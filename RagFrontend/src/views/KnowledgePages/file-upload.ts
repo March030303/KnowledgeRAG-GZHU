@@ -107,7 +107,7 @@ export const uploadFiles = async (
                 continue;
             }
 
-            const chunkSize = 0.1 * 1024 * 1024; // 每个分块大小 512KB
+            const chunkSize = 0.1 * 1024 * 1024; // 每个分块大小 100KB
             const totalChunks = Math.ceil(file.size / chunkSize);
             console.log(`文件 ${file.name} 分成了 ${totalChunks} 个分块`);
             let uploadedChunks = 0;

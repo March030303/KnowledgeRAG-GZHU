@@ -100,8 +100,8 @@ from .doc_manage import LocalDocumentManager
 doc_manager = LocalDocumentManager()
 
 def get_file_hash(content: bytes) -> str:
-    """生成文件的MD5哈希值"""
-    return hashlib.md5(content).hexdigest()
+    """生成文件的 SHA256 哈希值（用于增量向量化对比，提升安全性）"""
+    return hashlib.sha256(content).hexdigest()
 
 def get_file_type(filename: str) -> str:
     """获取文件扩展名"""

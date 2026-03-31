@@ -275,7 +275,7 @@ const ragFlow = [
 
 const uploadFlow = [
   { name: '文件选择', desc: '前端支持拖拽/点击，多文件批量' },
-  { name: '分块上传', desc: '100KB/chunk → POST /api/upload-chunk/' },
+  { name: '分块上传', desc: '100KB/chunk（0.1MB）→ POST /api/upload-chunk/' },
   { name: '合并文件', desc: '所有块传完 → POST /api/upload-complete/' },
   { name: '文档解析', desc: 'PDF/DOCX/TXT → LangChain DocumentLoader' },
   { name: '文本分块', desc: 'RecursiveCharacterTextSplitter（1000/200）' },

@@ -72,7 +72,7 @@ export async function uploadFileWithProgress(
   extraData: Record<string, string> = {},
   onProgress?: (progress: UploadProgress) => void,
 ): Promise<AxiosResponse> {
-  const CHUNK_SIZE = 5 * 1024 * 1024  // 5MB 分片
+  const CHUNK_SIZE = 5 * 1024 * 1024  // 5MB 分片 (注：已弃用，实际使用见 file-upload.ts 中的 0.1MB)
 
   if (file.size <= CHUNK_SIZE) {
     // 小文件直接上传
