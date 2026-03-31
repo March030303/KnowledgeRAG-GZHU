@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import math
 import re
+import logging
 from typing import List, Tuple, Dict, Any, Optional
+
+logger = logging.getLogger(__name__)
 
 from langchain.docstore.document import Document
 from langchain_community.vectorstores import FAISS
@@ -122,9 +125,9 @@ class HybridRetriever:
         self.vector_top_k = vector_top_k
         self.final_top_k = final_top_k
 
-        print(f"[HybridRetriever] 构建 BM25 索引，共 {len(documents)} 个文档块...")
+        logger.info(f"[HybridRetriever] 构建 BM25 索引，共 {len(documents)} 个文档块...")
         self.bm25 = BM25(documents)
-        print("[HybridRetriever] BM25 索引构建完成")
+        logger.info("[HybridRetriever] BM25 索引构建完成")
 
     def retrieve(self, query: str) -> List[Document]:
         """执行混合检索，返回融合排序后的 top-k 文档"""

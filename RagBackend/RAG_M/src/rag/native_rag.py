@@ -22,7 +22,10 @@ import math
 import pickle
 import pathlib
 import requests
+import logging
 from typing import List, Dict, Any, Generator, Optional, Tuple
+
+logger = logging.getLogger(__name__)
 
 
 # ────────────────────────────────────────────────
@@ -53,7 +56,7 @@ def _load_txt(file_path: str) -> List[NativeDocument]:
             text = f.read()
         return [NativeDocument(page_content=text, metadata={"source": file_path})]
     except Exception as e:
-        print(f"[NativeRAG] 加载文本文件失败 {file_path}: {e}")
+        logger.error(f"[NativeRAG] 加载文本文件失败 {file_path}: {e}")
         return []
 
 
@@ -73,10 +76,10 @@ def _load_pdf(file_path: str) -> List[NativeDocument]:
                     ))
         return docs
     except ImportError:
-        print("[NativeRAG] pypdf 未安装，尝试用文本模式读取 PDF")
+        logger.warning("[NativeRAG] pypdf 未安装，尝试用文本模式读取 PDF")
         return _load_txt(file_path)
     except Exception as e:
-        print(f"[NativeRAG] 加载 PDF 失败 {file_path}: {e}")
+        logger.error(f"[NativeRAG] 加载 PDF 失败 {file_path}: {e}")
         return []
 
 
@@ -87,7 +90,7 @@ def _load_docx(file_path: str) -> List[NativeDocument]:
         text = docx2txt.process(file_path)
         return [NativeDocument(page_content=text, metadata={"source": file_path})]
     except ImportError:
-        print("[NativeRAG] docx2txt 未安装，跳过 docx 文件")
+        logger.warning("[NativeRAG] docx2txt 未安装，跳过 docx 文件")
         return []
     except Exception as e:
         print(f"[NativeRAG] 加载 DOCX 失败 {file_path}: {e}")
@@ -106,7 +109,7 @@ def _load_csv(file_path: str) -> List[NativeDocument]:
         text = '\n'.join(rows)
         return [NativeDocument(page_content=text, metadata={"source": file_path})]
     except Exception as e:
-        print(f"[NativeRAG] 加载 CSV 失败 {file_path}: {e}")
+        logger.error(f"[NativeRAG] 加载 CSV 失败 {file_path}: {e}")
         return []
 
 
@@ -122,7 +125,7 @@ def load_documents_from_dir(docs_dir: str) -> List[NativeDocument]:
             if ext not in SUPPORTED_EXTENSIONS:
                 continue
             file_path = os.path.join(root, fname)
-            print(f"[NativeRAG] 加载文件: {file_path}")
+            logger.info(f"[NativeRAG] 加载文件: {file_path}")
             if ext in ('.txt', '.md'):
                 docs.extend(_load_txt(file_path))
             elif ext == '.pdf':
@@ -132,7 +135,7 @@ def load_documents_from_dir(docs_dir: str) -> List[NativeDocument]:
             elif ext == '.csv':
                 docs.extend(_load_csv(file_path))
 
-    print(f"[NativeRAG] 共加载原始文档 {len(docs)} 页")
+    logger.info(f"[NativeRAG] 共加载原始文档 {len(docs)} 页")
     return docs
 
 
@@ -163,7 +166,7 @@ def split_documents(
                 break
             start = end - chunk_overlap
 
-    print(f"[NativeRAG] 分块完成，共 {len(chunks)} 个文本块")
+    logger.info(f"[NativeRAG] 分块完成，共 {len(chunks)} 个文本块")
     return chunks
 
 
@@ -484,7 +487,7 @@ class NativeRAGPipeline:
         self._bm25: Optional[NativeBM25] = None
         docs_for_bm25 = documents or (vectorstore.documents if vectorstore else None)
         if use_hybrid and docs_for_bm25:
-            print(f"[NativeRAGPipeline] 构建 BM25 索引，{len(docs_for_bm25)} 个文档块")
+            logger.info(f"[NativeRAGPipeline] 构建 BM25 索引，{len(docs_for_bm25)} 个文档块")
             self._bm25 = NativeBM25(docs_for_bm25)
         else:
             self.use_hybrid = False

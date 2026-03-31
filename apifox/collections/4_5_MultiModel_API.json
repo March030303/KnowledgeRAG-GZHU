@@ -1,0 +1,190 @@
+{
+  "info": {
+    "name": "4.5 多模型适配",
+    "description": "统一的多模型路由层，支持本地和云端多种 LLM，按需切换。"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "获取可用模型列表",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/models/available",
+          "protocol": "http",
+          "path": ["api", "models", "available"]
+        },
+        "description": "获取所有可用的 LLM 模型，包括本地 Ollama 和云端模型。\n\n**本地模型**：\n- qwen2:0.5b (400MB，推荐低配)\n- qwen:7b-chat (4.2GB，需 17GB+ 内存)\n\n**云端模型**：\n- GPT-4o / GPT-3.5-turbo (需 OpenAI API Key)\n- DeepSeek (需 DeepSeek API Key)\n- Claude (需 Anthropic API Key)\n- 混元 hunyuan-turbo (需腾讯云 API Key)"
+      }
+    },
+    {
+      "name": "获取模型配置",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/models/config?model_id=qwen2:0.5b",
+          "protocol": "http",
+          "path": ["api", "models", "config"],
+          "query": [
+            {
+              "key": "model_id",
+              "value": "qwen2:0.5b"
+            }
+          ]
+        },
+        "description": "获取指定模型的详细配置信息。"
+      }
+    },
+    {
+      "name": "设置默认模型",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/models/default",
+          "protocol": "http",
+          "path": ["api", "models", "default"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"model_id\": \"qwen2:0.5b\", \"type\": \"local\"}"
+        },
+        "description": "设置用户的默认 LLM 模型。"
+      }
+    },
+    {
+      "name": "更新 API Key 配置",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/models/api-keys",
+          "protocol": "http",
+          "path": ["api", "models", "api-keys"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"provider\": \"openai\", \"api_key\": \"sk-...\", \"model_id\": \"gpt-4o\"}"
+        },
+        "description": "更新云端模型的 API Key 配置。安全存储在加密字段中。\n\n**支持的提供商**：\n- openai\n- deepseek\n- anthropic\n- hunyuan"
+      }
+    },
+    {
+      "name": "模型健康检查",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/models/health?model_id=qwen2:0.5b",
+          "protocol": "http",
+          "path": ["api", "models", "health"],
+          "query": [
+            {
+              "key": "model_id",
+              "value": "qwen2:0.5b"
+            }
+          ]
+        },
+        "description": "检查指定模型的健康状态（是否可用、延迟等）。"
+      }
+    },
+    {
+      "name": "模型对话（统一接口）",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/models/chat",
+          "protocol": "http",
+          "path": ["api", "models", "chat"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"model\": \"qwen2:0.5b\", \"messages\": [{\"role\": \"user\", \"content\": \"Hello\"}], \"stream\": true, \"temperature\": 0.7, \"max_tokens\": 2048}"
+        },
+        "description": "[SSE 流式] 统一的多模型对话接口，自动路由到指定模型（本地 Ollama 或云端）。"
+      }
+    },
+    {
+      "name": "获取模型使用统计",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/models/stats?from_date=2026-04-01&to_date=2026-04-02",
+          "protocol": "http",
+          "path": ["api", "models", "stats"],
+          "query": [
+            {
+              "key": "from_date",
+              "value": "2026-04-01"
+            },
+            {
+              "key": "to_date",
+              "value": "2026-04-02"
+            }
+          ]
+        },
+        "description": "获取模型使用统计，包括调用次数、成功率、平均延迟等。"
+      }
+    }
+  ]
+}

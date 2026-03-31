@@ -97,7 +97,7 @@ class RAGPipeline:
         if llm_model is None:
             model_config = get_model_config()
             llm_model = model_config.llm_model
-            print(f"[RAGPipeline] 使用默认 LLM 模型: {llm_model}")
+            logger.info(f"[RAGPipeline] 使用默认 LLM 模型: {llm_model}")
 
         self.llm = OllamaLLM(model=llm_model)
         self.vectorstore = vectorstore
@@ -108,7 +108,7 @@ class RAGPipeline:
         self._retrieval_config = None
         if retrieval_config and _STRATEGY_AVAILABLE:
             self._retrieval_config = RetrievalConfig.from_dict(retrieval_config)
-            print(f"[RAGPipeline] 检索策略: {self._retrieval_config.strategy}, topK={self._retrieval_config.topK}")
+            logger.info(f"[RAGPipeline] 检索策略: {self._retrieval_config.strategy}, topK={self._retrieval_config.topK}")
 
         # Initialize
         self._strategy_executor = None
@@ -121,13 +121,13 @@ class RAGPipeline:
         # Hybrid retrieval fallback
         self._hybrid_retriever: Optional[HybridRetriever] = None
         if use_hybrid and vectorstore is not None and self.documents and not _STRATEGY_AVAILABLE:
-            print(f"[RAGPipeline] 初始化混合检索器，文档块数量: {len(self.documents)}")
+            logger.info(f"[RAGPipeline] 初始化混合检索器，文档块数量: {len(self.documents)}")
             self._hybrid_retriever = HybridRetriever(
                 documents=self.documents,
                 vectorstore=vectorstore,
             )
         elif use_hybrid and vectorstore is not None and not self.documents and not _STRATEGY_AVAILABLE:
-            print("[RAGPipeline] 未传入 documents，混合检索降级为纯向量检索")
+            logger.warning("[RAGPipeline] 未传入 documents，混合检索降级为纯向量检索")
             self.use_hybrid = False
 
     def _retrieve(self, query: str) -> List[Dict[str, Any]]:
