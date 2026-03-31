@@ -242,8 +242,18 @@ class NativeVectorStore:
         )
 
     def similarity_search(self, query: str, top_k: int = 5) -> List[Tuple[NativeDocument, float]]:
-        """向量相似度检索，返回 (doc, score) 列表"""
+        """向量相似度检索，返回 (doc, score) 列表
+        
+        FIX: [P0] 检查 _index 初始化状态，避免 AttributeError
+        """
         import numpy as np
+        
+        # 防护：检查索引是否已构建
+        if self._index is None:
+            raise RuntimeError(
+                "FAISS 索引未初始化。请先调用 build_index() 构建索引。"
+            )
+        
         q_vec = self._encode([query]).astype('float32')
         scores, indices = self._index.search(q_vec, top_k)
         results = []

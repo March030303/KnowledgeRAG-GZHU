@@ -12,12 +12,15 @@ from __future__ import annotations
 
 import os
 import sys
+import logging
 from typing import List, Dict, Any, Generator, Optional
 
 from langchain_ollama.llms import OllamaLLM
 from langchain_community.vectorstores import FAISS
 from langchain.docstore.document import Document
 from langchain.prompts import PromptTemplate
+
+logger = logging.getLogger(__name__)
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from models.model_config import get_model_config
@@ -128,15 +131,25 @@ class RAGPipeline:
             self.use_hybrid = False
 
     def _retrieve(self, query: str) -> List[Dict[str, Any]]:
+        """检索文档块并返回带来源信息的结果"""
+        # FIX: [P0] 添加 vectorstore None 保护，避免 AttributeError
+        if self.vectorstore is None and not self._hybrid_retriever and not self._strategy_executor:
+            logger.error("[RAGPipeline._retrieve] vectorstore 未初始化，无法执行检索")
+            return []
+
         if self._strategy_executor is not None:
-            config = self._retrieval_config  # Noneexecutor
+            config = self._retrieval_config  # None executor
             return self._strategy_executor.retrieve(query, config)
 
-        # fallbackHybrid retrieval
+        # fallback Hybrid retrieval
         if self.use_hybrid and self._hybrid_retriever:
             return self._hybrid_retriever.retrieve_with_scores(query)
 
-        # fallbackVector retrieval
+        # fallback Vector retrieval
+        if self.vectorstore is None:
+            logger.warning("[RAGPipeline._retrieve] vectorstore 为 None，混合检索和向量检索均不可用")
+            return []
+
         raw = self.vectorstore.similarity_search_with_score(query, k=4)
         results = []
         for rank, (doc, score) in enumerate(raw, start=1):
