@@ -20,7 +20,8 @@ from models.model_config import get_model_config
 
 
 # Constants
-OLLAMA_API_URL = "http://localhost:11434/api/generate"
+_OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+OLLAMA_API_URL = f"{_OLLAMA_BASE_URL}/api/generate"
 model_config = get_model_config()
 OLLAMA_MODEL = model_config.kg_model
 CHUNK_SIZE = 5000
@@ -47,7 +48,7 @@ def extract_pdf_text(file_path):
         text = "\n".join([doc.page_content for doc in documents])
         return text
     except Exception as e:
-        print(f"Unable to extract PDF file {file_path}: {e}")
+        logger.error(f"[KG] 无法提取 PDF 文件 {file_path}: {e}")
         return ""
 
 # Extract text from DOC/DOCX
@@ -57,7 +58,7 @@ def extract_doc_text(file_path):
         text = "\n".join([para.text for para in doc.paragraphs])
         return text
     except Exception as e:
-        print(f"Unable to extract DOC file {file_path}: {e}")
+        logger.error(f"[KG] 无法提取 DOC 文件 {file_path}: {e}")
         return ""
 
 # Extract text from text files
@@ -66,7 +67,7 @@ def extract_text_file(file_path):
         with open(file_path, 'r', encoding='utf-8') as f:
             return f.read()
     except Exception as e:
-        print(f"Unable to read file {file_path}: {e}")
+        logger.error(f"[KG] 无法读取文件 {file_path}: {e}")
         return ""
 
 # Extract text based on file type
@@ -79,7 +80,7 @@ def extract_text(file_path):
     elif ext in ['.txt', '.md']:
         return extract_text_file(file_path)
     else:
-        print(f"Unsupported file type: {ext}")
+        logger.warning(f"[KG] 不支持的文件类型: {ext}")
         return ""
 
 # Extract graph data using Ollama API
@@ -115,11 +116,11 @@ def extract_graph_data(chunk):
     }
     try:
         response = requests.post(OLLAMA_API_URL, json=data, timeout=300)
-        print(f"API request status code: {response.status_code}")
+        logger.debug(f"[KG] API 状态码: {response.status_code}")
         if response.status_code == 200:
             result = response.json()
             generated_text = result.get('response', '')
-            print(f"API response: {generated_text[:100]}...")  # Print first 100 characters
+            logger.debug(f"[KG] API 返回摘要: {generated_text[:100]}...")
 
             # Attempt to extract JSON from the response using regex
             json_pattern = r'(\{.*\})'
@@ -131,19 +132,19 @@ def extract_graph_data(chunk):
                     if "nodes" in parsed_json and "edges" in parsed_json:
                         return parsed_json
                     else:
-                        print("Warning: JSON does not contain 'nodes' and 'edges' keys.")
+                        logger.warning("[KG] JSON 不含 'nodes' 和 'edges' 键")
                         return {"nodes": [], "edges": []}
                 except json.JSONDecodeError:
-                    print(f"Failed to parse extracted JSON: {json_str[:50]}...")
+                    logger.warning(f"[KG] JSON 解析失败: {json_str[:50]}...")
                     return {"nodes": [], "edges": []}
             else:
-                print("No JSON object found in the response.")
+                logger.warning("[KG] 响应中未找到 JSON 对象")
                 return {"nodes": [], "edges": []}
         else:
-            print(f"API request failed, status code: {response.status_code}")
+            logger.error(f"[KG] API 请求失败，状态码: {response.status_code}")
             return {"nodes": [], "edges": []}
     except Exception as e:
-        print(f"API call error: {str(e)}")
+        logger.error(f"[KG] API 调用异常: {str(e)}", exc_info=True)
         return {"nodes": [], "edges": []}
 
 @router.post("/process-file", response_model=ProcessFilesResponse)
@@ -167,13 +168,13 @@ async def process_single_file(request: ProcessFileRequest):
     # Extract graph data
     graph_data = {"nodes": [], "edges": []}
     for i, chunk in enumerate(chunks):
-        print(f"Processing chunk {i+1}/{len(chunks)}")
+        logger.info(f"[KG] 处理文本块 {i+1}/{len(chunks)}")
         result = extract_graph_data(chunk)
         if result and "nodes" in result and "edges" in result:
             graph_data["nodes"].extend(result["nodes"])
             graph_data["edges"].extend(result["edges"])
         else:
-            print(f"Failed to extract valid graph data for chunk {i+1}")
+            logger.warning(f"[KG] 文本块 {i+1} 未能提取有效图谱数据")
     
     return ProcessFilesResponse(
         message=f"Successfully processed {request.filename}",
@@ -195,12 +196,12 @@ async def process_all_files():
     for file in files:
         try:
             file_path = os.path.join(KNOWLEDGE_BASE_PATH, file)
-            print(f"Processing file: {file}")
+            logger.info(f"[KG] 正在处理文件: {file}")
             
             # Extract text
             content = extract_text(file_path)
             if not content:
-                print(f"Skipping file {file}, unable to extract content")
+                logger.warning(f"[KG] 跳过文件 {file}，无法提取内容")
                 continue
             
             # Split into chunks
@@ -209,13 +210,13 @@ async def process_all_files():
             # Extract graph data
             graph_data = {"nodes": [], "edges": []}
             for i, chunk in enumerate(chunks):
-                print(f"Processing chunk {i+1}/{len(chunks)}")
+                logger.info(f"[KG] 处理文本块 {i+1}/{len(chunks)}")
                 result = extract_graph_data(chunk)
                 if result and "nodes" in result and "edges" in result:
                     graph_data["nodes"].extend(result["nodes"])
                     graph_data["edges"].extend(result["edges"])
                 else:
-                    print(f"Failed to extract valid graph data for chunk {i+1}")
+                    logger.warning(f"[KG] 文本块 {i+1} 未能提取有效图谱数据")
             
             results.append(ProcessFilesResponse(
                 message=f"Successfully processed {file}",
@@ -226,10 +227,10 @@ async def process_all_files():
             output_file = os.path.join(KNOWLEDGE_BASE_PATH, f"{os.path.splitext(file)[0]}_graph.json")
             with open(output_file, 'w', encoding='utf-8') as f:
                 json.dump(graph_data, f, indent=4, ensure_ascii=False)
-            print(f"Graph data saved to {output_file}")
+            logger.info(f"[KG] 图谱数据已保存至: {output_file}")
             
         except Exception as e:
-            print(f"Error processing file {file}: {str(e)}")
+            logger.error(f"[KG] 处理文件 {file} 时出错: {str(e)}", exc_info=True)
             results.append(ProcessFilesResponse(
                 message=f"Error processing {file}: {str(e)}",
                 graph_data={"nodes": [], "edges": []}
@@ -296,24 +297,24 @@ async def process_knowledge_base(request: ProcessFolderRequest):
     for file in files:
         try:
             file_path = os.path.join(kb_folder_path, file)
-            print(f"Processing file: {file}")
+            logger.info(f"[KG] 正在处理文件: {file}")
             
             content = extract_text(file_path)
             if not content:
-                print(f"Skipping file {file}, unable to extract content")
+                logger.warning(f"[KG] 跳过文件 {file}，无法提取内容")
                 continue
             
             chunks = split_text_into_chunks(content, CHUNK_SIZE)
             
             graph_data = {"nodes": [], "edges": []}
             for i, chunk in enumerate(chunks):
-                print(f"Processing chunk {i+1}/{len(chunks)}")
+                logger.info(f"[KG] 处理文本块 {i+1}/{len(chunks)}")
                 result = extract_graph_data(chunk)
                 if result and "nodes" in result and "edges" in result:
                     graph_data["nodes"].extend(result["nodes"])
                     graph_data["edges"].extend(result["edges"])
                 else:
-                    print(f"Failed to extract valid graph data for chunk {i+1}")
+                    logger.warning(f"[KG] 文本块 {i+1} 未能提取有效图谱数据")
             
             results.append(ProcessFilesResponse(
                 message=f"Successfully processed {file}",
@@ -324,10 +325,10 @@ async def process_knowledge_base(request: ProcessFolderRequest):
             output_file = os.path.join(kb_folder_path, f"{os.path.splitext(file)[0]}_graph.json")
             with open(output_file, 'w', encoding='utf-8') as f:
                 json.dump(graph_data, f, indent=4, ensure_ascii=False)
-            print(f"Graph data saved to {output_file}")
+            logger.info(f"[KG] 图谱数据已保存至: {output_file}")
             
         except Exception as e:
-            print(f"Error processing file {file}: {str(e)}")
+            logger.error(f"[KG] 处理文件 {file} 时出错: {str(e)}", exc_info=True)
             results.append(ProcessFilesResponse(
                 message=f"Error processing {file}: {str(e)}",
                 graph_data={"nodes": [], "edges": []}
@@ -417,7 +418,7 @@ async def get_kb_merged_graph(kb_id: str):
             with open(os.path.join(kb_folder_path, gf), 'r', encoding='utf-8') as f:
                 graph_list.append(json.load(f))
         except Exception as e:
-            print(f"[KG] 读取图谱文件 {gf} 失败: {e}")
+            logger.error(f"[KG] 读取图谱文件 {gf} 失败: {e}")
 
     merged = _merge_graph_data(graph_list)
     merged["source_files"] = graph_files

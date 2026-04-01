@@ -1,14 +1,14 @@
+import logging
 import requests
 from bs4 import BeautifulSoup
 
 from fastapi import APIRouter, HTTPException
 
 from pydantic import BaseModel
-from typing import List
-
-from typing import Optional
+from typing import List, Optional
 from datetime import datetime, timedelta
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -114,10 +114,10 @@ def scrape_ollama_models():
     """
     cached_data = get_cached_models()
     if cached_data is not None:
-        print("使用缓存数据")
+        logger.debug("[Ollama] 使用缓存数据返回模型列表")
         return cached_data
     
-    print("缓存过期或不存在，重新爬取数据")
+    logger.info("[Ollama] 缓存过期或不存在，重新爬取数据")
     
     url = "https://ollama.com/library"
     headers = {
@@ -132,7 +132,7 @@ def scrape_ollama_models():
         # ... ...
         model_list_container = soup.find("ul", {"role": "list", "class": "grid grid-cols-1 gap-y-3"})
         if not model_list_container:
-            print("未找到模型列表容器")
+            logger.warning("[Ollama] 未找到模型列表容器，页面结构可能已变更")
             return []
 
         models = model_list_container.find_all("li")
@@ -195,15 +195,14 @@ def scrape_ollama_models():
             model_info_list.append(model_info)
 
         update_cache(model_info_list)
-        print(f"成功爬取 {len(model_info_list)} 个模型信息")
-        print(f"缓存更新时间: {_cache_timestamp}")
+        logger.info(f"[Ollama] 成功爬取 {len(model_info_list)} 个模型信息，缓存已更新")
         return model_info_list
 
     except requests.exceptions.RequestException as e:
-        print(f"请求失败: {e}")
+        logger.error(f"[Ollama] 爬取请求失败: {e}")
         return []
     except Exception as e:
-        print(f"解析失败: {e}")
+        logger.error(f"[Ollama] 模型列表解析失败: {e}", exc_info=True)
         return []
 
 if __name__ == "__main__":

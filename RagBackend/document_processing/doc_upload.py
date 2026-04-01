@@ -150,49 +150,8 @@ doc_manager = LocalDocumentManager()
 
 
 
-# File upload
-UPLOAD_DIR = "local-KLB-files"
-METADATA_DIR = "metadata"
-MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
-ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt", ".doc", ".md", ".rtf"}
 
-# IO 8
-_chunk_semaphore = asyncio.Semaphore(8)
-
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-os.makedirs(METADATA_DIR, exist_ok=True)
-
-METADATA_FILE = os.path.join(METADATA_DIR, "documents.json")
-
-# Temporary directory
-CHUNK_UPLOAD_DIR = os.path.join(UPLOAD_DIR, "chunks")
-os.makedirs(CHUNK_UPLOAD_DIR, exist_ok=True)
-
-# Pydantic
-class DocumentStatus(BaseModel):
-    documentId: int
-    enabled: bool
-
-class DeleteDocuments(BaseModel):
-    documentIds: List[int]
-
-class DocumentResponse(BaseModel):
-    id: int
-    name: str
-    fileType: str
-    chunks: int
-    uploadDate: str
-    slicingMethod: str
-    enabled: bool
-    file_size: int
-    file_hash: str
-
-# Document management
-
-from .doc_manage import LocalDocumentManager
-
-# Document management
-doc_manager = LocalDocumentManager()
+# NOTE: 以上常量/模型/doc_manager 均已在文件顶部 (L39~L195) 定义，此处旧代码已删除，防止覆盖
 
 # ============================================================================
 # 工具函数

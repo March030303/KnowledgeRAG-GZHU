@@ -1,9 +1,11 @@
 
+
 from fastapi.responses import JSONResponse
 from fastapi import UploadFile, File, APIRouter, HTTPException, Form, Request
 
 from typing import List, Optional
 from pydantic import BaseModel
+import logging
 import os
 import json
 from pydantic import BaseModel
@@ -12,6 +14,7 @@ import aiofiles
 from pathlib import Path
 import asyncio
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -52,9 +55,7 @@ def knowledge_base_data() -> List[dict]:
 
 
     KLB_items = knowledge_bases
-
-    print(KLB_items)
-    
+    logger.debug(f"[KB] 加载知识库列表，共 {len(KLB_items)} 个")
     return KLB_items
 
 
@@ -167,7 +168,7 @@ async def update_knowledgebase_config(KLB_id: str, request: Request):
     """
     try:
         body = await request.json()
-        print(f"接收到更新请求: KLB_id={KLB_id}, body={body}")
+        logger.info(f"[KB] 接收到更新请求: KLB_id={KLB_id}")
         
         name = body.get("name")
         description = body.get("description")
@@ -238,7 +239,7 @@ async def update_knowledgebase_config(KLB_id: str, request: Request):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"更新知识库配置失败: {str(e)}")
+        logger.error(f"[KB] 更新知识库配置失败: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"更新知识库配置失败: {str(e)}"

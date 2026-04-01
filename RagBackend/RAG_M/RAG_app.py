@@ -11,12 +11,15 @@ RAG_app.py  — RAG 服务路由 v2
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from functools import lru_cache
+import logging
 import os
 import json
 import asyncio
 from pathlib import Path
 from dotenv import load_dotenv
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 from fastapi.responses import StreamingResponse
 import io
@@ -130,9 +133,9 @@ def _load_vectorstore_and_docs(docs_dir: str):
     try:
         if hasattr(vectorstore, 'docstore') and hasattr(vectorstore.docstore, '_dict'):
             documents = list(vectorstore.docstore._dict.values())
-            print(f"[RAG_app] 从 docstore 提取到 {len(documents)} 个文档块，启用混合检索")
+            logger.info(f"[RAG_app] 从 docstore 提取到 {len(documents)} 个文档块，启用混合检索")
     except Exception as e:
-        print(f"[RAG_app] 提取 docstore 失败（{e}），混合检索降级为纯向量检索")
+        logger.warning(f"[RAG_app] 提取 docstore 失败（{e}），混合检索降级为纯向量检索")
 
     return vectorstore, documents, vector_store_manager
 
@@ -523,6 +526,7 @@ class AgentQueryRequest(BaseModel):
     docs_dir: str = None
     use_hybrid: bool = True
     max_iterations: int = 5
+    model: Optional[str] = None  # 云端模型：cloud:provider:model_id，Ollama 直接传 model_name
 
 
 @router.post("/agent_query")
@@ -723,7 +727,7 @@ async def native_query(req: NativeQueryRequest):
                     ollama_host = _cfg.ollama_base_url or os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
                     ollama_timeout = _cfg.timeout or int(os.getenv("OLLAMA_TIMEOUT", "120"))
                 except Exception as _cfg_err:
-                    print(f"[RAG_app] 读取用户模型配置失败，使用环境变量: {_cfg_err}")
+                    logger.warning(f"[RAG_app] 读取用户模型配置失败，使用环境变量: {_cfg_err}")
                     ollama_host = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
                     ollama_timeout = int(os.getenv("OLLAMA_TIMEOUT", "120"))
 
