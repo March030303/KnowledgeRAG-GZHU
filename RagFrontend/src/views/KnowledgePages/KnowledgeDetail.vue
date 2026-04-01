@@ -44,10 +44,19 @@
           </div>
         </div>
         <!-- 添加上传按钮 -->
-        <button @click="showUploadModal = true"
-          class="bg-blue-600 hover:bg-blue-700  text-white font-bold px-4 py-2 rounded-md ">
-          上传文件
-        </button>
+        <div class="flex gap-2">
+          <button @click="showUrlImportModal = true"
+            class="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded-md">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+            </svg>
+            导入链接
+          </button>
+          <button @click="showUploadModal = true"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-md">
+            上传文件
+          </button>
+        </div>
       </div>
 
       <!-- 文档列表 -->
@@ -485,9 +494,9 @@
 
     <!-- 上传文件模态框 -->
     <div v-if="showUploadModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
-        <div class="p-6">
-          <div class="flex justify-between items-center pb-4 border-b">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl" style="max-height: 90vh; display: flex; flex-direction: column;">
+        <div class="p-6" style="overflow-y: auto; flex: 1;">
+          <div class="flex justify-between items-center pb-4 border-b sticky top-0 bg-white z-10">
             <h3 class="text-xl font-semibold text-gray-800">上传文件</h3>
             <button @click="showUploadModal = false" class="text-gray-500 hover:text-gray-700">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
@@ -516,9 +525,12 @@
             </div>
 
             <div v-if="uploadedFiles.length > 0" class="mt-6">
-              <h4 class="text-lg font-medium text-gray-700 mb-4">待上传的文件</h4>
-              <ul class="divide-y divide-gray-200">
-                <li v-for="(file, index) in uploadedFiles" :key="index" class="py-4 flex items-center">
+              <h4 class="text-lg font-medium text-gray-700 mb-2 flex items-center gap-2">
+                待上传的文件
+                <span class="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{{ uploadedFiles.length }} 个</span>
+              </h4>
+              <ul class="divide-y divide-gray-200 overflow-y-auto" style="max-height: 240px;">
+                <li v-for="(file, index) in uploadedFiles" :key="index" class="py-3 flex items-center">
                   <div class="flex-shrink-0 mr-4">
                     <svg v-if="file.name.endsWith('.pdf')" class="h-10 w-10 text-red-500" fill="none"
                       viewBox="0 0 24 24" stroke="currentColor">
@@ -622,6 +634,141 @@
         </div>
       </div>
     </div>
+
+    <!-- URL 导入弹窗 -->
+    <div v-if="showUrlImportModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg">
+        <div class="p-6">
+          <div class="flex justify-between items-center pb-4 border-b mb-4">
+            <div class="flex items-center gap-2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+              </svg>
+              <h3 class="text-lg font-semibold text-gray-800">导入网页链接</h3>
+            </div>
+            <button @click="closeUrlImport" class="text-gray-400 hover:text-gray-600">✕</button>
+          </div>
+
+          <p class="text-sm text-gray-500 mb-3">每行输入一个链接，AI 将自动抓取正文内容并存入知识库。</p>
+          <textarea
+            v-model="urlImportList"
+            rows="5"
+            placeholder="https://example.com/article1&#10;https://example.com/article2"
+            class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none"
+          ></textarea>
+
+          <!-- 导入结果 -->
+          <div v-if="urlImportResults.length > 0" class="mt-3 space-y-1 max-h-32 overflow-y-auto">
+            <div v-for="r in urlImportResults" :key="r.url"
+              :class="['flex items-start gap-2 text-xs p-2 rounded-lg',
+                r.status === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600']">
+              <span>{{ r.status === 'ok' ? '✓' : '✗' }}</span>
+              <div>
+                <div class="font-medium truncate" style="max-width:340px">{{ r.url }}</div>
+                <div>{{ r.message }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 mt-4">
+            <button @click="closeUrlImport"
+              class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
+              关闭
+            </button>
+            <button @click="doUrlImport" :disabled="isImportingUrl || !urlImportList.trim()"
+              class="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
+              <svg v-if="isImportingUrl" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9"/>
+              </svg>
+              {{ isImportingUrl ? '抓取中...' : '开始导入' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 📝 笔记模块 -->
+    <div class="note-section">
+      <div class="note-header" @click="noteExpanded = !noteExpanded">
+        <div class="note-header-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+          </svg>
+          <span>知识库笔记</span>
+          <span class="note-count" v-if="noteList.length > 0">{{ noteList.length }}</span>
+        </div>
+        <div class="note-header-right">
+          <button class="note-add-btn" @click.stop="addNote" title="新建笔记">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" d="M12 4v16m8-8H4"/>
+            </svg>
+          </button>
+          <svg :class="['note-chevron', { 'note-chevron--open': noteExpanded }]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+      </div>
+
+      <div v-if="noteExpanded" class="note-body">
+        <!-- 笔记列表 -->
+        <div v-if="noteList.length === 0 && !activeNote" class="note-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <p>还没有笔记，点击右上角 + 新建</p>
+        </div>
+
+        <div v-else class="note-layout">
+          <!-- 笔记列表侧栏 -->
+          <div class="note-list">
+            <div
+              v-for="note in noteList"
+              :key="note.id"
+              :class="['note-item', { 'note-item--active': activeNote?.id === note.id }]"
+              @click="selectNote(note)"
+            >
+              <div class="note-item-title">{{ note.title || '无标题笔记' }}</div>
+              <div class="note-item-meta">
+                <span>{{ formatNoteTime(note.updatedAt) }}</span>
+                <button class="note-item-del" @click.stop="deleteNote(note.id)" title="删除笔记">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 笔记编辑区 -->
+          <div v-if="activeNote" class="note-editor">
+            <input
+              v-model="activeNote.title"
+              placeholder="笔记标题..."
+              class="note-title-input"
+              @input="markNoteUnsaved"
+            />
+            <textarea
+              v-model="activeNote.content"
+              placeholder="开始记录你的想法... 支持 Markdown 格式"
+              class="note-textarea"
+              @input="markNoteUnsaved"
+            ></textarea>
+            <div class="note-toolbar">
+              <span class="note-status">{{ noteSaveStatus }}</span>
+              <div class="note-toolbar-right">
+                <button class="note-tool-btn" @click="insertMarkdown('**', '**')" title="粗体">B</button>
+                <button class="note-tool-btn note-tool-italic" @click="insertMarkdown('*', '*')" title="斜体">I</button>
+                <button class="note-tool-btn" @click="insertMarkdown('`', '`')" title="代码">&lt;&gt;</button>
+                <button class="note-tool-btn" @click="insertMarkdown('- ', '')" title="列表">≡</button>
+                <button class="note-save-btn" @click="saveNote" :class="{ 'note-save-btn--unsaved': noteUnsaved }">
+                  {{ noteUnsaved ? '保存' : '已保存' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -650,6 +797,60 @@ const dragover = ref(false);
 const currentPage = ref(1);
 const itemsPerPage = ref(5);
 const showDeleteConfirmation = ref(false);
+
+// ── URL 内容导入 ────────────────────────────────────────
+const showUrlImportModal = ref(false);
+const urlImportList = ref<string>('');
+const isImportingUrl = ref(false);
+const urlImportResults = ref<{ url: string; status: 'ok' | 'error'; message: string }[]>([]);
+
+const doUrlImport = async () => {
+  const urls = urlImportList.value
+    .split('\n')
+    .map(u => u.trim())
+    .filter(u => u.startsWith('http'));
+
+  if (urls.length === 0) {
+    MessagePlugin.warning('请输入至少一个有效的 http/https 链接');
+    return;
+  }
+
+  isImportingUrl.value = true;
+  urlImportResults.value = [];
+
+  for (const url of urls) {
+    try {
+      // 调用后端抓取接口（如无则直接创建文本文档入库）
+      const res = await axios.post('/api/url-import/', {
+        url,
+        kb_id: id.value,
+      });
+      urlImportResults.value.push({ url, status: 'ok', message: res.data?.message || '导入成功' });
+    } catch (e: any) {
+      // 后端暂不支持时，改为提示待实现
+      urlImportResults.value.push({
+        url,
+        status: 'error',
+        message: e?.response?.data?.detail || '后端暂未实现URL抓取，请在后端添加 /api/url-import/ 接口',
+      });
+    }
+  }
+
+  isImportingUrl.value = false;
+
+  const okCount = urlImportResults.value.filter(r => r.status === 'ok').length;
+  if (okCount > 0) {
+    MessagePlugin.success(`${okCount} 个链接内容已导入知识库`);
+    await fetchDocuments();
+  }
+};
+
+const closeUrlImport = () => {
+  showUrlImportModal.value = false;
+  urlImportList.value = '';
+  urlImportResults.value = [];
+};
+// ───────────────────────────────────────────────────────
 
 // 在已有状态变量旁边添加
 const queryResults = ref<string[]>([]);
@@ -956,10 +1157,14 @@ const performRagQuery = async () => {
 
   try {
     const docsDir = `local-KLB-files/${KLB_id}`;
+    // 读取当前选中模型（支持云端 cloud:provider:model 格式）
+    const selectedModel = localStorage.getItem('selected_model') || (() => {
+      try { return JSON.parse(localStorage.getItem('user_model_config') || '{}').llm_model || '' } catch { return '' }
+    })()
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ query: testQuery.value, docs_dir: docsDir })
+      body: JSON.stringify({ query: testQuery.value, docs_dir: docsDir, model: selectedModel || undefined })
     });
 
     const reader = response.body?.getReader();
@@ -1222,6 +1427,22 @@ const formatJsonOutput = (text: string) => {
 };
 
 // 页面挂载时获取数据
+const fetchDocuments = async () => {
+  try {
+    const response = await axios.get<Document[]>(
+      API_ENDPOINTS.KNOWLEDGE.DOCUMENTS_LIST(KLB_id),
+      {
+        headers: {
+          'accept': 'application/json'
+        }
+      }
+    );
+    documents.value = response.data;
+  } catch (error) {
+    console.error('获取文档数据失败:', error);
+  }
+};
+
 onMounted(async () => {
   // 获取知识库配置（包含基本信息）
   await fetchKnowledgeBaseConfig();
@@ -1251,6 +1472,94 @@ onUnmounted(() => {
     window.clearInterval(intervalId);
   }
 });
+
+// ============ 笔记模块 ============
+interface Note {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+const noteExpanded = ref(false);
+const noteList = ref<Note[]>([]);
+const activeNote = ref<Note | null>(null);
+const noteUnsaved = ref(false);
+const noteSaveStatus = ref('');
+let noteAutoSaveTimer: ReturnType<typeof setTimeout>;
+
+const getNoteStorageKey = () => `kb_notes_${id.value}`;
+
+const loadNotes = () => {
+  try {
+    const raw = localStorage.getItem(getNoteStorageKey());
+    noteList.value = raw ? JSON.parse(raw) : [];
+  } catch { noteList.value = []; }
+};
+
+const saveNotesToStorage = () => {
+  localStorage.setItem(getNoteStorageKey(), JSON.stringify(noteList.value));
+};
+
+const addNote = () => {
+  const newNote: Note = {
+    id: Date.now().toString(),
+    title: '',
+    content: '',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+  noteList.value.unshift(newNote);
+  activeNote.value = newNote;
+  noteExpanded.value = true;
+  saveNotesToStorage();
+};
+
+const selectNote = (note: Note) => {
+  activeNote.value = note;
+};
+
+const deleteNote = (id: string) => {
+  noteList.value = noteList.value.filter(n => n.id !== id);
+  if (activeNote.value?.id === id) activeNote.value = noteList.value[0] || null;
+  saveNotesToStorage();
+};
+
+const markNoteUnsaved = () => {
+  noteUnsaved.value = true;
+  noteSaveStatus.value = '未保存';
+  clearTimeout(noteAutoSaveTimer);
+  noteAutoSaveTimer = setTimeout(saveNote, 1500);
+};
+
+const saveNote = () => {
+  if (!activeNote.value) return;
+  activeNote.value.updatedAt = Date.now();
+  const idx = noteList.value.findIndex(n => n.id === activeNote.value!.id);
+  if (idx !== -1) noteList.value[idx] = { ...activeNote.value };
+  saveNotesToStorage();
+  noteUnsaved.value = false;
+  noteSaveStatus.value = '已保存';
+};
+
+const formatNoteTime = (ts: number) => {
+  const d = new Date(ts);
+  const now = new Date();
+  const diff = Math.floor((now.getTime() - d.getTime()) / 60000);
+  if (diff < 1) return '刚刚';
+  if (diff < 60) return `${diff}分钟前`;
+  if (diff < 1440) return `${Math.floor(diff / 60)}小时前`;
+  return d.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+};
+
+const insertMarkdown = (before: string, after: string) => {
+  if (!activeNote.value) return;
+  activeNote.value.content += `${before}文本${after}`;
+  markNoteUnsaved();
+};
+
+onMounted(() => { loadNotes(); });
 </script>
 
 
@@ -1267,5 +1576,248 @@ onUnmounted(() => {
   position: fixed;
   z-index: -1;
   overflow-x: hidden;
+}
+
+/* ===== 笔记模块 ===== */
+.note-section {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  margin-bottom: 32px;
+  overflow: hidden;
+}
+
+.note-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid transparent;
+}
+
+.note-header:hover { background: #f9fafb; }
+
+.note-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.note-header-left svg {
+  width: 18px;
+  height: 18px;
+  color: #4f7ef8;
+}
+
+.note-count {
+  background: #eff6ff;
+  color: #4f7ef8;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+
+.note-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.note-add-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: #eff6ff;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4f7ef8;
+  transition: all 0.15s;
+}
+.note-add-btn:hover { background: #dbeafe; }
+.note-add-btn svg { width: 14px; height: 14px; }
+
+.note-chevron {
+  width: 16px;
+  height: 16px;
+  color: #9ca3af;
+  transition: transform 0.2s;
+}
+.note-chevron--open { transform: rotate(180deg); }
+
+.note-body {
+  border-top: 1px solid #f0f0f0;
+}
+
+.note-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #9ca3af;
+  gap: 10px;
+}
+.note-empty svg {
+  width: 40px;
+  height: 40px;
+  opacity: 0.4;
+}
+.note-empty p { font-size: 14px; }
+
+.note-layout {
+  display: flex;
+  height: 380px;
+}
+
+.note-list {
+  width: 200px;
+  flex-shrink: 0;
+  border-right: 1px solid #f0f0f0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.note-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid #f5f5f5;
+  transition: background 0.12s;
+}
+.note-item:hover { background: #f9fafb; }
+.note-item--active { background: #eff6ff; border-left: 3px solid #4f7ef8; }
+
+.note-item-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 3px;
+}
+
+.note-item-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.note-item-del {
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #9ca3af;
+  padding: 0;
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  transition: opacity 0.15s;
+}
+.note-item-del svg { width: 12px; height: 12px; }
+.note-item:hover .note-item-del { opacity: 1; }
+.note-item-del:hover { color: #ef4444; }
+
+.note-editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.note-title-input {
+  padding: 14px 18px 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  border: none;
+  outline: none;
+  border-bottom: 1px solid #f0f0f0;
+}
+.note-title-input::placeholder { color: #9ca3af; }
+
+.note-textarea {
+  flex: 1;
+  padding: 12px 18px;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: #374151;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: 'SF Mono', Consolas, 'Courier New', monospace;
+}
+.note-textarea::placeholder { color: #9ca3af; }
+
+.note-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-top: 1px solid #f0f0f0;
+  background: #f9fafb;
+}
+
+.note-status {
+  font-size: 11.5px;
+  color: #9ca3af;
+}
+
+.note-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.note-tool-btn {
+  width: 28px;
+  height: 24px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+}
+.note-tool-btn:hover { background: #f3f4f6; border-color: #d1d5db; }
+.note-tool-italic { font-style: italic; }
+
+.note-save-btn {
+  padding: 4px 12px;
+  background: #4f7ef8;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-left: 4px;
+  transition: all 0.15s;
+}
+.note-save-btn:hover { background: #3b6de8; }
+.note-save-btn--unsaved {
+  background: #f59e0b;
+  animation: pulse-save 1.5s infinite;
+}
+
+@keyframes pulse-save {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
 }
 </style>

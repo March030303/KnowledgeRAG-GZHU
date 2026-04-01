@@ -1,0 +1,118 @@
+{
+  "info": {
+    "name": "4.3 RAG 智能问答",
+    "description": "基于 LangChain 的 RAG Pipeline，将用户问题与知识库文档结合，生成有据可查的回答。"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "发送消息（流式 RAG 问答）",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/chat/send",
+          "protocol": "http",
+          "path": ["api", "chat", "send"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"question\": \"什么是 RAG？为什么要用它？\", \"kb_id\": \"kb_001\", \"model\": \"qwen2:0.5b\", \"top_k\": 5, \"use_reranker\": false, \"temperature\": 0.7}"
+        },
+        "description": "[SSE 流式] 发送消息到 RAG 系统，接收流式回答。流式响应格式：data: {\"type\": \"thinking\", \"content\": \"正在检索相关文档...\"}"
+      }
+    },
+    {
+      "name": "获取对话历史",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/chat/history?kb_id=kb_001&limit=20&offset=0",
+          "protocol": "http",
+          "path": ["api", "chat", "history"],
+          "query": [
+            {
+              "key": "kb_id",
+              "value": "kb_001"
+            },
+            {
+              "key": "limit",
+              "value": "20"
+            },
+            {
+              "key": "offset",
+              "value": "0"
+            }
+          ]
+        },
+        "description": "获取当前用户的对话历史记录，支持按知识库和分页过滤。"
+      }
+    },
+    {
+      "name": "删除对话记录",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/chat/chat_001",
+          "protocol": "http",
+          "path": ["api", "chat", "chat_001"]
+        },
+        "description": "删除指定的对话记录。"
+      }
+    },
+    {
+      "name": "获取引用来源详情",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/chat/citation/doc_1?page=5",
+          "protocol": "http",
+          "path": ["api", "chat", "citation", "doc_1"],
+          "query": [
+            {
+              "key": "page",
+              "value": "5"
+            }
+          ]
+        },
+        "description": "获取 AI 回答中引用的原始文档段落内容。"
+      }
+    }
+  ]
+}

@@ -1,0 +1,139 @@
+{
+  "info": {
+    "name": "4.4 Agent 任务模式",
+    "description": "基于 ReAct（Reasoning + Acting）框架的智能 Agent，能够分解复杂任务、调用工具链自主完成目标。"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "启动 Agent 任务（流式）",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/agent/run",
+          "protocol": "http",
+          "path": ["api", "agent", "run"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"task\": \"分析知识库中关于 RAG 的所有文档，然后用通俗语言总结 RAG 的核心概念和优势\", \"kb_id\": \"kb_001\", \"model\": \"qwen2:0.5b\", \"max_steps\": 5, \"enable_web_search\": false}"
+        },
+        "description": "[SSE 流式] 启动 Agent 任务，实时推送 Thought/Action/Observation/FinalAnswer。\n\n**流式响应格式**：\ndata: {\"type\": \"thought\", \"content\": \"我需要检索关于 RAG 的文档...\"}\ndata: {\"type\": \"action\", \"tool\": \"kb_search\", \"input\": \"RAG 核心概念\"}\ndata: {\"type\": \"observation\", \"result\": \"检索到 12 条相关文档\"}\ndata: {\"type\": \"final_answer\", \"content\": \"RAG 是...\"}\ndata: [DONE]"
+      }
+    },
+    {
+      "name": "获取任务历史",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/agent/history?limit=10&offset=0&date=2026-04-02",
+          "protocol": "http",
+          "path": ["api", "agent", "history"],
+          "query": [
+            {
+              "key": "limit",
+              "value": "10"
+            },
+            {
+              "key": "offset",
+              "value": "0"
+            },
+            {
+              "key": "date",
+              "value": "2026-04-02",
+              "description": "按日期过滤（YYYY-MM-DD 格式）"
+            }
+          ]
+        },
+        "description": "获取当前用户的 Agent 任务历史，按日期分组，支持分页。"
+      }
+    },
+    {
+      "name": "取消任务",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/agent/task_001/cancel",
+          "protocol": "http",
+          "path": ["api", "agent", "task_001", "cancel"]
+        },
+        "description": "取消正在执行的 Agent 任务。"
+      }
+    },
+    {
+      "name": "联网搜索工具",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/agent/web-search",
+          "protocol": "http",
+          "path": ["api", "agent", "web-search"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"query\": \"最新的 AI 模型进展\", \"max_results\": 5}"
+        },
+        "description": "调用 DuckDuckGo 进行实时网络搜索（无需 API Key）。"
+      }
+    },
+    {
+      "name": "获取任务详情",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/agent/task_001",
+          "protocol": "http",
+          "path": ["api", "agent", "task_001"]
+        },
+        "description": "获取指定任务的详细信息，包括全部的 Thought/Action/Observation 步骤。"
+      }
+    }
+  ]
+}

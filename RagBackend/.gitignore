@@ -25,7 +25,7 @@ npm-debug.log*
 
 uploads/
 local-KLB-files/
-.json
+models_config.json
 .gz
 .tar.gz
 metadata/documents.json

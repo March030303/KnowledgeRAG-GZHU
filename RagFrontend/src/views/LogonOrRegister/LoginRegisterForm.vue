@@ -89,12 +89,12 @@
 
                 <!-- 注册表单 -->
                 <div v-else-if="currentMode === 'register'">
-                    <!-- 用户名或邮箱 -->
+                    <!-- 邮箱 -->
                     <div class="mb-4">
-                        <label class="block text-white/80 text-sm font-light mb-2">用户名</label>
-                        <input v-model="registerForm.username" type="text" required autocomplete="username"
+                        <label class="block text-white/80 text-sm font-light mb-2">邮箱</label>
+                        <input v-model="registerForm.username" type="email" required autocomplete="email"
                             class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-300"
-                            placeholder="请输入用户名或邮箱" />
+                            placeholder="请输入邮箱地址" />
                     </div>
                     <!-- 密码 -->
                     <div class="mb-4">
@@ -524,15 +524,25 @@ const handleSubmit = async () => {
         // ── 登录 / 注册 ───────────────────────────────────────────
         let response;
         if (currentMode.value === 'login') {
-            const formData = new FormData();
-            formData.append('username', loginForm.value.username);
-            formData.append('password', loginForm.value.password);
-            response = await fetch('/api/login', { method: 'POST', body: formData });
+            // 使用 JSON 格式登录（/api/login/json），更稳定可靠
+            response = await fetch('/api/login/json', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: loginForm.value.username.trim(),
+                    password: loginForm.value.password
+                })
+            });
         } else {
-            const formData = new FormData();
-            formData.append('email', registerForm.value.username);
-            formData.append('password', registerForm.value.password);
-            response = await fetch('/api/register/form', { method: 'POST', body: formData });
+            // 注册使用 JSON 格式（/api/register）
+            response = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: registerForm.value.username.trim(),
+                    password: registerForm.value.password
+                })
+            });
         }
 
         const result = await response.json();
@@ -541,12 +551,13 @@ const handleSubmit = async () => {
             const token = result.access_token || result.token;
             emit('form-submit', {
                 type: currentMode.value,
-                email: currentMode.value === 'login' ? loginForm.value.username : registerForm.value.username,
+                email: currentMode.value === 'login' ? loginForm.value.username.trim() : registerForm.value.username.trim(),
                 password: currentMode.value === 'login' ? loginForm.value.password : registerForm.value.password,
                 token
             });
         } else {
-            alert(`${currentMode.value === 'login' ? '登录' : '注册'}失败: ${result.detail || '未知错误'}`);
+            const msg = result.detail || '未知错误';
+            alert(`${currentMode.value === 'login' ? '登录' : '注册'}失败: ${msg}`);
         }
 
         if (currentMode.value === 'login') {

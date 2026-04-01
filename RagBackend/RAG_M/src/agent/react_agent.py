@@ -25,7 +25,6 @@ import json
 from typing import List, Dict, Any, Optional, Generator
 from pathlib import Path
 
-# 路径修复：确保能找到项目根目录下的模块
 _AGENT_DIR = Path(__file__).resolve().parent
 _SRC_DIR = _AGENT_DIR.parent
 _RAG_M_DIR = _SRC_DIR.parent
@@ -45,19 +44,25 @@ from langchain_community.vectorstores import FAISS
 from models.model_config import get_model_config
 from src.rag.hybrid_retriever import HybridRetriever
 
+try:
+    from agent_tools.web_search_tool import build_web_search_tool
+    _WEB_SEARCH_AVAILABLE = True
+except ImportError:
+    _WEB_SEARCH_AVAILABLE = False
+
 
 # ─────────────────────────────────────────────
-# ReAct Agent Prompt 模板
+# ReAct Agent Prompt
 # ─────────────────────────────────────────────
 
-_REACT_PROMPT_TEMPLATE = """你是一个智能知识库助手，能够通过工具检索知识库中的相关信息来回答问题。
+_REACT_PROMPT_TEMPLATE = """你是一个智能知识库助手，能够通过工具检索知识库中的相关信息或搜索互联网来回答问题。
 
 你可以使用以下工具：
 {tools}
 
 使用以下格式推理：
 Question: 用户提出的问题
-Thought: 思考是否需要使用工具
+Thought: 思考是否需要使用工具，以及使用哪个工具
 Action: 要使用的工具名称，必须是 [{tool_names}] 之一
 Action Input: 传给工具的输入
 Observation: 工具返回的结果
@@ -66,10 +71,11 @@ Thought: 现在我知道了最终答案
 Final Answer: 给用户的最终回答（中文）
 
 规则：
-1. 优先使用工具检索知识库后再回答
-2. 如果工具返回了相关文档，请在回答中引用来源
-3. 如果问题是简单的日常对话（如"你好"、"谢谢"），可以直接回答，无需检索
-4. 回答要完整、清晰，默认使用中文
+1. 优先使用 search_knowledge_base 检索本地知识库后再回答
+2. 如果本地知识库没有相关内容，使用 web_search 搜索互联网获取最新信息
+3. 如果工具返回了相关文档，请在回答中引用来源
+4. 如果问题是简单的日常对话（如"你好"、"谢谢"），可以直接回答，无需检索
+5. 回答要完整、清晰，默认使用中文
 
 开始！
 
@@ -83,7 +89,7 @@ REACT_PROMPT = PromptTemplate(
 
 
 # ─────────────────────────────────────────────
-# RAG 检索工具工厂函数
+# RAG
 # ─────────────────────────────────────────────
 
 def build_rag_search_tool(
@@ -99,7 +105,7 @@ def build_rag_search_tool(
         documents: 原始文档列表（用于 BM25），可为空（降级为纯向量检索）
         top_k: 返回的最大文档块数
     """
-    # 初始化检索器
+    # Initialize
     if documents:
         retriever = HybridRetriever(
             documents=documents,
@@ -119,10 +125,10 @@ def build_rag_search_tool(
         """执行知识库检索，返回格式化的文档片段"""
         try:
             if retriever:
-                # 使用混合检索
+                # Hybrid retrieval
                 results = retriever.retrieve_with_scores(query)
             else:
-                # 降级：纯向量检索
+                # Vector retrieval
                 raw = vectorstore.similarity_search_with_score(query, k=top_k)
                 results = []
                 for rank, (doc, score) in enumerate(raw, start=1):
@@ -143,7 +149,7 @@ def build_rag_search_tool(
             if not results:
                 return "知识库中未找到与该问题相关的内容。"
 
-            # 格式化输出供 LLM 阅读
+            # LLM
             parts = []
             for item in results:
                 src = item["source_info"]
@@ -171,7 +177,7 @@ def build_rag_search_tool(
 
 
 # ─────────────────────────────────────────────
-# ReAct Agent 主类
+# ReAct Agent
 # ─────────────────────────────────────────────
 
 class ReActRAGAgent:
@@ -191,6 +197,7 @@ class ReActRAGAgent:
         top_k: int = 4,
         max_iterations: int = 5,
         verbose: bool = False,
+        enable_web_search: bool = True,
     ):
         """
         Args:
@@ -200,21 +207,20 @@ class ReActRAGAgent:
             top_k: 每次检索返回的文档块数
             max_iterations: Agent 最大推理轮次（防止死循环）
             verbose: 是否打印推理过程
+            enable_web_search: 是否注册联网搜索工具（默认开启）
         """
-        # 获取模型名
         if llm_model is None:
             config = get_model_config()
             llm_model = config.llm_model
             print(f"[ReActAgent] 使用 LLM 模型: {llm_model}")
 
-        # 初始化 LLM
+        # Initialize LLM
         self.llm = OllamaLLM(
             model=llm_model,
-            temperature=0.1,  # 低温度，使推理更稳定
-            stop=["Observation:"],  # ReAct 关键停止词
+            temperature=0.1,
+            stop=["Observation:"],  # ReAct
         )
 
-        # 构建工具列表
         self.tools = [
             build_rag_search_tool(
                 vectorstore=vectorstore,
@@ -223,21 +229,27 @@ class ReActRAGAgent:
             )
         ]
 
-        # 构建 Agent
+        if enable_web_search and _WEB_SEARCH_AVAILABLE:
+            self.tools.append(build_web_search_tool(max_results=5))
+            print("[ReActAgent] 联网搜索工具已注册")
+        elif enable_web_search and not _WEB_SEARCH_AVAILABLE:
+            print("[ReActAgent] 联网搜索工具不可用（导入失败），跳过注册")
+
+        # Agent
         self.agent = create_react_agent(
             llm=self.llm,
             tools=self.tools,
             prompt=REACT_PROMPT,
         )
 
-        # 构建 AgentExecutor
+        # AgentExecutor
         self.agent_executor = AgentExecutor(
             agent=self.agent,
             tools=self.tools,
             verbose=verbose,
             max_iterations=max_iterations,
-            handle_parsing_errors=True,  # 自动处理 LLM 输出格式错误
-            return_intermediate_steps=True,  # 返回推理过程（用于溯源）
+            handle_parsing_errors=True,  # LLM
+            return_intermediate_steps=True,
         )
 
         self._llm_model = llm_model
@@ -249,9 +261,9 @@ class ReActRAGAgent:
 
         Returns:
             {
-                "answer": str,           # 最终回答
-                "steps": list,           # 推理步骤（Action + Observation）
-                "sources": list,         # 引用的文档来源（从 steps 中提取）
+                "answer": str,
+                "steps": list,           # Action + Observation
+                "sources": list,         # steps
                 "mode": "react_agent"
             }
         """
@@ -259,7 +271,6 @@ class ReActRAGAgent:
             result = self.agent_executor.invoke({"input": question})
             answer = result.get("output", "无法生成回答")
 
-            # 提取推理步骤
             steps = []
             sources_set = set()
             for action, observation in result.get("intermediate_steps", []):
@@ -270,7 +281,7 @@ class ReActRAGAgent:
                 }
                 steps.append(step)
 
-                # 从 observation 中提取来源信息
+                # observation
                 if "【来源" in str(observation):
                     import re
                     matches = re.findall(r'【来源\s*\d+：([^】]+)】', str(observation))
@@ -311,7 +322,6 @@ class ReActRAGAgent:
             result = self.agent_executor.invoke({"input": question})
             answer = result.get("output", "无法生成回答")
 
-            # 输出推理步骤
             steps = result.get("intermediate_steps", [])
             if steps:
                 yield f"data: 📚 Agent 执行了 {len(steps)} 个推理步骤:\n\n"
@@ -327,7 +337,6 @@ class ReActRAGAgent:
 
             yield "data: 💬 正在生成回答...\n\n"
 
-            # 逐段输出回答
             for paragraph in answer.split('\n'):
                 if paragraph.strip():
                     yield f"data: {paragraph}\n\n"
@@ -341,7 +350,6 @@ class ReActRAGAgent:
 
 
 # ─────────────────────────────────────────────
-# 工具函数
 # ─────────────────────────────────────────────
 
 def _extract_filename(meta: Dict[str, Any]) -> str:

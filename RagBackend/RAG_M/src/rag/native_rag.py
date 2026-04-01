@@ -22,11 +22,14 @@ import math
 import pickle
 import pathlib
 import requests
+import logging
 from typing import List, Dict, Any, Generator, Optional, Tuple
+
+logger = logging.getLogger(__name__)
 
 
 # ────────────────────────────────────────────────
-# 0. 文档数据结构
+# 0.
 # ────────────────────────────────────────────────
 
 class NativeDocument:
@@ -40,7 +43,7 @@ class NativeDocument:
 
 
 # ────────────────────────────────────────────────
-# 1. 原生文档加载器
+# 1. Document loading
 # ────────────────────────────────────────────────
 
 SUPPORTED_EXTENSIONS = {'.pdf', '.txt', '.md', '.docx', '.csv'}
@@ -53,7 +56,7 @@ def _load_txt(file_path: str) -> List[NativeDocument]:
             text = f.read()
         return [NativeDocument(page_content=text, metadata={"source": file_path})]
     except Exception as e:
-        print(f"[NativeRAG] 加载文本文件失败 {file_path}: {e}")
+        logger.error(f"[NativeRAG] 加载文本文件失败 {file_path}: {e}")
         return []
 
 
@@ -73,10 +76,10 @@ def _load_pdf(file_path: str) -> List[NativeDocument]:
                     ))
         return docs
     except ImportError:
-        print("[NativeRAG] pypdf 未安装，尝试用文本模式读取 PDF")
+        logger.warning("[NativeRAG] pypdf 未安装，尝试用文本模式读取 PDF")
         return _load_txt(file_path)
     except Exception as e:
-        print(f"[NativeRAG] 加载 PDF 失败 {file_path}: {e}")
+        logger.error(f"[NativeRAG] 加载 PDF 失败 {file_path}: {e}")
         return []
 
 
@@ -87,7 +90,7 @@ def _load_docx(file_path: str) -> List[NativeDocument]:
         text = docx2txt.process(file_path)
         return [NativeDocument(page_content=text, metadata={"source": file_path})]
     except ImportError:
-        print("[NativeRAG] docx2txt 未安装，跳过 docx 文件")
+        logger.warning("[NativeRAG] docx2txt 未安装，跳过 docx 文件")
         return []
     except Exception as e:
         print(f"[NativeRAG] 加载 DOCX 失败 {file_path}: {e}")
@@ -106,7 +109,7 @@ def _load_csv(file_path: str) -> List[NativeDocument]:
         text = '\n'.join(rows)
         return [NativeDocument(page_content=text, metadata={"source": file_path})]
     except Exception as e:
-        print(f"[NativeRAG] 加载 CSV 失败 {file_path}: {e}")
+        logger.error(f"[NativeRAG] 加载 CSV 失败 {file_path}: {e}")
         return []
 
 
@@ -116,14 +119,13 @@ def load_documents_from_dir(docs_dir: str) -> List[NativeDocument]:
     IGNORE_DIRS = {'vectorstore', 'native_vectorstore', '__pycache__', '.git', 'node_modules'}
 
     for root, dirs, files in os.walk(docs_dir):
-        # 过滤忽略目录
         dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
         for fname in files:
             ext = pathlib.Path(fname).suffix.lower()
             if ext not in SUPPORTED_EXTENSIONS:
                 continue
             file_path = os.path.join(root, fname)
-            print(f"[NativeRAG] 加载文件: {file_path}")
+            logger.info(f"[NativeRAG] 加载文件: {file_path}")
             if ext in ('.txt', '.md'):
                 docs.extend(_load_txt(file_path))
             elif ext == '.pdf':
@@ -133,12 +135,12 @@ def load_documents_from_dir(docs_dir: str) -> List[NativeDocument]:
             elif ext == '.csv':
                 docs.extend(_load_csv(file_path))
 
-    print(f"[NativeRAG] 共加载原始文档 {len(docs)} 页")
+    logger.info(f"[NativeRAG] 共加载原始文档 {len(docs)} 页")
     return docs
 
 
 # ────────────────────────────────────────────────
-# 2. 原生文本分块
+# 2.
 # ────────────────────────────────────────────────
 
 def split_documents(
@@ -164,12 +166,12 @@ def split_documents(
                 break
             start = end - chunk_overlap
 
-    print(f"[NativeRAG] 分块完成，共 {len(chunks)} 个文本块")
+    logger.info(f"[NativeRAG] 分块完成，共 {len(chunks)} 个文本块")
     return chunks
 
 
 # ────────────────────────────────────────────────
-# 3. 原生向量存储（FAISS）
+# 3. Vector storeFAISS
 # ────────────────────────────────────────────────
 
 class NativeVectorStore:
@@ -203,7 +205,7 @@ class NativeVectorStore:
         print(f"[NativeVectorStore] 对 {len(texts)} 个文本块计算向量...")
         vectors = self._encode(texts).astype('float32')
         dim = vectors.shape[1]
-        self._index = faiss.IndexFlatIP(dim)  # 内积（因为已 normalize，等价余弦）
+        self._index = faiss.IndexFlatIP(dim)  # normalize
         self._index.add(vectors)
         print(f"[NativeVectorStore] FAISS 索引构建完成，维度={dim}")
 
@@ -214,7 +216,6 @@ class NativeVectorStore:
         faiss.write_index(self._index, os.path.join(save_path, "native.index"))
         with open(os.path.join(save_path, "native_docs.pkl"), 'wb') as f:
             pickle.dump(self._documents, f)
-        # 保存模型名称
         with open(os.path.join(save_path, "native_config.json"), 'w') as f:
             json.dump({"model_name": self.model_name}, f)
         print(f"[NativeVectorStore] 已保存到 {save_path}")
@@ -244,8 +245,18 @@ class NativeVectorStore:
         )
 
     def similarity_search(self, query: str, top_k: int = 5) -> List[Tuple[NativeDocument, float]]:
-        """向量相似度检索，返回 (doc, score) 列表"""
+        """向量相似度检索，返回 (doc, score) 列表
+        
+        FIX: [P0] 检查 _index 初始化状态，避免 AttributeError
+        """
         import numpy as np
+        
+        # 防护：检查索引是否已构建
+        if self._index is None:
+            raise RuntimeError(
+                "FAISS 索引未初始化。请先调用 build_index() 构建索引。"
+            )
+        
         q_vec = self._encode([query]).astype('float32')
         scores, indices = self._index.search(q_vec, top_k)
         results = []
@@ -261,7 +272,7 @@ class NativeVectorStore:
 
 
 # ────────────────────────────────────────────────
-# 4. 原生 BM25（复用逻辑，针对 NativeDocument）
+# 4. BM25 NativeDocument
 # ────────────────────────────────────────────────
 
 class NativeBM25:
@@ -328,7 +339,7 @@ def _rrf_fusion(
 
 
 # ────────────────────────────────────────────────
-# 5. 原生 LLM 调用（Ollama HTTP API）
+# 5. LLM Ollama HTTP API
 # ────────────────────────────────────────────────
 
 def _ollama_generate(
@@ -380,24 +391,37 @@ def _ollama_generate(
 
 
 # ────────────────────────────────────────────────
-# 6. 原生 RAG Pipeline
+# 6. RAG Pipeline
 # ────────────────────────────────────────────────
 
-_NATIVE_PROMPT_TEMPLATE = """你是知识管理助手，专门回答基于文档的问题。
+_NATIVE_PROMPT_TEMPLATE = """<|im_start|>system
+你是一个专业的中文知识库问答助手。你的任务是基于提供的文档片段，给出准确、简洁的中文回答。
 
-规则：
-1. 优先基于"参考文档"中的内容回答
-2. 如果文档信息不足，在回答末尾注明"（以上部分内容基于通用知识补充）"
-3. 回答时自然引用来源，例如："根据《文件名》中的内容，..."
-4. 用户未指定语言时默认使用中文
-5. 回答要完整、清晰，如涉及代码/公式/表格则给出对应示例
-6. 与上下文完全无关的问题，说明无关并给出通用参考信息
-
-参考文档（已按相关度排序）：
+核心规则（必须严格遵守）：
+1. 【优先文档】只根据"参考文档"中的内容回答，不要编造文档中没有的信息
+2. 【引用来源】回答中主动引用来源，格式：根据【来源X】，...
+3. 【信息不足】如果文档完全没有相关信息，直接说"知识库中未找到相关内容"
+4. 【补充通用知识】文档内容不完整时，在文档答案后追加一段通用知识，并标注"（通用知识补充）"
+5. 【中文优先】始终用简体中文回答，除非问题本身用英文提问
+6. 【简洁清晰】回答要结构化，重要内容用序号或要点列出，避免废话
+7. 【代码/公式】涉及代码时用代码块格式展示
+<|im_end|>
+<|im_start|>user
+参考文档（按相关度从高到低排序）：
 {context}
 
-用户问题：{question}
+问题：{question}
+<|im_end|>
+<|im_start|>assistant
+"""
 
+# qwen2:0.5b token
+_NATIVE_PROMPT_TEMPLATE_LITE = """系统：你是中文知识库助手，只根据文档回答，引用来源格式为"根据【来源X】"，不确定时说"未找到相关内容"。
+
+文档：
+{context}
+
+问题：{question}
 回答："""
 
 
@@ -433,12 +457,13 @@ class NativeRAGPipeline:
         self,
         vectorstore: NativeVectorStore,
         documents: Optional[List[NativeDocument]] = None,
-        llm_model: str = "qwen:7b-chat",
+        llm_model: str = "qwen2:0.5b",
         ollama_host: str = "http://localhost:11434",
         use_hybrid: bool = True,
         bm25_top_k: int = 5,
         vector_top_k: int = 5,
         final_top_k: int = 4,
+        ollama_timeout: int = 120,   # Ollama
     ):
         self.vectorstore = vectorstore
         self.llm_model = llm_model
@@ -447,12 +472,22 @@ class NativeRAGPipeline:
         self.final_top_k = final_top_k
         self.bm25_top_k = bm25_top_k
         self.vector_top_k = vector_top_k
+        self.ollama_timeout = ollama_timeout
 
-        # 构建 BM25
+        # Prompt
+        # 0.5b/1b context token
+        _small_models = ("0.5b", "1b", "1.5b", "tiny", "mini")
+        self._prompt_template = (
+            _NATIVE_PROMPT_TEMPLATE_LITE
+            if any(s in llm_model.lower() for s in _small_models)
+            else _NATIVE_PROMPT_TEMPLATE
+        )
+
+        # BM25
         self._bm25: Optional[NativeBM25] = None
         docs_for_bm25 = documents or (vectorstore.documents if vectorstore else None)
         if use_hybrid and docs_for_bm25:
-            print(f"[NativeRAGPipeline] 构建 BM25 索引，{len(docs_for_bm25)} 个文档块")
+            logger.info(f"[NativeRAGPipeline] 构建 BM25 索引，{len(docs_for_bm25)} 个文档块")
             self._bm25 = NativeBM25(docs_for_bm25)
         else:
             self.use_hybrid = False
@@ -513,7 +548,7 @@ class NativeRAGPipeline:
         yield f"data: SOURCES: {json.dumps(sources, ensure_ascii=False)}\n\n"
 
         context = _format_native_context(docs_with_sources)
-        prompt = _NATIVE_PROMPT_TEMPLATE.format(context=context, question=query)
+        prompt = self._prompt_template.format(context=context, question=query)
 
         yield "data: [原生RAG] 正在生成回答（直接调用 Ollama API）...\n\n"
 
@@ -523,6 +558,7 @@ class NativeRAGPipeline:
                 prompt=prompt,
                 host=self.ollama_host,
                 stream=True,
+                timeout=self.ollama_timeout,
             ):
                 if token.startswith("[ERROR]"):
                     yield f"data: {token}\n\n"
@@ -545,13 +581,14 @@ class NativeRAGPipeline:
             }
 
         context = _format_native_context(docs_with_sources)
-        prompt = _NATIVE_PROMPT_TEMPLATE.format(context=context, question=query)
+        prompt = self._prompt_template.format(context=context, question=query)
 
         answer_parts = list(_ollama_generate(
             model=self.llm_model,
             prompt=prompt,
             host=self.ollama_host,
             stream=False,
+            timeout=self.ollama_timeout,
         ))
         answer = "".join(answer_parts)
 
