@@ -171,10 +171,25 @@ class RetrievalStrategyExecutor:
                 break
         return results
 
-    def _bm25_search(self, query: str, top_k: int) -> List[Dict[str, Any]]:
-        bm25 = self._get_bm25()
-        raw = bm25.retrieve(query, top_k=top_k)
-        return [_build_result_item(i + 1, doc, score) for i, (doc, score) in enumerate(raw)]
+    def _bm25_search(
+        self, query: str, top_k: int, score_threshold: float = 0.0
+    ) -> List[Dict[str, Any]]:
+        try:
+            bm25 = self._get_bm25()
+            raw = bm25.retrieve(query, top_k=top_k * 2)
+            results = []
+            for i, (doc, score) in enumerate(raw):
+                if score < score_threshold:
+                    continue
+                results.append(_build_result_item(i + 1, doc, score))
+                if len(results) >= top_k:
+                    break
+            return results
+        except ValueError:
+            raise
+        except Exception as e:
+            logger.error(f"[BM25Search] 检索失败: {e}", exc_info=True)
+            return []
 
     def _hybrid_search(
         self, query: str, config: RetrievalConfig
@@ -218,16 +233,22 @@ class RetrievalStrategyExecutor:
 
     def _rrf_search(self, query: str, config: RetrievalConfig) -> List[Dict[str, Any]]:
         """RRF 融合"""
-        bm25 = self._get_bm25()
-        bm25_raw = bm25.retrieve(query, top_k=config.topK)
-        vector_raw = self.vectorstore.similarity_search_with_score(query, k=config.topK)
-        vector_list = [(doc, score) for doc, score in vector_raw]
+        try:
+            bm25 = self._get_bm25()
+            bm25_raw = bm25.retrieve(query, top_k=config.topK)
+            vector_raw = self.vectorstore.similarity_search_with_score(query, k=config.topK)
+            vector_list = [(doc, score) for doc, score in vector_raw]
 
-        fused = reciprocal_rank_fusion([bm25_raw, vector_list])
-        return [
-            _build_result_item(i + 1, doc, score)
-            for i, (doc, score) in enumerate(fused[: config.topK])
-        ]
+            fused = reciprocal_rank_fusion([bm25_raw, vector_list])
+            return [
+                _build_result_item(i + 1, doc, score)
+                for i, (doc, score) in enumerate(fused[: config.topK])
+            ]
+        except ValueError:
+            raise
+        except Exception as e:
+            logger.warning(f"[RRFSearch] RRF 融合失败，降级为向量检索: {e}")
+            return self._vector_search(query, config.topK, config.scoreThreshold)
 
     def _mmr_search(
         self, query: str, config: RetrievalConfig
@@ -269,7 +290,7 @@ class RetrievalStrategyExecutor:
         if strategy == "vector":
             results = self._vector_search(query, config.topK, config.scoreThreshold)
         elif strategy == "bm25":
-            results = self._bm25_search(query, config.topK)
+            results = self._bm25_search(query, config.topK, config.scoreThreshold)
         elif strategy == "hybrid":
             results = self._hybrid_search(query, config)
         elif strategy == "rrf":

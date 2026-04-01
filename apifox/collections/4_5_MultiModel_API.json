@@ -89,7 +89,7 @@
         "header": [
           {
             "key": "Content-Type",
-            "application/json"
+            "value": "application/json"
           },
           {
             "key": "Authorization",
