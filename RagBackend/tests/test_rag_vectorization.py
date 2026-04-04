@@ -13,14 +13,11 @@ RAG 混合检索与向量化测试套件
   cd RagBackend && python tests/test_rag_vectorization.py
 """
 
-import sys
-import os
 import math
-import json
-import tempfile
-import unittest
 import pathlib
-from typing import List, Dict, Any
+import sys
+import unittest
+from typing import Any, Dict, List
 
 BACKEND_ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BACKEND_ROOT))
@@ -29,10 +26,11 @@ sys.path.insert(0, str(BACKEND_ROOT / "RAG_M" / "src"))
 # ──────────────────────────────────────────
 # ──────────────────────────────────────────
 
+
 def cosine_similarity(a: List[float], b: List[float]) -> float:
     dot = sum(x * y for x, y in zip(a, b))
-    norm_a = math.sqrt(sum(x ** 2 for x in a))
-    norm_b = math.sqrt(sum(x ** 2 for x in b))
+    norm_a = math.sqrt(sum(x**2 for x in a))
+    norm_b = math.sqrt(sum(x**2 for x in b))
     if norm_a == 0 or norm_b == 0:
         return 0.0
     return dot / (norm_a * norm_b)
@@ -47,7 +45,7 @@ def mock_embed(text: str) -> List[float]:
     for i, ch in enumerate(text):
         vec[ord(ch) % DIM] += 1.0
     # L2
-    norm = math.sqrt(sum(x ** 2 for x in vec)) or 1.0
+    norm = math.sqrt(sum(x**2 for x in vec)) or 1.0
     return [x / norm for x in vec]
 
 
@@ -55,12 +53,14 @@ def mock_embed(text: str) -> List[float]:
 # 1BM25
 # ──────────────────────────────────────────
 
+
 class TestBM25Scoring(unittest.TestCase):
 
     def setUp(self):
         """尝试导入 HybridRetriever 中的 BM25Retriever"""
         try:
             from rag.hybrid_retriever import BM25Retriever
+
             self.BM25Retriever = BM25Retriever
             self.skip = False
         except ImportError:
@@ -86,7 +86,10 @@ class TestBM25Scoring(unittest.TestCase):
             self.skipTest("BM25Retriever 模块不可用")
         docs = [
             {"content": "今天天气很好", "metadata": {"source": "d1"}},
-            {"content": "知识图谱知识图谱知识图谱——专门讲图谱的文档", "metadata": {"source": "d2"}},
+            {
+                "content": "知识图谱知识图谱知识图谱——专门讲图谱的文档",
+                "metadata": {"source": "d2"},
+            },
             {"content": "随机内容与查询无关", "metadata": {"source": "d3"}},
         ]
         retriever = self.BM25Retriever(docs)
@@ -111,6 +114,7 @@ class TestBM25Scoring(unittest.TestCase):
 # ──────────────────────────────────────────
 # 2RRF
 # ──────────────────────────────────────────
+
 
 class TestRRFFusion(unittest.TestCase):
 
@@ -153,8 +157,9 @@ class TestRRFFusion(unittest.TestCase):
             scores[doc_id] = scores.get(doc_id, 0) + self._rrf_score(rank)
         for i in range(len(result) - 1):
             self.assertGreaterEqual(
-                scores[result[i]], scores[result[i+1]],
-                f"{result[i]} 的得分应 >= {result[i+1]}"
+                scores[result[i]],
+                scores[result[i + 1]],
+                f"{result[i]} 的得分应 >= {result[i+1]}",
             )
 
     def test_rrf_k_parameter_effect(self):
@@ -169,6 +174,7 @@ class TestRRFFusion(unittest.TestCase):
 # ──────────────────────────────────────────
 # 3 FAISS/torch
 # ──────────────────────────────────────────
+
 
 class TestVectorizationLogic(unittest.TestCase):
 
@@ -186,14 +192,15 @@ class TestVectorizationLogic(unittest.TestCase):
         sim_similar = cosine_similarity(query, similar)
         sim_unrelated = cosine_similarity(query, unrelated)
         self.assertGreater(
-            sim_similar, sim_unrelated,
-            f"相似文本得分 {sim_similar:.4f} 应 > 不相关文本得分 {sim_unrelated:.4f}"
+            sim_similar,
+            sim_unrelated,
+            f"相似文本得分 {sim_similar:.4f} 应 > 不相关文本得分 {sim_unrelated:.4f}",
         )
 
     def test_mock_embed_returns_unit_vector(self):
         """mock_embed 应返回归一化向量（L2 范数 ≈ 1）"""
         v = mock_embed("任意文本内容")
-        norm = math.sqrt(sum(x ** 2 for x in v))
+        norm = math.sqrt(sum(x**2 for x in v))
         self.assertAlmostEqual(norm, 1.0, places=5, msg="embedding 向量应为单位向量")
 
     def test_different_texts_produce_different_embeddings(self):
@@ -206,7 +213,11 @@ class TestVectorizationLogic(unittest.TestCase):
 
     def test_vector_dimension_fixed(self):
         """所有 embedding 应有相同维度"""
-        texts = ["短文本", "这是一段稍微长一些的文本", "这里有更长的文本内容用来测试向量维度的一致性"]
+        texts = [
+            "短文本",
+            "这是一段稍微长一些的文本",
+            "这里有更长的文本内容用来测试向量维度的一致性",
+        ]
         vectors = [mock_embed(t) for t in texts]
         dims = [len(v) for v in vectors]
         self.assertEqual(len(set(dims)), 1, f"所有 embedding 维度应一致，得到: {dims}")
@@ -228,17 +239,23 @@ class TestVectorizationLogic(unittest.TestCase):
             scored.append((doc["id"], score))
         scored.sort(key=lambda x: x[1], reverse=True)
         top1_id = scored[0][0]
-        self.assertIn(top1_id, ["d1", "d3"],
-                      f"最相关文档应为 d1 或 d3，实际为 {top1_id}（得分: {scored[0][1]:.4f}）")
+        self.assertIn(
+            top1_id,
+            ["d1", "d3"],
+            f"最相关文档应为 d1 或 d3，实际为 {top1_id}（得分: {scored[0][1]:.4f}）",
+        )
 
 
 # ──────────────────────────────────────────
 # 4
 # ──────────────────────────────────────────
 
+
 class TestCitationTracking(unittest.TestCase):
 
-    def _make_result(self, source: str, page: int, score: float, content: str) -> Dict[str, Any]:
+    def _make_result(
+        self, source: str, page: int, score: float, content: str
+    ) -> Dict[str, Any]:
         return {
             "content": content,
             "score": score,
@@ -248,7 +265,7 @@ class TestCitationTracking(unittest.TestCase):
                 "score": score,
                 "rank": 0,
                 "source_path": f"/data/{source}",
-            }
+            },
         }
 
     def test_source_info_has_required_fields(self):
@@ -256,8 +273,9 @@ class TestCitationTracking(unittest.TestCase):
         result = self._make_result("report.pdf", 3, 0.92, "这是检索到的内容")
         required = ["file_name", "page", "score", "rank", "source_path"]
         for field in required:
-            self.assertIn(field, result["source_info"],
-                          f"source_info 缺少必要字段: {field}")
+            self.assertIn(
+                field, result["source_info"], f"source_info 缺少必要字段: {field}"
+            )
 
     def test_source_info_score_in_range(self):
         """得分应在 [0, 1] 区间内"""
@@ -275,7 +293,9 @@ class TestCitationTracking(unittest.TestCase):
         ]
         # file_name
         unique_sources = set(r["source_info"]["file_name"] for r in results)
-        self.assertEqual(len(unique_sources), 2, "应有 2 个唯一来源（doc.pdf 和 other.pdf）")
+        self.assertEqual(
+            len(unique_sources), 2, "应有 2 个唯一来源（doc.pdf 和 other.pdf）"
+        )
 
     def test_citation_sorted_by_score(self):
         """引用列表应按相关性得分降序排列"""
@@ -284,7 +304,9 @@ class TestCitationTracking(unittest.TestCase):
             self._make_result("a.pdf", 1, 0.95, "内容"),
             self._make_result("b.pdf", 1, 0.8, "内容"),
         ]
-        sorted_results = sorted(results, key=lambda x: x["source_info"]["score"], reverse=True)
+        sorted_results = sorted(
+            results, key=lambda x: x["source_info"]["score"], reverse=True
+        )
         scores = [r["source_info"]["score"] for r in sorted_results]
         self.assertEqual(scores, sorted(scores, reverse=True), "引用应按得分降序排列")
 
@@ -292,6 +314,7 @@ class TestCitationTracking(unittest.TestCase):
 # ──────────────────────────────────────────
 # 5Knowledge graph
 # ──────────────────────────────────────────
+
 
 class TestGraphMergeLogic(unittest.TestCase):
 
@@ -305,15 +328,28 @@ class TestGraphMergeLogic(unittest.TestCase):
                 if nid and nid not in merged_nodes:
                     merged_nodes[nid] = node
             for edge in graph.get("edges", []):
-                key = (edge.get("source", ""), edge.get("target", ""), edge.get("label", ""))
+                key = (
+                    edge.get("source", ""),
+                    edge.get("target", ""),
+                    edge.get("label", ""),
+                )
                 if key[0] and key[1] and key not in merged_edges:
                     merged_edges[key] = edge
-        return {"nodes": list(merged_nodes.values()), "edges": list(merged_edges.values())}
+        return {
+            "nodes": list(merged_nodes.values()),
+            "edges": list(merged_edges.values()),
+        }
 
     def test_duplicate_nodes_removed(self):
         """相同 id 的节点只保留一个"""
         g1 = {"nodes": [{"id": "A", "label": "节点A"}], "edges": []}
-        g2 = {"nodes": [{"id": "A", "label": "节点A(副本)"}, {"id": "B", "label": "节点B"}], "edges": []}
+        g2 = {
+            "nodes": [
+                {"id": "A", "label": "节点A(副本)"},
+                {"id": "B", "label": "节点B"},
+            ],
+            "edges": [],
+        }
         merged = self._merge([g1, g2])
         ids = [n["id"] for n in merged["nodes"]]
         self.assertEqual(len(ids), len(set(ids)), "节点 id 不应有重复")
@@ -331,11 +367,11 @@ class TestGraphMergeLogic(unittest.TestCase):
         """合并后应包含所有唯一节点和边"""
         g1 = {
             "nodes": [{"id": "A"}, {"id": "B"}],
-            "edges": [{"source": "A", "target": "B", "label": "r1"}]
+            "edges": [{"source": "A", "target": "B", "label": "r1"}],
         }
         g2 = {
             "nodes": [{"id": "C"}, {"id": "D"}],
-            "edges": [{"source": "C", "target": "D", "label": "r2"}]
+            "edges": [{"source": "C", "target": "D", "label": "r2"}],
         }
         merged = self._merge([g1, g2])
         self.assertEqual(len(merged["nodes"]), 4)
@@ -352,22 +388,27 @@ class TestGraphMergeLogic(unittest.TestCase):
         g = {
             "nodes": [{"id": "A"}],
             "edges": [
-                {"source": "", "target": "A", "label": "r"},   # source
-                {"source": "A", "target": "", "label": "r"},   # target
+                {"source": "", "target": "A", "label": "r"},  # source
+                {"source": "A", "target": "", "label": "r"},  # target
                 {"source": "A", "target": "B", "label": "r"},
-            ]
+            ],
         }
         merged = self._merge([g])
-        self.assertEqual(len(merged["edges"]), 1, "只有 source 和 target 非空的边才保留")
+        self.assertEqual(
+            len(merged["edges"]), 1, "只有 source 和 target 非空的边才保留"
+        )
 
 
 # ──────────────────────────────────────────
 # 6RAG Pipeline
 # ──────────────────────────────────────────
 
+
 class TestRAGPipelineStructure(unittest.TestCase):
 
-    def _mock_rag_result(self, use_hybrid: bool = True, num_sources: int = 3) -> Dict[str, Any]:
+    def _mock_rag_result(
+        self, use_hybrid: bool = True, num_sources: int = 3
+    ) -> Dict[str, Any]:
         """模拟 rag_pipeline 返回的标准结构"""
         return {
             "answer": "这是基于检索内容生成的回答",
@@ -381,7 +422,7 @@ class TestRAGPipelineStructure(unittest.TestCase):
                         "rank": i,
                         "score": round(0.95 - i * 0.1, 2),
                         "source_path": f"/data/doc{i+1}.pdf",
-                    }
+                    },
                 }
                 for i in range(num_sources)
             ],
@@ -414,8 +455,9 @@ class TestRAGPipelineStructure(unittest.TestCase):
         """sources 应按 score 降序排列"""
         result = self._mock_rag_result(num_sources=5)
         scores = [s["score"] for s in result["sources"]]
-        self.assertEqual(scores, sorted(scores, reverse=True),
-                         "sources 应按 score 降序排列")
+        self.assertEqual(
+            scores, sorted(scores, reverse=True), "sources 应按 score 降序排列"
+        )
 
     def test_retrieval_mode_field(self):
         """结果必须包含 retrieval_mode 字段"""
@@ -428,8 +470,11 @@ class TestRAGPipelineStructure(unittest.TestCase):
         """混合检索和纯向量检索都应返回 sources"""
         for use_hybrid in [True, False]:
             result = self._mock_rag_result(use_hybrid=use_hybrid)
-            self.assertGreater(len(result["sources"]), 0,
-                               f"{'hybrid' if use_hybrid else 'vector_only'} 模式应返回 sources")
+            self.assertGreater(
+                len(result["sources"]),
+                0,
+                f"{'hybrid' if use_hybrid else 'vector_only'} 模式应返回 sources",
+            )
 
 
 # ──────────────────────────────────────────

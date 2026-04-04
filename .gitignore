@@ -10,11 +10,16 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.venv/
+venv/
+htmlcov/
+coverage.xml
 
 # ── Node / Frontend ──────────────────────────────────────────────
 node_modules/
 dist/
 .vite/
+.pnpm-store/
 *.local
 
 # ── Environment / Secrets ────────────────────────────────────────
@@ -34,12 +39,15 @@ dist/
 *.ear
 *.iml
 *.class
+coverage/
+docs/.vitepress/dist/
 
 # ── OS / Editor ──────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
+.tooling/
 *.swp
 *.swo
 

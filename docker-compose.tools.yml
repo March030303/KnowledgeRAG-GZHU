@@ -1,0 +1,16 @@
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: ragf-open-webui
+    restart: unless-stopped
+    ports:
+      - '3001:8080'
+    environment:
+      OLLAMA_BASE_URL: ${OLLAMA_WEBUI_TARGET:-http://host.docker.internal:11435}
+      WEBUI_AUTH: 'False'
+    volumes:
+      - open_webui_data:/app/backend/data
+
+volumes:
+  open_webui_data:
+    driver: local

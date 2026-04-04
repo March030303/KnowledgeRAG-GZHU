@@ -38,14 +38,16 @@ $dockerRunning = (docker ps --format "{{.Names}}" 2>&1) -match "ragf-mysql"
 if (-not $dockerRunning) {
   Write-Host "  [!] ragf-mysql not running, starting Docker services..." -ForegroundColor Yellow
   Push-Location $ROOT
-  docker compose up -d db 2>&1 | Out-Null
+  docker compose up -d mysql 2>&1 | Out-Null
+
   Pop-Location
   $w = 0
   while (-not (Test-DockerMySQL) -and $w -lt 20) { Start-Sleep 1; $w++ }
 }
 if (Test-DockerMySQL) {
-  Write-Host "  [OK] ragf-mysql running on 127.0.0.1:3306" -ForegroundColor Green
+  Write-Host "  [OK] ragf-mysql running on 127.0.0.1:3307 (container 3306)" -ForegroundColor Green
 } else {
+
   Write-Host "  [X] Docker MySQL not responding. Please run: docker compose up -d" -ForegroundColor Red
   Write-Host "      Then retry this script." -ForegroundColor Red
   exit 1
@@ -80,4 +82,5 @@ Write-Host "  Backend:  http://localhost:8000" -ForegroundColor Green
 Write-Host "  API Docs: http://localhost:8000/docs" -ForegroundColor Green
 $ffp = Get-FrontPort; if ($ffp -gt 0) { Write-Host "  Frontend: http://localhost:$ffp" -ForegroundColor Green; Start-Process "http://localhost:$ffp" } else { Write-Host "  Frontend: check Vite window (5173 or 5174)" -ForegroundColor Yellow }
 Write-Host ""
-Write-Host "  [DB] Both local dev and Docker use the same MySQL: ragf-mysql (127.0.0.1:3306)" -ForegroundColor Cyan
+Write-Host "  [DB] Local dev uses Docker MySQL ragf-mysql on 127.0.0.1:3307 (container 3306)" -ForegroundColor Cyan
+

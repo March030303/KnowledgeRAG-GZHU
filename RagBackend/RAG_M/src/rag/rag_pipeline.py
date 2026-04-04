@@ -10,29 +10,34 @@ RAG 核心流水线 v3
 
 from __future__ import annotations
 
+import logging
 import os
 import sys
-import logging
-from typing import List, Dict, Any, Generator, Optional
+from typing import Any, Dict, Generator, List, Optional
 
-from langchain_ollama.llms import OllamaLLM
 from langchain_community.vectorstores import FAISS
-from langchain.docstore.document import Document
-from langchain.prompts import PromptTemplate
+from langchain_core.documents import Document
+from langchain_core.prompts import PromptTemplate
+from langchain_ollama.llms import OllamaLLM
 
 logger = logging.getLogger(__name__)
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 from models.model_config import get_model_config
 from src.rag.hybrid_retriever import HybridRetriever
 
 # Retrieval strategy
 try:
     import sys as _sys
-    _BACKEND_DIR = os.path.join(os.path.dirname(__file__), '..', '..', '..')
+
+    _BACKEND_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "..")
     if _BACKEND_DIR not in _sys.path:
         _sys.path.insert(0, _BACKEND_DIR)
-    from document_processing.retrieval_strategy import RetrievalStrategyExecutor, RetrievalConfig
+    from document_processing.retrieval_strategy import (
+        RetrievalConfig,
+        RetrievalStrategyExecutor,
+    )
+
     _STRATEGY_AVAILABLE = True
 except ImportError:
     _STRATEGY_AVAILABLE = False
@@ -72,7 +77,9 @@ def _format_context(docs_with_sources: List[Dict[str, Any]]) -> str:
         file_name = src.get("file_name", "未知来源")
         page = src.get("page")
         page_str = f"第 {page} 页" if page is not None else ""
-        header = f"【来源 {src['rank']}：{file_name}{' ' + page_str if page_str else ''}】"
+        header = (
+            f"【来源 {src['rank']}：{file_name}{' ' + page_str if page_str else ''}】"
+        )
         content = item["document"].page_content.strip()
         parts.append(f"{header}\n{content}")
     return "\n\n---\n\n".join(parts)
@@ -108,7 +115,9 @@ class RAGPipeline:
         self._retrieval_config = None
         if retrieval_config and _STRATEGY_AVAILABLE:
             self._retrieval_config = RetrievalConfig.from_dict(retrieval_config)
-            logger.info(f"[RAGPipeline] 检索策略: {self._retrieval_config.strategy}, topK={self._retrieval_config.topK}")
+            logger.info(
+                f"[RAGPipeline] 检索策略: {self._retrieval_config.strategy}, topK={self._retrieval_config.topK}"
+            )
 
         # Initialize
         self._strategy_executor = None
@@ -120,20 +129,36 @@ class RAGPipeline:
 
         # Hybrid retrieval fallback
         self._hybrid_retriever: Optional[HybridRetriever] = None
-        if use_hybrid and vectorstore is not None and self.documents and not _STRATEGY_AVAILABLE:
-            logger.info(f"[RAGPipeline] 初始化混合检索器，文档块数量: {len(self.documents)}")
+        if (
+            use_hybrid
+            and vectorstore is not None
+            and self.documents
+            and not _STRATEGY_AVAILABLE
+        ):
+            logger.info(
+                f"[RAGPipeline] 初始化混合检索器，文档块数量: {len(self.documents)}"
+            )
             self._hybrid_retriever = HybridRetriever(
                 documents=self.documents,
                 vectorstore=vectorstore,
             )
-        elif use_hybrid and vectorstore is not None and not self.documents and not _STRATEGY_AVAILABLE:
+        elif (
+            use_hybrid
+            and vectorstore is not None
+            and not self.documents
+            and not _STRATEGY_AVAILABLE
+        ):
             logger.warning("[RAGPipeline] 未传入 documents，混合检索降级为纯向量检索")
             self.use_hybrid = False
 
     def _retrieve(self, query: str) -> List[Dict[str, Any]]:
         """检索文档块并返回带来源信息的结果"""
         # FIX: [P0] 添加 vectorstore None 保护，避免 AttributeError
-        if self.vectorstore is None and not self._hybrid_retriever and not self._strategy_executor:
+        if (
+            self.vectorstore is None
+            and not self._hybrid_retriever
+            and not self._strategy_executor
+        ):
             logger.error("[RAGPipeline._retrieve] vectorstore 未初始化，无法执行检索")
             return []
 
@@ -147,25 +172,29 @@ class RAGPipeline:
 
         # fallback Vector retrieval
         if self.vectorstore is None:
-            logger.warning("[RAGPipeline._retrieve] vectorstore 为 None，混合检索和向量检索均不可用")
+            logger.warning(
+                "[RAGPipeline._retrieve] vectorstore 为 None，混合检索和向量检索均不可用"
+            )
             return []
 
         raw = self.vectorstore.similarity_search_with_score(query, k=4)
         results = []
         for rank, (doc, score) in enumerate(raw, start=1):
             meta = doc.metadata or {}
-            results.append({
-                "document": doc,
-                "source_info": {
-                    "rank": rank,
-                    "rrf_score": float(score),
-                    "file_name": _extract_filename_from_meta(meta),
-                    "page": meta.get("page"),
-                    "chunk_index": meta.get("chunk_index"),
-                    "source_path": meta.get("source", ""),
-                },
-                "content_preview": doc.page_content[:200],
-            })
+            results.append(
+                {
+                    "document": doc,
+                    "source_info": {
+                        "rank": rank,
+                        "rrf_score": float(score),
+                        "file_name": _extract_filename_from_meta(meta),
+                        "page": meta.get("page"),
+                        "chunk_index": meta.get("chunk_index"),
+                        "source_path": meta.get("source", ""),
+                    },
+                    "content_preview": doc.page_content[:200],
+                }
+            )
         return results
 
     def process_query(self, query: str) -> Dict[str, Any]:
@@ -252,9 +281,9 @@ class RAGPipeline:
             for chunk in self.llm.stream(prompt_text):
                 if chunk:
                     yield f"data: {chunk}\n\n"
-        except Exception as e:
+        except Exception:
             answer = self.llm.invoke(prompt_text)
-            for paragraph in answer.split('\n'):
+            for paragraph in answer.split("\n"):
                 if paragraph.strip():
                     yield f"data: {paragraph}\n\n"
 
@@ -263,6 +292,7 @@ class RAGPipeline:
 
 def _extract_filename_from_meta(meta: Dict[str, Any]) -> str:
     import os as _os
+
     for key in ("source", "file_path", "path", "filename", "file_name"):
         val = meta.get(key, "")
         if val:

@@ -26,18 +26,22 @@ retrieval_strategy.py
 
 from __future__ import annotations
 
-import math
 import logging
-from typing import List, Dict, Any, Optional
-from dataclasses import dataclass, field
+import math
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
-from langchain.docstore.document import Document
 from langchain_community.vectorstores import FAISS
+from langchain_core.documents import Document
 
 try:
-    from RAG_M.src.rag.hybrid_retriever import HybridRetriever, BM25, reciprocal_rank_fusion
+    from RAG_M.src.rag.hybrid_retriever import (
+        BM25,
+        HybridRetriever,
+        reciprocal_rank_fusion,
+    )
 except ImportError:
-    from src.rag.hybrid_retriever import HybridRetriever, BM25, reciprocal_rank_fusion
+    from src.rag.hybrid_retriever import BM25, reciprocal_rank_fusion
 
 logger = logging.getLogger(__name__)
 
@@ -46,13 +50,14 @@ logger = logging.getLogger(__name__)
 # Retrieval strategy
 # ─────────────────────────────────────────────────────────────────
 
+
 @dataclass
 class RetrievalConfig:
-    strategy: str = "rrf"            # vector | bm25 | hybrid | rrf | mmr
+    strategy: str = "rrf"  # vector | bm25 | hybrid | rrf | mmr
     topK: int = 6
-    scoreThreshold: float = 0.0      # 0 =
-    vectorWeight: float = 0.6        # hybrid
-    bm25Weight: float = 0.4          # hybrid
+    scoreThreshold: float = 0.0  # 0 =
+    vectorWeight: float = 0.6  # hybrid
+    bm25Weight: float = 0.4  # hybrid
     rerank: bool = False
     rerankTopN: int = 3
 
@@ -72,6 +77,7 @@ class RetrievalConfig:
 # ─────────────────────────────────────────────────────────────────
 # ─────────────────────────────────────────────────────────────────
 
+
 def _build_result_item(rank: int, doc: Document, score: float) -> Dict[str, Any]:
     meta = doc.metadata or {}
     return {
@@ -90,6 +96,7 @@ def _build_result_item(rank: int, doc: Document, score: float) -> Dict[str, Any]
 
 def _extract_filename(meta: dict) -> str:
     import os
+
     for key in ("source", "file_path", "path", "filename", "file_name"):
         val = meta.get(key, "")
         if val:
@@ -101,6 +108,7 @@ def _extract_filename(meta: dict) -> str:
 # Cross-Encoder rerank
 # sentence-transformers cross-encoder
 # ─────────────────────────────────────────────────────────────────
+
 
 def _lightweight_rerank(
     query: str,
@@ -131,6 +139,7 @@ def _lightweight_rerank(
 
 # ─────────────────────────────────────────────────────────────────
 # ─────────────────────────────────────────────────────────────────
+
 
 class RetrievalStrategyExecutor:
     """
@@ -197,7 +206,9 @@ class RetrievalStrategyExecutor:
         """加权线性融合：score = vectorWeight * v_score + bm25Weight * b_score"""
         bm25 = self._get_bm25()
         bm25_raw = bm25.retrieve(query, top_k=config.topK * 2)
-        vector_raw = self.vectorstore.similarity_search_with_score(query, k=config.topK * 2)
+        vector_raw = self.vectorstore.similarity_search_with_score(
+            query, k=config.topK * 2
+        )
 
         # BM25
         b_scores: Dict[str, float] = {}
@@ -236,7 +247,9 @@ class RetrievalStrategyExecutor:
         try:
             bm25 = self._get_bm25()
             bm25_raw = bm25.retrieve(query, top_k=config.topK)
-            vector_raw = self.vectorstore.similarity_search_with_score(query, k=config.topK)
+            vector_raw = self.vectorstore.similarity_search_with_score(
+                query, k=config.topK
+            )
             vector_list = [(doc, score) for doc, score in vector_raw]
 
             fused = reciprocal_rank_fusion([bm25_raw, vector_list])
@@ -250,16 +263,14 @@ class RetrievalStrategyExecutor:
             logger.warning(f"[RRFSearch] RRF 融合失败，降级为向量检索: {e}")
             return self._vector_search(query, config.topK, config.scoreThreshold)
 
-    def _mmr_search(
-        self, query: str, config: RetrievalConfig
-    ) -> List[Dict[str, Any]]:
+    def _mmr_search(self, query: str, config: RetrievalConfig) -> List[Dict[str, Any]]:
         """Maximal Marginal Relevance（FAISS 原生支持）"""
         try:
             docs = self.vectorstore.max_marginal_relevance_search(
                 query,
                 k=config.topK,
                 fetch_k=config.topK * 3,
-                lambda_mult=0.5,   # 0=, 1=
+                lambda_mult=0.5,  # 0=, 1=
             )
             return [_build_result_item(i + 1, doc, 0.0) for i, doc in enumerate(docs)]
         except Exception as e:

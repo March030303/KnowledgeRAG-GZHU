@@ -25,43 +25,41 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
-import { ref } from "vue";
-import { MessagePlugin } from "tdesign-vue-next";
-import { useCardDataStore } from "@/store";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { ref } from 'vue'
+import { MessagePlugin } from 'tdesign-vue-next'
+import { useCardDataStore } from '@/store'
 // 搜索关键词
-const searchKeyword = ref("");
-const cardDataStore = useCardDataStore();
-let timer: any = null;
+const searchKeyword = ref('')
+const cardDataStore = useCardDataStore()
+let timer: any = null
 
 // 搜索处理函数
 const handleSearch = () => {
   // 执行搜索逻辑，比如调用接口、过滤列表等
   if (timer) {
-    clearTimeout(timer);
+    clearTimeout(timer)
   }
   timer = setTimeout(() => {
-    if (searchKeyword.value === "") {
-      cardDataStore.resetFilters();
-      timer = null;
-      return;
+    if (searchKeyword.value === '') {
+      cardDataStore.resetFilters()
+      timer = null
+      return
     }
-    cardDataStore.filterCardData(searchKeyword.value);
-    console.log("搜索关键词:", searchKeyword.value);
-    MessagePlugin.success(`正在搜索：“${searchKeyword.value}”`);
-    timer = null;
-  }, 300); // 300毫秒的防抖延时
+    cardDataStore.filterCardData(searchKeyword.value)
+    console.log('搜索关键词:', searchKeyword.value)
+    MessagePlugin.success(`正在搜索：“${searchKeyword.value}”`)
+    timer = null
+  }, 300) // 300毫秒的防抖延时
   //添加了一个搜索防抖
-};
-  // 实际项目里搜索接口是异步的，所以这里使用 await 等待接口返回结果，实际项目里的形式为：
-  // await searchKnowledge(searchKeyword.value);
-  // 过滤本地列表数据
-  // 清空搜索框
-  //searchKeyword.value = '';
-  //有后端了就可以区修改这个查询逻辑
-
-
+}
+// 实际项目里搜索接口是异步的，所以这里使用 await 等待接口返回结果，实际项目里的形式为：
+// await searchKnowledge(searchKeyword.value);
+// 过滤本地列表数据
+// 清空搜索框
+//searchKeyword.value = '';
+//有后端了就可以区修改这个查询逻辑
 </script>
 <style scoped>
 .search-box {
@@ -72,7 +70,6 @@ const handleSearch = () => {
   width: 300px;
   max-width: 250px;
 }
-
 .search-input {
   width: 100%;
   padding: 8px 12px;
@@ -82,11 +79,9 @@ const handleSearch = () => {
   height: 100%;
   transition: border-color 0.2s;
 }
-
 .search-input:focus {
   border-color: #007bff;
 }
-
 .search-button {
   position: absolute;
   right: 0;
@@ -101,7 +96,6 @@ const handleSearch = () => {
   cursor: pointer;
   transition: background-color 0.2s;
 }
-
 .search-button:hover {
   background-color: #0056b3;
 }

@@ -76,29 +76,45 @@ Apifox → 测试套件 → 导入 tests/smoke_test.apifox.json → 运行全部
 
 7 条核心接口全部 ✅ = 后端健康。
 
+### Step 6 — 看日志 / 做排障（本次增强）
+
+现在每次请求都会附带运维相关信息：
+
+- 响应头 `X-Trace-Id`：请求链路唯一标识
+- 响应头 `X-Process-Time-Ms`：服务端处理耗时（毫秒）
+- 审计日志接口 `/api/audit/logs`：支持按 `trace_id`、`status_code`、`request_path` 过滤
+- 审计统计接口 `/api/audit/stats`：查看 24h 错误数、慢请求数、状态码分布
+
+**推荐排障流程：**
+
+1. 在 Apifox 发送请求
+2. 打开响应头，记下 `X-Trace-Id`
+3. 调用 `GET /api/audit/logs?trace_id=<你的trace_id>`
+4. 结合后端控制台里同一个 `trace_id` 的 access / exception 日志定位问题
+
 ---
 
 ## 接口分组总览
 
-| 分组 | 前缀 | 说明 |
-|------|------|------|
-| 系统 | `/` | 健康检查、下载页 |
-| 用户认证 | `/api/register` `/api/login` `/api/logout` | 注册/登录/退出 |
-| 密码重置 | `/api/password-reset/*` | 邮件验证码 + 重置密码 |
-| QQ 登录 | `/api/qq-login/*` | OAuth2.0 回调 |
-| 知识库 CRUD | `/knowledge/*` `/api/knowledge/*` | 创建/查询/删除/封面 |
-| 文档上传 | `/upload-chunk` `/merge-chunks` | 分片上传 + 合并 |
-| 文档管理 | `/documents/*` `/api/files/*` | 列表/删除/预览 |
-| RAG 服务 | `/api/RAG/*` | 流式问答/同步查询/向量化 |
-| 多模型对话 | `/api/chat/*` `/api/models/*` | 统一对话接口 |
-| Agent 模式 | `/api/agent/*` | ReAct 任务/联网搜索 |
-| 知识图谱 | `/api/kg/*` | 生成/查询/搜索 |
-| 知识广场 | `/api/square/*` | 分享/搜索/圈子/收藏 |
-| 文档创作 | `/api/creation/*` | 摘要/翻译/大纲/优化 |
-| 模型评测 | `/api/eval/*` | 运行评测/查结果 |
-| 审计日志 | `/api/audit/*` | 接口调用记录查询 |
-| 系统监控 | `/metrics` | Prometheus 指标 |
-| 用户设置 | `/api/user/*` | 个人信息/头像/设置 |
+| 分组        | 前缀                                       | 说明                     |
+| ----------- | ------------------------------------------ | ------------------------ |
+| 系统        | `/`                                        | 健康检查、下载页         |
+| 用户认证    | `/api/register` `/api/login` `/api/logout` | 注册/登录/退出           |
+| 密码重置    | `/api/password-reset/*`                    | 邮件验证码 + 重置密码    |
+| QQ 登录     | `/api/qq-login/*`                          | OAuth2.0 回调            |
+| 知识库 CRUD | `/knowledge/*` `/api/knowledge/*`          | 创建/查询/删除/封面      |
+| 文档上传    | `/upload-chunk` `/merge-chunks`            | 分片上传 + 合并          |
+| 文档管理    | `/documents/*` `/api/files/*`              | 列表/删除/预览           |
+| RAG 服务    | `/api/RAG/*`                               | 流式问答/同步查询/向量化 |
+| 多模型对话  | `/api/chat/*` `/api/models/*`              | 统一对话接口             |
+| Agent 模式  | `/api/agent/*`                             | ReAct 任务/联网搜索      |
+| 知识图谱    | `/api/kg/*`                                | 生成/查询/搜索           |
+| 知识广场    | `/api/square/*`                            | 分享/搜索/圈子/收藏      |
+| 文档创作    | `/api/creation/*`                          | 摘要/翻译/大纲/优化      |
+| 模型评测    | `/api/eval/*`                              | 运行评测/查结果          |
+| 审计日志    | `/api/audit/*`                             | 接口调用记录查询         |
+| 系统监控    | `/metrics`                                 | Prometheus 指标          |
+| 用户设置    | `/api/user/*`                              | 个人信息/头像/设置       |
 
 ---
 
@@ -120,12 +136,12 @@ Token 通过 `/api/login/login` 获取，有效期 **24 小时**。
 
 以下接口返回 `text/event-stream`，在 Apifox 中需开启「流式响应」模式：
 
-| 接口 | 说明 |
-|------|------|
-| `POST /api/RAG/RAG_query` | RAG 流式问答 |
-| `POST /api/RAG/ingest` | 文档向量化进度流 |
-| `POST /api/models/chat` | 多模型流式对话 |
-| `POST /api/creation/generate` | 文档创作 SSE |
+| 接口                          | 说明             |
+| ----------------------------- | ---------------- |
+| `POST /api/RAG/RAG_query`     | RAG 流式问答     |
+| `POST /api/RAG/ingest`        | 文档向量化进度流 |
+| `POST /api/models/chat`       | 多模型流式对话   |
+| `POST /api/creation/generate` | 文档创作 SSE     |
 
 > Apifox 调试 SSE：请求面板 → 右侧「响应」→ 展开可见逐行 `data:` 事件。
 

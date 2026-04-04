@@ -9,22 +9,16 @@
 - 文本分块计算
 """
 
-import asyncio
 import pytest
-from pathlib import Path
-from unittest.mock import MagicMock, AsyncMock, patch
-from fastapi import HTTPException
 
 from document_processing.doc_upload import (
-    validate_file,
-    get_file_type,
-    get_file_hash,
-    calculate_chunks,
-    UploadChunkRequest,
-    UploadCompleteRequest,
     ALLOWED_EXTENSIONS,
     MAX_FILE_SIZE,
-    KB_CHUNK_SIZE,
+    UploadChunkRequest,
+    calculate_chunks,
+    get_file_hash,
+    get_file_type,
+    validate_file,
 )
 
 
@@ -116,7 +110,7 @@ class TestPydanticModels:
             chunkIndex=0,
             totalChunks=5,
             fileName="document.pdf",
-            KLB_id="kb_001"
+            KLB_id="kb_001",
         )
         assert req.fileName == "document.pdf"
         assert req.KLB_id == "kb_001"
@@ -129,7 +123,7 @@ class TestPydanticModels:
                 chunkIndex=0,
                 totalChunks=1,
                 fileName="../../../etc/passwd",
-                KLB_id="kb_001"
+                KLB_id="kb_001",
             )
 
     def test_upload_chunk_request_kb_id_with_parent_traversal(self):
@@ -140,7 +134,7 @@ class TestPydanticModels:
                 chunkIndex=0,
                 totalChunks=1,
                 fileName="doc.pdf",
-                KLB_id="../../../etc"
+                KLB_id="../../../etc",
             )
 
 
@@ -151,9 +145,20 @@ class TestAllowedExtensions:
     def test_allowed_extensions_coverage(self):
         """验证所有承诺的文件格式都被支持"""
         required_formats = {
-            ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".csv",
-            ".txt", ".md", ".rtf",
-            ".png", ".jpg", ".jpeg", ".gif", ".bmp"
+            ".pdf",
+            ".docx",
+            ".doc",
+            ".xlsx",
+            ".xls",
+            ".csv",
+            ".txt",
+            ".md",
+            ".rtf",
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".gif",
+            ".bmp",
         }
 
         for fmt in required_formats:

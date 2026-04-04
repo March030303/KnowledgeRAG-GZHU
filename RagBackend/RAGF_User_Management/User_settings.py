@@ -33,9 +33,13 @@ DEFAULT_AVATAR = (
 
 # ── JWT helper ───────────────────────────────────────────────────────────────
 
+
 def _verify_jwt(token: str) -> dict:
-    secret = os.getenv("JWT_SECRET", "changeme_jwt_secret")
+    secret = (
+        os.getenv("JWT_SECRET") or os.getenv("JWT_SECRET_KEY") or "changeme_jwt_secret"
+    )
     try:
+
         return jwt.decode(token, secret, algorithms=["HS256"])
     except jwt.ExpiredSignatureError:
         return {"error": "Token has expired"}
@@ -52,6 +56,7 @@ def _require_jwt(token: str) -> str:
 
 
 # ── GET /api/user/GetUserData ────────────────────────────────────────────────
+
 
 @router.get("/api/user/GetUserData")
 async def get_user_data(token: str = Depends(oauth2_scheme)):
@@ -115,6 +120,7 @@ async def get_user_data(token: str = Depends(oauth2_scheme)):
 
 # ── POST /api/UpdateUserData ─────────────────────────────────────────────────
 
+
 class UserDataUpdate(BaseModel):
     avatar: str
     email: str
@@ -158,7 +164,13 @@ async def update_user_data(
         cur.execute(
             "UPDATE user_profile SET name=%s, signature=%s, avatar=%s, social_media=%s "
             "WHERE user_id = (SELECT id FROM user WHERE email = %s)",
-            (user_data.name, user_data.signature, avatar_url, user_data.social_media, email),
+            (
+                user_data.name,
+                user_data.signature,
+                avatar_url,
+                user_data.social_media,
+                email,
+            ),
         )
         if cur.rowcount > 0:
             return {"status": "success", "message": "Profile updated"}
@@ -166,6 +178,7 @@ async def update_user_data(
 
 
 # ── POST /api/user/UpdateAvatar ──────────────────────────────────────────────
+
 
 @router.post("/api/user/UpdateAvatar")
 async def update_avatar(
@@ -179,7 +192,9 @@ async def update_avatar(
     os.makedirs(upload_dir, exist_ok=True)
 
     ext = os.path.splitext(avatar_file.filename)[1]
-    filename = f"avatar_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}{ext}"
+    filename = (
+        f"avatar_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}{ext}"
+    )
     path = os.path.join(upload_dir, filename)
 
     async with aiofiles.open(path, "wb") as f:
@@ -194,11 +209,16 @@ async def update_avatar(
             (avatar_url, email),
         )
         if cur.rowcount > 0:
-            return {"status": "success", "message": "Avatar updated", "avatar_url": avatar_url}
+            return {
+                "status": "success",
+                "message": "Avatar updated",
+                "avatar_url": avatar_url,
+            }
         return {"status": "error", "message": "User not found"}
 
 
 # ── DELETE /api/user/DeleteUserData ─────────────────────────────────────────
+
 
 @router.delete("/api/user/DeleteUserData")
 async def delete_user_data(token: str = Depends(oauth2_scheme)):
@@ -214,6 +234,7 @@ async def delete_user_data(token: str = Depends(oauth2_scheme)):
 
 
 # ── GET /api/user/GetUserAllData ─────────────────────────────────────────────
+
 
 @router.get("/api/user/GetUserAllData")
 async def get_user_all_data():

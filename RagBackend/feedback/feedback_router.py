@@ -2,30 +2,31 @@
 feedback_router.py — 用户反馈提交接口
 将反馈内容通过邮件发送到 13425121993@163.com
 """
-import logging
-import smtplib
-import os
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+import logging
+import os
+import smtplib
+from datetime import datetime
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from typing import Optional
+
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/feedback")
 
 # - Environment variable.env SMTP mailto -
-SMTP_HOST  = os.getenv("SMTP_HOST", "smtp.163.com")
-SMTP_PORT  = int(os.getenv("SMTP_PORT", "465"))
-SMTP_USER  = os.getenv("SMTP_USER", "")
-SMTP_PASS  = os.getenv("SMTP_PASS", "")   # /
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.163.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "465"))
+SMTP_USER = os.getenv("SMTP_USER", "")
+SMTP_PASS = os.getenv("SMTP_PASS", "")  # /
 FEEDBACK_TO = "13425121993@163.com"
 
 
 class FeedbackRequest(BaseModel):
-    type: str          # bug / feature / ui / other
+    type: str  # bug / feature / ui / other
     title: str
     content: str
     email: Optional[str] = ""
@@ -33,10 +34,10 @@ class FeedbackRequest(BaseModel):
 
 
 TYPE_LABELS = {
-    "bug":     "🐛 Bug 报告",
+    "bug": "🐛 Bug 报告",
     "feature": "💡 功能建议",
-    "ui":      "🎨 UI 改进",
-    "other":   "💬 其他",
+    "ui": "🎨 UI 改进",
+    "other": "💬 其他",
 }
 
 

@@ -3,11 +3,12 @@
 - 用户可在文档任意位置留评论
 - AI 可在评论区直接回答问题
 """
+
 import os
 import sqlite3
-from datetime import datetime
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException
+from typing import Optional
+
+from fastapi import APIRouter
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/doc-comments")
@@ -22,7 +23,8 @@ def get_db():
 
 def init_db():
     conn = get_db()
-    conn.executescript("""
+    conn.executescript(
+        """
         CREATE TABLE IF NOT EXISTS comments (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
             doc_id      TEXT NOT NULL,
@@ -39,7 +41,8 @@ def init_db():
             updated_at  TEXT
         );
         CREATE INDEX IF NOT EXISTS idx_comments_doc ON comments(doc_id);
-    """)
+    """
+    )
     conn.commit()
     conn.close()
 
@@ -69,12 +72,23 @@ class AICommentRequest(BaseModel):
 @router.post("/add")
 def add_comment(req: CommentCreate):
     conn = get_db()
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO comments (doc_id, kb_id, parent_id, user_id, user_name,
                               content, anchor_text, anchor_pos)
         VALUES (?,?,?,?,?,?,?,?)
-    """, (req.doc_id, req.kb_id, req.parent_id, req.user_id, req.user_name,
-          req.content, req.anchor_text, req.anchor_pos))
+    """,
+        (
+            req.doc_id,
+            req.kb_id,
+            req.parent_id,
+            req.user_id,
+            req.user_name,
+            req.content,
+            req.anchor_text,
+            req.anchor_pos,
+        ),
+    )
     conn.commit()
     comment_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
     conn.close()
@@ -84,9 +98,12 @@ def add_comment(req: CommentCreate):
 @router.get("/{doc_id}")
 def list_comments(doc_id: str):
     conn = get_db()
-    rows = conn.execute("""
+    rows = conn.execute(
+        """
         SELECT * FROM comments WHERE doc_id=? ORDER BY created_at ASC
-    """, (doc_id,)).fetchall()
+    """,
+        (doc_id,),
+    ).fetchall()
     conn.close()
     comments = [dict(r) for r in rows]
     tree = []
@@ -102,11 +119,16 @@ def list_comments(doc_id: str):
 @router.post("/ai-answer")
 async def ai_answer_in_comment(req: AICommentRequest):
     """AI 在评论区直接回答问题，结合文档上下文"""
+    import json
+    import os
+
+    import httpx
     from fastapi.responses import StreamingResponse
-    import httpx, json, os
 
     # Prompt
-    context = f'用户在文档中标注了这段话："{req.anchor_text}"\n\n' if req.anchor_text else ""
+    context = (
+        f'用户在文档中标注了这段话："{req.anchor_text}"\n\n' if req.anchor_text else ""
+    )
     prompt = f"{context}用户提问：{req.question}\n\n请基于文档内容简洁回答。"
 
     ollama_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
@@ -114,10 +136,13 @@ async def ai_answer_in_comment(req: AICommentRequest):
 
     # AI
     conn = get_db()
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO comments (doc_id, kb_id, user_id, user_name, content, anchor_text, is_ai)
         VALUES (?,?,?,?,?,?,1)
-    """, (req.doc_id, req.kb_id, "ai", "AI助手", "（生成中...）", req.anchor_text))
+    """,
+        (req.doc_id, req.kb_id, "ai", "AI助手", "（生成中...）", req.anchor_text),
+    )
     conn.commit()
     ai_comment_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
     conn.close()
@@ -125,8 +150,11 @@ async def ai_answer_in_comment(req: AICommentRequest):
     async def stream_and_save():
         full_text = ""
         async with httpx.AsyncClient(timeout=60) as client:
-            async with client.stream("POST", f"{ollama_url}/api/generate",
-                                     json={"model": model, "prompt": prompt, "stream": True}) as resp:
+            async with client.stream(
+                "POST",
+                f"{ollama_url}/api/generate",
+                json={"model": model, "prompt": prompt, "stream": True},
+            ) as resp:
                 async for line in resp.aiter_lines():
                     if line:
                         try:
@@ -139,8 +167,10 @@ async def ai_answer_in_comment(req: AICommentRequest):
                         except:
                             pass
         db = get_db()
-        db.execute("UPDATE comments SET content=?, updated_at=datetime('now','localtime') WHERE id=?",
-                   (full_text, ai_comment_id))
+        db.execute(
+            "UPDATE comments SET content=?, updated_at=datetime('now','localtime') WHERE id=?",
+            (full_text, ai_comment_id),
+        )
         db.commit()
         db.close()
         yield f"data: {json.dumps({'done': True, 'comment_id': ai_comment_id})}\n\n"
@@ -160,7 +190,9 @@ def resolve_comment(comment_id: int):
 @router.delete("/{comment_id}")
 def delete_comment(comment_id: int):
     conn = get_db()
-    conn.execute("DELETE FROM comments WHERE id=? OR parent_id=?", (comment_id, comment_id))
+    conn.execute(
+        "DELETE FROM comments WHERE id=? OR parent_id=?", (comment_id, comment_id)
+    )
     conn.commit()
     conn.close()
     return {"status": "deleted"}

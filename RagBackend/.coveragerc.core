@@ -1,0 +1,13 @@
+[run]
+include =
+    */document_processing/retrieval_strategy.py
+    */rag_enhancement/reranker.py
+    */multi_model/model_router.py
+    */RAG_M/RAG_app.py
+omit =
+    tests/*
+
+[report]
+show_missing = True
+skip_covered = False
+

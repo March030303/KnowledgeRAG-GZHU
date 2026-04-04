@@ -1,1 +1,1 @@
-from monitoring.metrics import router, instrument_app
+from monitoring.metrics import instrument_app, router

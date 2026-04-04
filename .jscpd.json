@@ -1,0 +1,19 @@
+{
+  "absolute": true,
+  "gitignore": true,
+  "minLines": 5,
+  "minTokens": 50,
+  "reporters": ["console"],
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.vite/**",
+    "**/.tooling/**",
+    "**/local-KLB-files/**",
+    "**/.venv/**",
+    "**/venv/**",
+    "**/htmlcov/**",
+    "**/.pytest_cache/**",
+    "**/.mypy_cache/**"
+  ]
+}

@@ -1,55 +1,78 @@
-import React, { useState, useCallback } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useCallback } from 'react'
 import {
-  View, Text, TouchableOpacity, FlatList, StyleSheet,
-  Alert, ActivityIndicator, TextInput, Modal, RefreshControl,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { useKbStore } from '../store/useKbStore';
-import { COLORS, FONTS, RADIUS, SPACING, SHADOW } from '../constants/theme';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-
-type Props = NativeStackScreenProps<any, 'KnowledgeBase'>;
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+  TextInput,
+  Modal,
+  RefreshControl
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useFocusEffect } from '@react-navigation/native'
+import { Ionicons } from '@expo/vector-icons'
+import { useKbStore } from '../store/useKbStore'
+import { COLORS, FONTS, RADIUS, SPACING, SHADOW } from '../constants/theme'
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+type Props = NativeStackScreenProps<any, 'KnowledgeBase'>
 
 export default function KnowledgeBaseScreen({ navigation }: Props) {
-  const { knowledgeBases, loading, fetchKnowledgeBases, createKnowledgeBase, deleteKnowledgeBase, toggleStar } = useKbStore();
-  const [showCreate, setShowCreate] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newDesc, setNewDesc] = useState('');
-  const [creating, setCreating] = useState(false);
-
+  const {
+    knowledgeBases,
+    loading,
+    fetchKnowledgeBases,
+    createKnowledgeBase,
+    deleteKnowledgeBase,
+    toggleStar
+  } = useKbStore()
+  const [showCreate, setShowCreate] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newDesc, setNewDesc] = useState('')
+  const [creating, setCreating] = useState(false)
   // 页面聚焦时刷新
   useFocusEffect(
     useCallback(() => {
-      fetchKnowledgeBases();
+      fetchKnowledgeBases()
     }, [])
-  );
+  )
 
   const handleCreate = async () => {
-    if (!newName.trim()) { Alert.alert('请填写知识库名称'); return; }
-    setCreating(true);
+    if (!newName.trim()) {
+      Alert.alert('请填写知识库名称')
+      return
+    }
+    setCreating(true)
     try {
-      await createKnowledgeBase(newName.trim(), newDesc.trim());
-      setShowCreate(false);
-      setNewName('');
-      setNewDesc('');
+      await createKnowledgeBase(newName.trim(), newDesc.trim())
+      setShowCreate(false)
+      setNewName('')
+      setNewDesc('')
     } catch (e: any) {
-      Alert.alert('创建失败', e.response?.data?.detail ?? e.message);
-    } finally { setCreating(false); }
-  };
+      Alert.alert('创建失败', e.response?.data?.detail ?? e.message)
+    } finally {
+      setCreating(false)
+    }
+  }
 
   const handleDelete = (id: string, name: string) => {
     Alert.alert('删除知识库', `确定删除「${name}」？此操作不可撤销。`, [
       { text: '取消', style: 'cancel' },
       {
-        text: '删除', style: 'destructive',
-        onPress: () => deleteKnowledgeBase(id).catch(e => Alert.alert('删除失败', e.message)),
-      },
-    ]);
-  };
-
-  const renderItem = ({ item }: { item: ReturnType<typeof useKbStore.getState>['knowledgeBases'][0] }) => (
+        text: '删除',
+        style: 'destructive',
+        onPress: () => deleteKnowledgeBase(id).catch(e => Alert.alert('删除失败', e.message))
+      }
+    ])
+  }
+  const renderItem = ({
+    item
+  }: {
+    item: ReturnType<typeof useKbStore.getState>['knowledgeBases'][0]
+  }) => (
     <TouchableOpacity
       style={styles.card}
       onPress={() => navigation.navigate('KnowledgeDetail', { kbId: item.id, kbName: item.name })}
@@ -58,7 +81,9 @@ export default function KnowledgeBaseScreen({ navigation }: Props) {
       <View style={[styles.cardAccent, { backgroundColor: item.color }]} />
       <View style={styles.cardBody}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
+          <Text style={styles.cardTitle} numberOfLines={1}>
+            {item.name}
+          </Text>
           <View style={styles.cardActions}>
             <TouchableOpacity onPress={() => toggleStar(item.id)} hitSlop={8}>
               <Ionicons
@@ -67,13 +92,19 @@ export default function KnowledgeBaseScreen({ navigation }: Props) {
                 color={item.is_starred ? '#f59e0b' : COLORS.textMuted}
               />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleDelete(item.id, item.name)} hitSlop={8} style={{ marginLeft: 10 }}>
+            <TouchableOpacity
+              onPress={() => handleDelete(item.id, item.name)}
+              hitSlop={8}
+              style={{ marginLeft: 10 }}
+            >
               <Ionicons name="trash-outline" size={16} color={COLORS.textMuted} />
             </TouchableOpacity>
           </View>
         </View>
         {item.description ? (
-          <Text style={styles.cardDesc} numberOfLines={2}>{item.description}</Text>
+          <Text style={styles.cardDesc} numberOfLines={2}>
+            {item.description}
+          </Text>
         ) : null}
         <View style={styles.cardFooter}>
           <View style={styles.cardStat}>
@@ -95,12 +126,10 @@ export default function KnowledgeBaseScreen({ navigation }: Props) {
         </View>
       </View>
     </TouchableOpacity>
-  );
-
-  const starred = knowledgeBases.filter(k => k.is_starred);
-  const rest = knowledgeBases.filter(k => !k.is_starred);
-  const sortedList = [...starred, ...rest];
-
+  )
+  const starred = knowledgeBases.filter(k => k.is_starred)
+  const rest = knowledgeBases.filter(k => !k.is_starred)
+  const sortedList = [...starred, ...rest]
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <FlatList
@@ -123,10 +152,13 @@ export default function KnowledgeBaseScreen({ navigation }: Props) {
           ) : null
         }
         refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={fetchKnowledgeBases} tintColor={COLORS.primary} />
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={fetchKnowledgeBases}
+            tintColor={COLORS.primary}
+          />
         }
       />
-
       {/* 新建 Modal */}
       <Modal visible={showCreate} transparent animationType="slide">
         <View style={styles.modalOverlay}>
@@ -158,34 +190,38 @@ export default function KnowledgeBaseScreen({ navigation }: Props) {
             />
             <TouchableOpacity
               style={[styles.createBtn, creating && styles.createBtnDisabled]}
-              onPress={handleCreate} disabled={creating}
+              onPress={handleCreate}
+              disabled={creating}
             >
-              {creating
-                ? <ActivityIndicator size="small" color="white" />
-                : <Ionicons name="add" size={18} color="white" />}
+              {creating ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Ionicons name="add" size={18} color="white" />
+              )}
               <Text style={styles.createBtnText}>{creating ? '创建中...' : '创建'}</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-
       {/* FAB */}
       <TouchableOpacity style={styles.fab} onPress={() => setShowCreate(true)}>
         <Ionicons name="add" size={28} color="white" />
       </TouchableOpacity>
     </SafeAreaView>
-  );
+  )
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   list: { padding: SPACING.md, gap: SPACING.sm, paddingBottom: 80 },
   listHeader: { fontSize: 13, color: COLORS.textMuted, marginBottom: 4 },
   card: {
-    backgroundColor: COLORS.card, borderRadius: RADIUS.lg,
-    flexDirection: 'row', overflow: 'hidden',
-    borderWidth: 1, borderColor: COLORS.border,
-    ...SHADOW.sm,
+    backgroundColor: COLORS.card,
+    borderRadius: RADIUS.lg,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOW.sm
   },
   cardAccent: { width: 4 },
   cardBody: { flex: 1, padding: SPACING.md },
@@ -198,38 +234,65 @@ const styles = StyleSheet.create({
   cardStatText: { fontSize: 12, color: COLORS.textMuted },
   cardTime: { fontSize: 11, color: COLORS.textMuted, marginLeft: 'auto' },
   chatBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: COLORS.primary + '15', borderRadius: RADIUS.sm,
-    paddingHorizontal: 8, paddingVertical: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: COLORS.primary + '15',
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: 8,
+    paddingVertical: 3
   },
   chatBtnText: { fontSize: 12, color: COLORS.primary, fontWeight: '500' },
   empty: { alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 10 },
   emptyTitle: { ...FONTS.title, fontSize: 17, color: COLORS.textMuted },
   emptyDesc: { fontSize: 13, color: COLORS.textMuted, textAlign: 'center' },
   fab: {
-    position: 'absolute', right: 20, bottom: 24,
-    width: 56, height: 56, borderRadius: 28,
+    position: 'absolute',
+    right: 20,
+    bottom: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: COLORS.primary,
-    alignItems: 'center', justifyContent: 'center',
-    ...SHADOW.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOW.md
   },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalSheet: {
-    backgroundColor: 'white', borderTopLeftRadius: 16, borderTopRightRadius: 16,
-    padding: SPACING.md, paddingBottom: 36,
+    backgroundColor: 'white',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: SPACING.md,
+    paddingBottom: 36
   },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16
+  },
   modalTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text },
   fieldLabel: { fontSize: 12, fontWeight: '600', color: COLORS.textMuted, marginBottom: 6 },
   input: {
-    borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.sm,
-    paddingHorizontal: 10, paddingVertical: 8,
-    fontSize: 14, color: COLORS.text,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 14,
+    color: COLORS.text
   },
   createBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    backgroundColor: COLORS.primary, borderRadius: RADIUS.sm, paddingVertical: 12, marginTop: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: COLORS.primary,
+    borderRadius: RADIUS.sm,
+    paddingVertical: 12,
+    marginTop: 16
   },
   createBtnDisabled: { opacity: 0.6 },
-  createBtnText: { color: 'white', fontWeight: '700', fontSize: 15 },
-});
+  createBtnText: { color: 'white', fontWeight: '700', fontSize: 15 }
+})

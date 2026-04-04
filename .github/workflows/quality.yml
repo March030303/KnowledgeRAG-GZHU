@@ -1,0 +1,57 @@
+name: quality-gate
+
+on:
+  push:
+    branches: ['main', 'master', 'nuanshuang/**', 'feature/**']
+  pull_request:
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: KnowledgeRAG-GZHU
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install root deps
+        run: npm install --workspaces=false --ignore-scripts
+      - name: Install frontend deps
+        run: npm run frontend:install
+      - name: Install mobile deps
+        run: npm run mobile:install
+      - name: Lint frontend
+        run: npm run frontend:lint
+      - name: Typecheck frontend
+        run: npm run frontend:typecheck
+      - name: Coverage gate frontend
+        run: npm run frontend:coverage
+      - name: Lint mobile
+        run: npm run mobile:lint
+      - name: Duplicate scan
+        run: npm run dupcheck
+
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: KnowledgeRAG-GZHU
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Poetry
+        run: python -m pip install --upgrade pip poetry
+      - name: Install backend deps
+        run: npm run backend:install
+      - name: Lint backend
+        run: npm run backend:lint
+      - name: Coverage gate stable modules
+        run: npm run backend:coverage:stable
+      - name: Coverage gate core modules
+        run: npm run backend:coverage:core

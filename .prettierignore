@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.vite/
+.tooling/
+.pnpm-store/
+local-KLB-files/
+htmlcov/
+coverage/
+RagBackend/.venv/
+RagBackend/**/*.py
+apifox/collections/*.json
+*.lock
+*.min.js

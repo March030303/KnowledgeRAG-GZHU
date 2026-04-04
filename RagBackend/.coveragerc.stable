@@ -1,0 +1,11 @@
+[run]
+source =
+    trace_logging
+    audit
+    exception
+omit =
+    tests/*
+
+[report]
+show_missing = True
+skip_covered = False

@@ -1,0 +1,60 @@
+{
+  "name": "knowledgerag-gzhu-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "workspaces": [
+    "RagFrontend",
+    "RagMobile"
+  ],
+  "scripts": {
+    "prepare": "python tools/install_local_hooks.py",
+    "hooks:install": "python tools/install_local_hooks.py",
+    "install:all": "npm install --workspaces=false --ignore-scripts && corepack pnpm --dir RagFrontend install --no-frozen-lockfile && corepack pnpm --dir RagMobile install --no-frozen-lockfile && python tools/poetryw.py --directory RagBackend install --with dev",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "dupcheck": "jscpd --config .jscpd.json",
+    "frontend:install": "corepack pnpm --dir RagFrontend install --no-frozen-lockfile",
+    "frontend:lint": "corepack pnpm --dir RagFrontend lint",
+    "frontend:typecheck": "corepack pnpm --dir RagFrontend typecheck",
+    "frontend:test": "corepack pnpm --dir RagFrontend test",
+    "frontend:coverage": "corepack pnpm --dir RagFrontend test:coverage",
+    "mobile:install": "corepack pnpm --dir RagMobile install --no-frozen-lockfile",
+    "mobile:lint": "corepack pnpm --dir RagMobile lint",
+    "backend:install": "python tools/poetryw.py --directory RagBackend install --with dev",
+    "backend:lint": "python tools/poetryw.py --directory RagBackend run ruff check trace_logging.py audit exception tests/test_tooling_smoke.py && python tools/poetryw.py --directory RagBackend run black --check trace_logging.py audit exception tests/test_tooling_smoke.py && python tools/poetryw.py --directory RagBackend run mypy trace_logging.py audit exception tests/test_tooling_smoke.py",
+    "backend:test": "python tools/poetryw.py --directory RagBackend run pytest tests/test_tooling_smoke.py",
+    "backend:coverage": "corepack pnpm run backend:coverage:stable && corepack pnpm run backend:coverage:core",
+    "backend:coverage:stable": "python tools/poetryw.py --directory RagBackend run pytest tests/test_tooling_smoke.py tests/test_trace_logging_unit.py tests/test_trace_middleware.py tests/test_exceptions_unit.py tests/test_audit_log_unit.py tests/test_audit_log_routes.py --cov-reset --cov --cov-config=.coveragerc.stable --cov-report=term-missing --cov-fail-under=90",
+    "backend:coverage:core": "python tools/poetryw.py --directory RagBackend run pytest tests/test_retrieval_strategy.py tests/test_reranker.py tests/test_model_router.py tests/test_rag_app_routes.py --cov-reset --cov --cov-config=.coveragerc.core --cov-report=term-missing --cov-fail-under=60",
+    "quality:check": "corepack pnpm run frontend:lint && corepack pnpm run frontend:typecheck && corepack pnpm run frontend:coverage && corepack pnpm run mobile:lint && corepack pnpm run dupcheck && corepack pnpm run backend:lint && corepack pnpm run backend:coverage",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "apifox:export": "node -e \"const fs=require('node:fs'); const out='apifox/collections/KnowledgeRAG_API.json'; const url=process.env.OPENAPI_URL||'http://localhost:8000/openapi.json'; fetch(url).then(async (res)=>{ if(!res.ok) throw new Error('OpenAPI export failed: '+res.status); const json=await res.json(); fs.mkdirSync('apifox/collections',{recursive:true}); fs.writeFileSync(out, JSON.stringify(json, null, 2)); console.log('Exported OpenAPI to '+out); }).catch((err)=>{ console.error(err.message||err); process.exit(1); });\""
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,vue,json,md,yml,yaml,mjs,cjs}": [
+      "prettier --write"
+    ],
+    "RagFrontend/src/**/*.{ts,vue}": [
+      "corepack pnpm --dir RagFrontend exec eslint --fix"
+    ],
+    "RagMobile/**/*.{ts,tsx}": [
+      "corepack pnpm --dir RagMobile exec eslint --fix"
+    ]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "consola": "^3.4.2",
+    "husky": "^9.1.7",
+    "jscpd": "^4.0.5",
+    "lint-staged": "^16.1.6",
+    "pnpm": "^10.33.0",
+    "prettier": "^3.6.2",
+    "vitepress": "^1.6.4"
+  }
+}

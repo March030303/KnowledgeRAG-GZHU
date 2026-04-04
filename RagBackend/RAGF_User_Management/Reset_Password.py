@@ -7,19 +7,19 @@
 短信发送：预留接口，默认控制台打印（可替换为阿里云/腾讯云 SMS SDK）。
 """
 
-import os
-import random
-import string
 import hashlib
 import logging
+import os
+import random
 import smtplib
+import string
 import time
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from typing import Optional, Dict, Tuple
+from email.mime.text import MIMEText
+from typing import Dict, Tuple
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -27,23 +27,23 @@ router = APIRouter()
 # Use the shared db_cursor() — never define DB_CONFIG locally.
 from RAGF_User_Management.db_config import db_cursor
 
-
 # ─────────────────────────────
 # SMTP .env
 # ─────────────────────────────
-SMTP_HOST     = os.getenv("SMTP_HOST",     "smtp.qq.com")
-SMTP_PORT     = int(os.getenv("SMTP_PORT", 465))
-SMTP_USER     = os.getenv("SMTP_USER",     "")   # xxx@qq.com
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
-SMTP_FROM     = os.getenv("SMTP_FROM",     SMTP_USER)
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.qq.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", 465))
+SMTP_USER = os.getenv("SMTP_USER", "")  # xxx@qq.com
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD") or os.getenv("SMTP_PASS", "")
+SMTP_FROM = os.getenv("SMTP_FROM", SMTP_USER)
+
 
 # ─────────────────────────────
 # key → (code, expire_ts, retry_count)
 # ─────────────────────────────
 _CODE_STORE: Dict[str, Tuple[str, float, int]] = {}
 
-CODE_TTL     = 5 * 60   # 5
-MAX_RETRY    = 5         # Retry count
+CODE_TTL = 5 * 60  # 5
+MAX_RETRY = 5  # Retry count
 CODE_RESEND_INTERVAL = 60  # 60
 
 
@@ -89,7 +89,9 @@ def _can_resend(target: str) -> bool:
 def _send_email(to_addr: str, code: str) -> bool:
     if not SMTP_USER or not SMTP_PASSWORD:
         # SMTP/
-        logger.warning(f"[DEV] 邮件未配置 SMTP，验证码已打印到控制台: {to_addr} -> {code}")
+        logger.warning(
+            f"[DEV] 邮件未配置 SMTP，验证码已打印到控制台: {to_addr} -> {code}"
+        )
         print(f"\n{'='*50}")
         print(f"[邮件验证码] 发送到: {to_addr}")
         print(f"验证码: {code}  (5分钟内有效)")
@@ -99,8 +101,8 @@ def _send_email(to_addr: str, code: str) -> bool:
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = "【RAG-F】密码重置验证码"
-        msg["From"]    = SMTP_FROM
-        msg["To"]      = to_addr
+        msg["From"] = SMTP_FROM
+        msg["To"] = to_addr
 
         html_body = f"""
         <html><body style="font-family:Arial,sans-serif;background:#f5f5f5;padding:20px;">
@@ -209,7 +211,9 @@ def _reset_password_by_email(email: str, new_password: str) -> bool:
     try:
         hashed = hashlib.sha256(new_password.encode()).hexdigest()
         with db_cursor() as cur:
-            cur.execute("UPDATE user SET password = %s WHERE email = %s", (hashed, email))
+            cur.execute(
+                "UPDATE user SET password = %s WHERE email = %s", (hashed, email)
+            )
             return cur.rowcount > 0
     except Exception as e:
         logger.error(f"_reset_password_by_email error: {e}")
@@ -220,7 +224,9 @@ def _reset_password_by_phone(phone: str, new_password: str) -> bool:
     try:
         hashed = hashlib.sha256(new_password.encode()).hexdigest()
         with db_cursor() as cur:
-            cur.execute("UPDATE user SET password = %s WHERE phone = %s", (hashed, phone))
+            cur.execute(
+                "UPDATE user SET password = %s WHERE phone = %s", (hashed, phone)
+            )
             return cur.rowcount > 0
     except Exception as e:
         logger.error(f"_reset_password_by_phone error: {e}")
@@ -239,7 +245,7 @@ class SendSmsCodeRequest(BaseModel):
 
 
 class ResetPasswordRequest(BaseModel):
-    method: str          # "email" "phone"
+    method: str  # "email" "phone"
     target: str
     code: str
     new_password: str
