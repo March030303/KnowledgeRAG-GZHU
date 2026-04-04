@@ -6,10 +6,7 @@
         v-for="t in types"
         :key="t.id"
         :class="['cs-item', activeType === t.id && 'cs-item--active']"
-        @click="
-          activeType = t.id
-          output = ''
-        "
+        @click="selectCreationType(t.id)"
       >
         <span class="cs-icon">{{ t.icon }}</span>
         <div>
@@ -193,6 +190,12 @@ const types = [
 const activeType = ref('outline')
 const generating = ref(false)
 const output = ref('')
+
+function selectCreationType(typeId: string) {
+  activeType.value = typeId
+  output.value = ''
+}
+
 // ── 模型选择 ─────────────────────────────────────────────────
 interface ModelOption {
   id: string
@@ -222,12 +225,20 @@ async function loadModels() {
       }
     }
   } catch {
-    // 离线降级
+    const persistedModel =
+      localStorage.getItem('creation_selected_model') ||
+      localStorage.getItem('selected_model') ||
+      localStorage.getItem('default_model') ||
+      'deepseek-chat'
     availableModels.value = [
-      { id: 'deepseek-chat', name: 'DeepSeek Chat（云端）', provider: 'deepseek', available: true },
-      { id: 'qwen2:0.5b', name: 'Qwen2 0.5B（本地）', provider: 'ollama', available: false }
+      {
+        id: persistedModel,
+        name: `${persistedModel}（最近使用）`,
+        provider: persistedModel.includes(':') ? 'ollama' : 'deepseek',
+        available: true
+      }
     ]
-    selectedModel.value = 'deepseek-chat'
+    selectedModel.value = persistedModel
   }
 }
 function onModelChange() {
@@ -330,7 +341,7 @@ onMounted(() => {
 })
 </script>
 <style scoped>
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 .creation-page {
   display: flex;
   gap: 0;

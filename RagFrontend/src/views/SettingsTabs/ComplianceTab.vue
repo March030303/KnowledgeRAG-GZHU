@@ -533,7 +533,7 @@ function exportReport(report: any) {
   position: relative;
   transition: background 0.2s;
 }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 .toggle-track::after {
   content: '';
   position: absolute;
@@ -546,7 +546,7 @@ function exportReport(report: any) {
   transition: transform 0.2s;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 .toggle-switch input:checked + .toggle-track {
   background: #4f7ef8;
 }

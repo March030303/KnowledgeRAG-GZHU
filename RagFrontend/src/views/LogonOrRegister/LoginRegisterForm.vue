@@ -559,11 +559,7 @@
         </button>
         <button
           type="button"
-          @click="
-            MessagePlugin.warning(
-              '微信登录需要企业资质认证，个人开发者暂不支持。如需使用请申请微信开放平台企业账号。'
-            )
-          "
+          @click="showWeChatEnterpriseNotice"
           class="w-full inline-flex justify-center items-center py-2 px-4 border border-white/20 rounded-md shadow-sm bg-white/10 text-sm font-medium text-white/50 cursor-not-allowed transition-all duration-300"
         >
           <t-icon name="logo-wechat-stroke" class="w-5 h-5 opacity-50" />
@@ -801,6 +797,13 @@ const showForgotPassword = () => {
 }
 // ─── QQ 登录 ───────────────────────────────────────────────────
 const isQQLoading = ref(false)
+
+function showWeChatEnterpriseNotice() {
+  MessagePlugin.warning(
+    '微信登录需要企业资质认证，个人开发者暂不支持。如需使用请申请微信开放平台企业账号。'
+  )
+}
+
 const handleQQLogin = async () => {
   if (isQQLoading.value) return
   isQQLoading.value = true

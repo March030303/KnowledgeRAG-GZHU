@@ -131,15 +131,10 @@
           </template>
           <template #prefix>
             <div class="sender-prefix-controls">
-              <t-tooltip>
-                <t-select
-                  v-model="selectValue"
-                  class="model-select"
-                  :options="selectOptions"
-                  value-type="object"
-                  @change="handleModelChange"
-                />
-              </t-tooltip>
+              <div class="model-badge" :title="selectedModelLabel">
+                <span class="model-badge__dot" :class="{ 'is-cloud': isCloudModel }"></span>
+                <span class="model-badge__text">{{ selectedModelLabel }}</span>
+              </div>
               <t-tooltip content="开启后模型会进行更深度的思考，但响应会变慢">
                 <t-button
                   class="deep-think-btn"
@@ -204,7 +199,6 @@ import { fetchOllamaStream } from './sseRequest-reasoning'
 import { MessagePlugin } from 'tdesign-vue-next'
 import { useChatImgtore } from '@/store'
 import { CloseIcon } from 'tdesign-icons-vue-next'
-import ollamaApiService from '@/utils/ollamaApi' // 导入统一的Ollama API服务
 const useChatImg = useChatImgtore()
 // 基础状态
 const fetchCancel = ref(null)
@@ -240,30 +234,31 @@ const props = defineProps({
   history: {
     type: Array,
     default: () => []
+  },
+  selectedModel: {
+    type: String,
+    default: ''
   }
 })
-// 模型选择相关
-const selectOptions = ref([])
-const selectValue = ref({})
 const isChecked = ref(false)
-// ── 云端模型前缀标记（用于区分 provider）────────────────
-// value 格式："cloud:deepseek:deepseek-chat"  本地格式："local:qwen2:0.5b"
-const CLOUD_PROVIDERS: Record<string, string> = {
-  deepseek: 'DeepSeek',
-  openai: 'OpenAI',
-  hunyuan: '混元'
-}
-// 处理模型选择事件
-const handleModelChange = value => {
-  // 同步到 localStorage，让侧边栏 ModelSelector 也感知
-  if (value?.value) {
-    const rawId = value.value.startsWith('cloud:')
-      ? value.value.split(':').slice(2).join(':')
-      : value.value.replace(/^local:/, '')
-    localStorage.setItem('selected_model', rawId)
+const selectedModelValue = computed(() => props.selectedModel || '')
+const isCloudModel = computed(
+  () => Boolean(selectedModelValue.value) && !selectedModelValue.value.includes(':')
+)
+const selectedModelLabel = computed(() => {
+  if (!selectedModelValue.value) return '未选择模型'
+  if (isCloudModel.value) {
+    const providerLabel = (() => {
+      const modelId = selectedModelValue.value.toLowerCase()
+      if (modelId.includes('deepseek')) return 'DeepSeek'
+      if (modelId.includes('gpt') || modelId.includes('openai')) return 'OpenAI'
+      if (modelId.includes('hunyuan')) return '混元'
+      return '云端模型'
+    })()
+    return `${providerLabel} · ${selectedModelValue.value}`
   }
-  MessagePlugin.success(`已选择模型：${value.label}`)
-}
+  return `Ollama · ${selectedModelValue.value}`
+})
 // 深度思考开关
 const checkClick = () => {
   isChecked.value = !isChecked.value
@@ -375,14 +370,19 @@ const inputEnter = function (messageContent) {
     actionsState: { good: false, bad: false }
   }
   // 根据当前选中模型动态命名 AI
-  const curModelVal: string = selectValue.value?.value || ''
+  const curModelVal = selectedModelValue.value
   let aiName = 'TDesignAI'
-  if (curModelVal.startsWith('cloud:deepseek:')) {
+  if (curModelVal.toLowerCase().includes('deepseek')) {
     aiName = '🤖 DeepSeek'
-  } else if (curModelVal.startsWith('cloud:openai:')) {
+  } else if (
+    curModelVal.toLowerCase().includes('gpt') ||
+    curModelVal.toLowerCase().includes('openai')
+  ) {
     aiName = '🤖 GPT'
-  } else if (curModelVal.startsWith('cloud:hunyuan:')) {
+  } else if (curModelVal.toLowerCase().includes('hunyuan')) {
     aiName = '🤖 混元'
+  } else if (curModelVal) {
+    aiName = `🤖 ${curModelVal}`
   }
   // 添加AI占位消息
   const aiMessage = {
@@ -534,16 +534,22 @@ const handleData = async messageContent => {
   console.log('开始处理数据:', messageContent)
   isUserAborted.value = false
   const lastItem = chatList.value[0]
-  const selectedModelValue: string = selectValue.value?.value || ''
-  // ── 云端模型路由（value 以 "cloud:" 开头）────────────────
-  if (selectedModelValue.startsWith('cloud:')) {
-    // cloud:deepseek:deepseek-chat → modelId = deepseek-chat
-    const modelId = selectedModelValue.split(':').slice(2).join(':')
-    await handleCloudChat(messageContent, modelId, chatList.value)
+  const currentModel = selectedModelValue.value
+  if (!currentModel) {
+    lastItem.role = 'error'
+    lastItem.content = '请先在左侧选择可用模型后再发送消息'
+    lastItem.reasoning = ''
+    isStreamLoad.value = false
+    loading.value = false
+    return
+  }
+  // ── 云端模型路由（原始 ID 不带 provider 前缀）───────────────
+  if (!currentModel.includes(':')) {
+    await handleCloudChat(messageContent, currentModel, chatList.value)
     return
   }
   // ── 本地 Ollama 模型（原有逻辑）─────────────────────────
-  const localModel = selectedModelValue.replace(/^local:/, '') || 'llama2'
+  const localModel = currentModel.replace(/^local:/, '') || currentModel || 'llama2'
   // 获取 Ollama 配置
   let serverUrl = 'http://localhost:11434'
   try {
@@ -731,75 +737,16 @@ const handleOperation = async (operation, item) => {
   }
 }
 // 生命周期
-onMounted(async () => {
+onMounted(() => {
   console.log(chatList.value)
   nextMsg.value = chatList.value[Object.keys(chatList.value)[0]]?.content || ''
   console.log(nextMsg.value)
   window.addEventListener('keydown', handleKeyDown)
-  // ── 从后端拉取全量模型列表（含云端 DeepSeek 等）─────────────
-  const savedModel = localStorage.getItem('selected_model') || ''
-  try {
-    // 优先走 /api/models/list（含云端模型）
-    const res = await fetch('/api/models/list')
-    const data = await res.json()
-    const allModels: any[] = data.models || []
-    // 本地 Ollama 模型
-    const localOpts = allModels
-      .filter(m => m.provider === 'ollama')
-      .map(m => ({ label: m.name, value: `local:${m.id}` }))
-    // 云端模型（按 provider 分组标签）
-    const cloudOpts = allModels
-      .filter(m => m.provider !== 'ollama')
-      .map(m => ({
-        label: `${CLOUD_PROVIDERS[m.provider] || m.provider}: ${m.name
-          .replace(/（云端[^）]*）/, '')
-          .replace(/\（.*?\）/, '')
-          .trim()}${m.available ? '' : ' 🔑未配置'}`,
-        value: `cloud:${m.provider}:${m.id}`,
-        disabled: !m.available
-      }))
-    selectOptions.value = [...localOpts, ...cloudOpts]
-    // 恢复上次选择
-    if (savedModel) {
-      const localMatch = selectOptions.value.find(
-        o => o.value === `local:${savedModel}` || o.value === savedModel
-      )
-      const cloudMatch = selectOptions.value.find(
-        o =>
-          o.value === `cloud:deepseek:${savedModel}` ||
-          o.value === `cloud:openai:${savedModel}` ||
-          o.value.endsWith(`:${savedModel}`)
-      )
-      if (localMatch) {
-        selectValue.value = localMatch
-      } else if (cloudMatch) {
-        selectValue.value = cloudMatch
-      } else {
-        selectValue.value = selectOptions.value[0] || {}
-      }
-    } else {
-      selectValue.value = selectOptions.value[0] || {}
-    }
-  } catch (e) {
-    // 后端不可达时降级：只从 Ollama 拉本地模型
-    console.warn('[chat-main-unit] /api/models/list 失败，降级到本地 Ollama:', e)
-    try {
-      const models = await ollamaApiService.getModels()
-      selectOptions.value = models.map(m => ({
-        label: m.name,
-        value: `local:${m.model}`
-      }))
-    } catch (e2) {
-      console.error('获取模型列表失败:', e2)
-      MessagePlugin.error('获取模型列表失败，请检查 API 服务是否配置正确')
-    }
-    selectValue.value = selectOptions.value[0] || {}
-  }
 })
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeyDown)
-  if (fetchCancel.value) {
-    fetchCancel.value.controller.close()
+  if (fetchCancel.value?.controller) {
+    fetchCancel.value.controller.abort()
   }
 })
 // 引用溯源展开/折叠
@@ -840,7 +787,7 @@ const toggleSources = item => {
     border: 0;
     width: 40px;
     height: 40px;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     border-radius: 50%;
     box-shadow:
       0px 8px 10px -5px rgba(0, 0, 0, 0.08),
@@ -850,8 +797,8 @@ const toggleSources = item => {
   .to-bottom {
     width: 40px;
     height: 40px;
-    // eslint-disable-next-line no-useless-escape
-    // eslint-disable-next-line no-useless-escape
+    /* eslint-disable-next-line no-useless-escape */
+    /* eslint-disable-next-line no-useless-escape */
     border: 1px solid #dcdcdc;
     box-sizing: border-box;
     background: var(--td-bg-color-container);
@@ -866,41 +813,33 @@ const toggleSources = item => {
     }
   }
 }
-.model-select {
-  display: flex;
+.model-badge {
+  display: inline-flex;
   align-items: center;
-  .t-select {
-    width: 112px;
-    height: 32px;
-    margin-right: 8px;
-    .t-input {
-      border-radius: 32px;
-      padding: 0 15px;
-    }
-  }
-  .check-box {
-    width: 112px;
-    height: 32px;
-    border-radius: 32px;
-    border: 0;
-    background: #e7e7e7;
-    color: rgba(0, 0, 0, 0.9);
-    box-sizing: border-box;
-    flex: 0 0 auto;
-    .t-button__text {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      span {
-        margin-left: 4px;
-      }
-    }
-  }
-  .check-box.is-active {
-    border: 1px solid #d9e1ff;
-    background: #f2f3ff;
-    color: var(--td-brand-color);
-  }
+  gap: 6px;
+  max-width: 180px;
+  padding: 0 10px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--td-bg-color-secondarycontainer);
+  border: 1px solid var(--td-border-level-1-color);
+}
+.model-badge__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  flex-shrink: 0;
+}
+.model-badge__dot.is-cloud {
+  background: #3b82f6;
+}
+.model-badge__text {
+  font-size: 12px;
+  color: var(--td-text-color-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .t-chat-input.position-absolute {
   position: absolute;
@@ -981,14 +920,6 @@ const toggleSources = item => {
   align-items: center;
   gap: 8px;
   padding-left: 12px;
-}
-.model-select {
-  width: 130px;
-  :deep(.t-input) {
-    border: none !important;
-    background-color: transparent !important;
-    box-shadow: none !important;
-  }
 }
 .deep-think-btn {
   display: flex;

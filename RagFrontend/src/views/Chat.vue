@@ -233,6 +233,7 @@
         :history="currentSession.history"
         :title="currentSession.title"
         :lastMessage="currentSession.lastMessage"
+        :selectedModel="selectedModel"
         :key="currentSession.id"
         :loading="isStreamLoad"
         :ragMode="ragMode"
@@ -329,7 +330,7 @@ const ragMode = ref(false)
 const selectedKbId = ref<string>('')
 const kbList = ref<any[]>([])
 // ====== 多模型 & 检索策略 ======
-const selectedModel = ref(localStorage.getItem('selected_model') || 'qwen2:0.5b')
+const selectedModel = ref(localStorage.getItem('selected_model') || '')
 const retrievalConfig = ref<RetrievalConfigType>({
   strategy: 'rrf',
   topK: 6,
@@ -339,15 +340,16 @@ const retrievalConfig = ref<RetrievalConfigType>({
   rerank: false,
   rerankTopN: 3
 })
-watch(selectedModel, v => localStorage.setItem('selected_model', v))
-// ====== 当前生效的 Ollama 模型（从后端拉，优先展示用户配置的） ======
-const currentOllamaModel = ref(localStorage.getItem('selected_model') || 'qwen2:0.5b')
+watch(selectedModel, v => {
+  if (v) localStorage.setItem('selected_model', v)
+})
+const currentOllamaModel = computed(() => selectedModel.value || '未选择模型')
 async function syncCurrentOllamaModel() {
+  if (selectedModel.value) return
   try {
     const res = await import('axios').then(m => m.default.get('/api/user-model-config'))
     const model = res.data?.config?.llm_model
     if (model) {
-      currentOllamaModel.value = model
       selectedModel.value = model
       localStorage.setItem('selected_model', model)
     }
@@ -663,9 +665,8 @@ const inputEnter = async (inputValue: string) => {
   isStreamLoad.value = true
   loading.value = true
   try {
-    // 读取当前选中的模型（支持 cloud:provider:model 格式）
-    const selectedModel =
-      localStorage.getItem('selected_model') ||
+    const currentModel =
+      selectedModel.value ||
       (() => {
         try {
           const cfg = JSON.parse(localStorage.getItem('user_model_config') || '{}')
@@ -682,7 +683,7 @@ const inputEnter = async (inputValue: string) => {
         sessionId: currentId,
         history: chatSessions.value[sessionIndex].history,
         // 模型选择（云端/本地统一字段）
-        model: selectedModel || undefined,
+        model: currentModel || undefined,
         // RAG 模式参数
         rag_mode: ragMode.value,
         kb_id: ragMode.value ? selectedKbId.value : undefined,

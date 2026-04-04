@@ -286,15 +286,7 @@
               >
                 生成摘要
               </t-button>
-              <t-button
-                size="small"
-                variant="outline"
-                @click="
-                  summaryInput = ''
-                  summaryResult = ''
-                "
-                >清除</t-button
-              >
+              <t-button size="small" variant="outline" @click="clearSummary">清除</t-button>
             </div>
             <div
               v-if="summaryResult"
@@ -677,6 +669,12 @@ const aiSummaryEnabled = ref(localStorage.getItem('aiSummaryEnabled') === 'true'
 const summaryInput = ref('')
 const summaryResult = ref('')
 const summaryLoading = ref(false)
+
+function clearSummary() {
+  summaryInput.value = ''
+  summaryResult.value = ''
+}
+
 function applyNewLayout(val: boolean) {
   localStorage.setItem('newLayoutEnabled', String(val))
   // 给 body 加属性，让侧边栏 CSS 响应
@@ -704,7 +702,10 @@ async function generateSummary() {
     const serverUrl =
       JSON.parse(localStorage.getItem('ollamaSettings') || '{}').serverUrl ||
       'http://localhost:11434'
-    const model = localStorage.getItem('selected_model') || 'qwen2:0.5b'
+    const model =
+      localStorage.getItem('selected_model') ||
+      localStorage.getItem('default_model') ||
+      'deepseek-chat'
     const prompt = `请用3-5句话对以下内容进行简洁摘要，只输出摘要内容，不要有任何前缀：\n\n${summaryInput.value.substring(0, 2000)}`
     const res = await fetch(`${serverUrl}/api/generate`, {
       method: 'POST',

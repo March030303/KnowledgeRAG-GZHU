@@ -26,14 +26,7 @@
             class="kb-search-input"
             @input="handleSearch"
           />
-          <button
-            v-if="searchKeyword"
-            class="kb-search-clear"
-            @click="
-              searchKeyword = ''
-              handleSearch()
-            "
-          >
+          <button v-if="searchKeyword" class="kb-search-clear" @click="clearSearchKeyword">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -279,6 +272,10 @@ const searchKeyword = ref('')
 const isSearching = computed(() => searchKeyword.value.trim() !== '')
 const handleSearch = () => {
   cardDataStore.filterCardData(searchKeyword.value)
+}
+const clearSearchKeyword = () => {
+  searchKeyword.value = ''
+  handleSearch()
 }
 // 导航
 const goToDetail = (id: string) => {

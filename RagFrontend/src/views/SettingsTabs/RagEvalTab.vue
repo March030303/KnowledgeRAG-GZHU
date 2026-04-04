@@ -10,7 +10,7 @@
     <div class="eval-toolbar">
       <div class="eval-model-input">
         <label>评测模型（多个用逗号分隔）</label>
-        <input v-model="evalModels" placeholder="如：qwen2:0.5b, llama3:8b" class="eval-input" />
+        <input v-model="evalModels" placeholder="如：当前模型, llama3:8b" class="eval-input" />
       </div>
       <button class="eval-btn-run" @click="runEval" :disabled="running">
         {{ running ? '⏳ 评测中...' : '▶ 开始评测' }}
@@ -132,7 +132,7 @@ import axios from 'axios'
 import { useEvalStore } from '@/store'
 const evalStore = useEvalStore()
 // ── 本地 UI 状态（非持久化） ─────────────────────────────────
-const evalModels = ref('qwen2:0.5b')
+const evalModels = ref(localStorage.getItem('selected_model') || 'deepseek-chat')
 const loadingChart = ref(false)
 const questionsByCategory = ref<Record<string, any[]>>({})
 const showAllQs = ref(false)

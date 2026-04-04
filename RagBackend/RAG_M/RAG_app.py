@@ -118,6 +118,8 @@ class QueryRequest(BaseModel):
     docs_dir: str = None
     use_hybrid: bool = True  # Hybrid retrieval
     model: Optional[str] = None  # cloud:provider:model
+    retrieval_config: Optional[dict] = None
+
 
 
 class IngestRequest(BaseModel):
@@ -387,7 +389,9 @@ async def process_query_sync(query_body: QueryRequest):
             vectorstore=vectorstore,
             documents=documents if use_hybrid else None,
             use_hybrid=use_hybrid,
+            retrieval_config=query_body.retrieval_config,
         )
+
 
         result = rag.process_query(query_body.query)
         return {

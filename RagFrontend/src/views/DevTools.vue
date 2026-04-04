@@ -597,7 +597,7 @@ async function collectProjectContext(): Promise<string> {
   lines.push('\n=== 前端路由 ===')
   lines.push('  / → /knowledge | /knowledge/:id | /chat | /square | /shared/:id')
   lines.push('  /agent | /history | /files | /settings | /user/* | /devtools')
-  lines.push('  /acmd_sre | /service | /testrange | /DOC | /404')
+  lines.push('  /acmd_search | /service | /testrange | /DOC | /404')
   // 8. 最近操作（audit logs快照）
   if (auditLogs.value.length > 0) {
     lines.push('\n=== 最近审计记录(前5条) ===')
@@ -685,7 +685,10 @@ ${systemContext}
       const serverUrl =
         JSON.parse(localStorage.getItem('ollamaSettings') || '{}').serverUrl ||
         'http://localhost:11434'
-      const model = localStorage.getItem('selected_model') || 'qwen2:0.5b'
+      const model =
+        localStorage.getItem('selected_model') ||
+        localStorage.getItem('default_model') ||
+        'deepseek-chat'
       const fullPrompt = `${systemPrompt}\n\n开发者问题：${userMsg}\n\n请基于上面的项目信息回答：`
       const res = await fetch(`${serverUrl}/api/generate`, {
         method: 'POST',
@@ -702,7 +705,7 @@ ${systemContext}
         content: `⚠️ **WorkBuddy 和 Ollama 均未连接**
 **项目上下文已收集完毕**，等待 AI 引擎：
 - 启动 WorkBuddy：打开客户端 → 设置 → 启用本地 API
-- 或启动 Ollama：\`ollama serve\`，然后 \`ollama pull qwen2:0.5b\`
+- 或启动 Ollama：\`ollama serve\`，然后 \`ollama pull 你的模型名\`
 您的问题「${userMsg}」已记录，连接成功后请重新发送。`
       })
     }

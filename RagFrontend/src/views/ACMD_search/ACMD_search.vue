@@ -444,46 +444,46 @@ const handlePageSizeChange = () => {
 </script>
 <style scoped>
 .academic-search-page {
-    min-height: calc(100vh - 100px);
+  min-height: calc(100vh - 100px);
 }
 .results-container {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 /* 自定义滚动条样式 */
 :deep(.t-list)::-webkit-scrollbar {
-    width: 6px;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+  width: 6px;
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 }
 :deep(.t-list)::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
+  background: #f1f1f1;
+  border-radius: 10px;
 }
 :deep(.t-list)::-webkit-scrollbar-thumb {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    background: #c1c1c1;
-    border-radius: 10px;
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  background: #c1c1c1;
+  border-radius: 10px;
 }
 :deep(.t-list)::-webkit-scrollbar-thumb:hover {
-    background: #a1a1a1;
+  background: #a1a1a1;
 }
 /* 响应式调整 */
 @media (max-width: 768px) {
-    .results-container {
-        margin: 0 -1rem;
-    }
-    :deep(.t-list) {
-        max-height: 50vh;
-    }
-    :deep(.t-card__header) {
-        padding: 12px 16px;
-    }
-    :deep(.t-card__body) {
-        padding: 12px 16px;
-    }
+  .results-container {
+    margin: 0 -1rem;
+  }
+  :deep(.t-list) {
+    max-height: 50vh;
+  }
+  :deep(.t-card__header) {
+    padding: 12px 16px;
+  }
+  :deep(.t-card__body) {
+    padding: 12px 16px;
+  }
 }
 @media (min-width: 768px) {
-    :deep(.t-list) {
-        max-height: 60vh;
-    }
+  :deep(.t-list) {
+    max-height: 60vh;
+  }
 }
 </style>

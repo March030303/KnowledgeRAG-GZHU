@@ -353,7 +353,7 @@ function formatDateTime(ts: number) {
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 .quota-item {
 }
 .quota-header {

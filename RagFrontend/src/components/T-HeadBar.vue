@@ -33,11 +33,11 @@
       </t-menu-item>
       <t-menu-item
         value="itemacmd"
-        @click="navigateTo('/acmd_sre')"
+        @click="navigateTo('/acmd_search')"
         class="mx-1 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
         :class="{
-          'bg-blue-50 text-blue-600': $route.path === '/acmd_sre',
-          'text-gray-700 hover:bg-gray-100': $route.path !== '/acmd_sre'
+          'bg-blue-50 text-blue-600': $route.path === '/acmd_search',
+          'text-gray-700 hover:bg-gray-100': $route.path !== '/acmd_search'
         }"
       >
         <t-icon name="mobile-list" class="mr-2" />
@@ -254,7 +254,7 @@ const currentMenuItem = computed(() => {
       return 'item5'
     case '/DOC':
       return 'item6'
-    case '/acmd_sre':
+    case '/acmd_search':
       return 'itemacmd'
     default:
       // 处理所有以 /user 开头的路径

@@ -193,6 +193,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { MessagePlugin } from 'tdesign-vue-next'
 import axios from 'axios'
+
 const providers = ref([
   {
     id: 'ollama',
@@ -201,54 +202,14 @@ const providers = ref([
     type: 'local',
     type_label: '本地',
     enabled: true,
-    is_default: true,
+    is_default: false,
     testing: false,
     test_result: null as any,
-    available_models: ['qwen2:0.5b', 'qwen:7b-chat', 'llama3:8b', 'mistral:7b'],
-    config: { base_url: 'http://localhost:11434', model: 'qwen2:0.5b', temperature: 0.7 },
+    available_models: [] as string[],
+    config: { base_url: 'http://localhost:11434', model: '', temperature: 0.7 },
     usage: { today_calls: 0, today_tokens: 0, avg_latency: 0 },
     key_placeholder: '',
     url_placeholder: ''
-  },
-  {
-    id: 'bailian',
-    icon: '☁️',
-    name: '阿里云百炼',
-    type: 'cloud',
-    type_label: '云端',
-    enabled: false,
-    is_default: false,
-    testing: false,
-    test_result: null as any,
-    available_models: ['qwen-turbo', 'qwen-plus', 'qwen-max', 'qwen-long'],
-
-    config: { api_key: '', model: 'qwen-turbo', temperature: 0.7, max_tokens: 2048 },
-    usage: { today_calls: 0, today_tokens: 0, avg_latency: 0 },
-    key_placeholder: 'sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    url_placeholder: ''
-  },
-  {
-    id: 'xinghuo',
-    icon: '⭐',
-    name: '讯飞星火',
-    type: 'cloud',
-    type_label: '云端',
-    enabled: false,
-    is_default: false,
-    testing: false,
-    test_result: null as any,
-
-    available_models: ['spark-lite', 'spark-pro', 'spark-max', 'spark-ultra'],
-    config: {
-      api_key: '',
-      base_url: 'https://spark-api-open.xf-yun.com/v1',
-      model: 'spark-lite',
-      temperature: 0.7,
-      max_tokens: 4096
-    },
-    usage: { today_calls: 0, today_tokens: 0, avg_latency: 0 },
-    key_placeholder: 'Bearer xxxx',
-    url_placeholder: 'https://spark-api-open.xf-yun.com/v1'
   },
   {
     id: 'deepseek',
@@ -260,8 +221,7 @@ const providers = ref([
     is_default: false,
     testing: false,
     test_result: null as any,
-    available_models: ['deepseek-chat', 'deepseek-coder', 'deepseek-reasoner'],
-
+    available_models: ['deepseek-chat', 'deepseek-reasoner'],
     config: { api_key: '', model: 'deepseek-chat', temperature: 0.7, max_tokens: 4096 },
     usage: { today_calls: 0, today_tokens: 0, avg_latency: 0 },
     key_placeholder: 'sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
@@ -277,8 +237,7 @@ const providers = ref([
     is_default: false,
     testing: false,
     test_result: null as any,
-
-    available_models: ['gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo', 'o1-mini'],
+    available_models: ['gpt-4o', 'gpt-4o-mini'],
     config: {
       api_key: '',
       base_url: 'https://api.openai.com/v1',
@@ -289,8 +248,30 @@ const providers = ref([
     usage: { today_calls: 0, today_tokens: 0, avg_latency: 0 },
     key_placeholder: 'sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     url_placeholder: 'https://api.openai.com/v1'
+  },
+  {
+    id: 'hunyuan',
+    icon: '🌀',
+    name: '腾讯混元',
+    type: 'cloud',
+    type_label: '云端',
+    enabled: false,
+    is_default: false,
+    testing: false,
+    test_result: null as any,
+    available_models: ['hunyuan-lite', 'hunyuan-pro'],
+    config: {
+      api_key: '',
+      model: 'hunyuan-lite',
+      temperature: 0.7,
+      max_tokens: 4096
+    },
+    usage: { today_calls: 0, today_tokens: 0, avg_latency: 0 },
+    key_placeholder: '请输入混元 API Key / SecretId',
+    url_placeholder: ''
   }
 ])
+
 const lbConfig = reactive({
   strategy: 'primary',
   circuit_breaker_threshold: 3,
@@ -299,48 +280,107 @@ const lbConfig = reactive({
 })
 
 const defaultModel = computed(() => {
-  const p = providers.value.find(p => p.is_default && p.enabled)
-  return p ? { provider: p.name, model_name: p.config.model, online: true } : null
+  const p = providers.value.find(item => item.is_default && item.enabled)
+  return p ? { provider: p.name, model_name: p.config.model || '未设置', online: true } : null
 })
-// ── 页面加载时从后端恢复已保存配置 ──────────────────────────────
-onMounted(async () => {
+
+function getSavedDefaultModel() {
+  return (
+    localStorage.getItem('selected_model') ||
+    localStorage.getItem('agent_selected_model') ||
+    localStorage.getItem('default_model') ||
+    ''
+  )
+}
+
+async function refreshOllamaModels(provider: any) {
   try {
-    // 获取各 provider 状态（Key 是否已配置）
-    const statusRes = await axios.get('/api/models/providers/status')
-    const status = statusRes.data
-    // 获取完整模型列表，用于判断哪些模型 available
-    const listRes = await axios.get('/api/models/list')
-    const _modelList: any[] = listRes.data.models || []
-    providers.value.forEach(p => {
-      // 根据后端 providers/status 恢复启用状态
-      if (p.id === 'deepseek' && status.deepseek?.configured) {
-        p.enabled = true
-      } else if (p.id === 'openai' && status.openai?.configured) {
-        p.enabled = true
-      } else if (p.id === 'hunyuan' && status.hunyuan?.configured) {
-        p.enabled = true
-      }
-      // 从 localStorage 恢复完整 config（含 api_key，API Key 不在 providers/status 中明文返回）
-      const saved = localStorage.getItem(`model_config_${p.id}`)
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved)
-          Object.assign(p.config, parsed)
-          // 如果有 api_key 并且 provider 支持，自动启用
-          if ((p.config as any).api_key) p.enabled = true
-        } catch {
-          /* ignore */
+    const res = await axios.get('/api/user-model-config/local-models', {
+      params: { base_url: provider.config.base_url || 'http://localhost:11434' }
+    })
+    const models = Array.isArray(res.data?.models) ? res.data.models : []
+    provider.available_models = models
+    if (!provider.config.model || !models.includes(provider.config.model)) {
+      provider.config.model = models[0] || provider.config.model || ''
+    }
+  } catch {
+    provider.available_models = provider.config.model ? [provider.config.model] : []
+  }
+}
+
+async function hydrateFromBackend() {
+  let savedDefaultModel = getSavedDefaultModel()
+
+  providers.value.forEach(provider => {
+    const saved = localStorage.getItem(`model_config_${provider.id}`)
+    if (!saved) return
+    try {
+      const parsed = JSON.parse(saved)
+      Object.assign(provider.config, parsed)
+      if ((provider.config as any).api_key) provider.enabled = true
+    } catch {
+      /* ignore */
+    }
+  })
+
+  try {
+    const [statusRes, listRes, userCfgRes] = await Promise.all([
+      axios.get('/api/models/providers/status'),
+      axios.get('/api/models/list'),
+      axios.get('/api/user-model-config')
+    ])
+    const status = statusRes.data || {}
+    const modelList: any[] = listRes.data?.models || []
+    const userCfg = userCfgRes.data?.config || {}
+
+    const ollamaProvider = providers.value.find(item => item.id === 'ollama')
+    if (ollamaProvider) {
+      ollamaProvider.config.base_url = userCfg.ollama_base_url || ollamaProvider.config.base_url
+      ollamaProvider.config.model = userCfg.llm_model || ollamaProvider.config.model
+      await refreshOllamaModels(ollamaProvider)
+      if (!savedDefaultModel) savedDefaultModel = userCfg.llm_model || ''
+    }
+
+    providers.value.forEach(provider => {
+      if (provider.id === 'deepseek') provider.enabled = !!status.deepseek?.configured
+      if (provider.id === 'openai') provider.enabled = !!status.openai?.configured
+      if (provider.id === 'hunyuan') provider.enabled = !!status.hunyuan?.configured
+
+      const providerModels = modelList.filter(item => item.provider === provider.id)
+      if (provider.id !== 'ollama' && providerModels.length) {
+        provider.available_models = providerModels.map(item => item.id)
+        const availableCurrent = provider.available_models.includes(provider.config.model)
+        if (!availableCurrent) {
+          provider.config.model = provider.available_models[0] || provider.config.model
         }
       }
     })
-  } catch (e) {
-    // 后端未启动时静默忽略
-    console.warn('[MultiModelTab] 加载配置失败（后端未启动？）', e)
+  } catch (error) {
+    console.warn('[MultiModelTab] 加载后端配置失败，改用本地缓存', error)
+    const ollamaProvider = providers.value.find(item => item.id === 'ollama')
+    if (ollamaProvider) await refreshOllamaModels(ollamaProvider)
   }
-})
+
+  if (!savedDefaultModel) {
+    const ollamaProvider = providers.value.find(item => item.id === 'ollama')
+    savedDefaultModel = ollamaProvider?.config.model || ''
+  }
+
+  providers.value.forEach(provider => {
+    provider.is_default = provider.config.model === savedDefaultModel
+  })
+  if (!providers.value.some(provider => provider.is_default)) {
+    const fallback = providers.value.find(provider => provider.enabled && provider.config.model)
+    if (fallback) fallback.is_default = true
+  }
+}
+
+onMounted(hydrateFromBackend)
+
 function toggleProvider(provider: any) {
   MessagePlugin.success(`${provider.name} 已${provider.enabled ? '启用' : '禁用'}`)
 }
+
 async function testProvider(provider: any) {
   provider.testing = true
   provider.test_result = null
@@ -351,41 +391,69 @@ async function testProvider(provider: any) {
     })
     const d = res.data
     provider.test_result = { ok: d.ok, message: d.message, latency: d.latency }
-  } catch (e: any) {
+  } catch {
     provider.test_result = { ok: false, message: '请求失败，请确认后端已启动' }
   } finally {
     provider.testing = false
   }
 }
-async function saveProvider(provider: any) {
+
+async function saveProvider(provider: any, silent = false) {
+  const configPayload = {
+    ...provider.config,
+    is_default: provider.is_default
+  }
   try {
-    // 1. 保存到后端（持久化，所有接口立即生效）
     await axios.post('/api/models/configure', {
       provider_id: provider.id,
-      config: provider.config
+      config: configPayload
     })
-    // 2. 同步到 localStorage（页面刷新后 onMounted 恢复用）
     localStorage.setItem(`model_config_${provider.id}`, JSON.stringify(provider.config))
-    MessagePlugin.success(`${provider.name} 配置已保存，立即生效`)
-  } catch (e: any) {
-    // 后端不可达时降级到本地暂存
-
+    if (provider.is_default && provider.config.model) {
+      localStorage.setItem('selected_model', provider.config.model)
+      localStorage.setItem('agent_selected_model', provider.config.model)
+      localStorage.setItem('default_model', provider.config.model)
+    }
+    if (provider.id === 'ollama') {
+      await refreshOllamaModels(provider)
+    }
+    if (!silent) MessagePlugin.success(`${provider.name} 配置已保存，立即生效`)
+  } catch {
     localStorage.setItem(`model_config_${provider.id}`, JSON.stringify(provider.config))
-    MessagePlugin.warning('后端暂不可达，配置已本地暂存（后端启动后需重新保存以生效）')
+    if (provider.is_default && provider.config.model) {
+      localStorage.setItem('selected_model', provider.config.model)
+      localStorage.setItem('agent_selected_model', provider.config.model)
+      localStorage.setItem('default_model', provider.config.model)
+    }
+    if (!silent) {
+      MessagePlugin.warning('后端暂不可达，配置已本地暂存（后端启动后需重新保存以生效）')
+    }
   }
 }
-function setDefault(provider: any) {
-  providers.value.forEach(p => (p.is_default = false))
-  provider.is_default = true
 
-  MessagePlugin.success(`已将 ${provider.name} 设为默认模型`)
+async function setDefault(provider: any) {
+  providers.value.forEach(item => {
+    item.is_default = item.id === provider.id
+  })
+  await saveProvider(provider, true)
+  MessagePlugin.success(`已将 ${provider.config.model || provider.name} 设为默认模型`)
 }
-function pullModel(provider: any) {
-  MessagePlugin.info(`正在后台拉取 ${provider.config.model}，请稍候...`)
+
+async function pullModel(provider: any) {
+  if (!provider.config.model) {
+    MessagePlugin.warning('请先填写或选择模型名，再执行拉取')
+    return
+  }
+  MessagePlugin.info(
+    `请先在终端执行 ollama pull ${provider.config.model}，随后我已为你刷新本地模型列表`
+  )
+  await refreshOllamaModels(provider)
 }
+
 function formatTokens(n: number) {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n)
 }
+
 async function saveLbConfig() {
   try {
     await axios.post('/api/models/lb-config', lbConfig)
@@ -396,89 +464,309 @@ async function saveLbConfig() {
 }
 </script>
 <style scoped>
-.tab-content { max-width: 960px; }
-.section-header { margin-bottom: 16px; }
-.section-header h2 { font-size: 18px; color: #111827; margin: 0 0 4px; }
-.section-desc { font-size: 13px; color: #9ca3af; margin: 0; }
+.tab-content {
+  max-width: 960px;
+}
+.section-header {
+  margin-bottom: 16px;
+}
+.section-header h2 {
+  font-size: 18px;
+  color: #111827;
+  margin: 0 0 4px;
+}
+.section-desc {
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 0;
+}
 .current-model-banner {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  display: flex; align-items: center; gap: 12px;
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  display: flex;
+  align-items: center;
+  gap: 12px;
   background: linear-gradient(135deg, #eff6ff, #f0fdf4);
-  border-radius: 12px; padding: 14px 18px; margin-bottom: 16px;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
   border: 1px solid #bfdbfe;
 }
-.banner-icon { font-size: 24px; }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-.banner-title { font-size: 12px; color: #6b7280; }
-.banner-model { font-size: 15px; font-weight: 700; color: #111827; }
-.banner-status { margin-left: auto; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
-.status--ok { background: #dcfce7; color: #15803d; }
-.status--off { background: #fee2e2; color: #dc2626; }
-.providers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
-.provider-card {
-  background: white; border-radius: 12px; padding: 16px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06); border: 2px solid transparent; transition: border-color 0.2s;
+.banner-icon {
+  font-size: 24px;
 }
-.provider-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-.provider-icon { font-size: 26px; }
-.provider-meta { flex: 1; }
-.provider-name { font-size: 14px; font-weight: 600; color: #111827; }
-.provider-badge { display: inline-block; padding: 1px 7px; border-radius: 8px; font-size: 11px; margin-top: 2px; }
-.badge--local { background: #dcfce7; color: #15803d; }
-.badge--cloud { background: #dbeafe; color: #1d4ed8; }
-.toggle-switch { position: relative; }
-.toggle-switch input { display: none; }
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+.banner-title {
+  font-size: 12px;
+  color: #6b7280;
+}
+.banner-model {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+.banner-status {
+  margin-left: auto;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.status--ok {
+  background: #dcfce7;
+  color: #15803d;
+}
+.status--off {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.providers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+.provider-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border: 2px solid transparent;
+  transition: border-color 0.2s;
+}
+.provider-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.provider-icon {
+  font-size: 26px;
+}
+.provider-meta {
+  flex: 1;
+}
+.provider-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+.provider-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 8px;
+  font-size: 11px;
+  margin-top: 2px;
+}
+.badge--local {
+  background: #dcfce7;
+  color: #15803d;
+}
+.badge--cloud {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.toggle-switch {
+  position: relative;
+}
+.toggle-switch input {
+  display: none;
+}
 .toggle-track {
-  display: block; width: 36px; height: 20px; border-radius: 10px; background: #d1d5db;
-  cursor: pointer; transition: background 0.2s; position: relative;
+  display: block;
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: #d1d5db;
+  cursor: pointer;
+  transition: background 0.2s;
+  position: relative;
 }
 .toggle-track::after {
-  content: ''; position: absolute; top: 2px; left: 2px;
-  width: 16px; height: 16px; border-radius: 50%; background: white;
-  transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
-.toggle-switch input:checked + .toggle-track { background: #4f7ef8; }
-.toggle-switch input:checked + .toggle-track::after { transform: translateX(16px); }
-.provider-config { border-top: 1px solid #f3f4f6; padding-top: 12px; }
-.cfg-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.cfg-row label { font-size: 12px; color: #6b7280; width: 70px; flex-shrink: 0; }
-.cfg-input, .cfg-select { flex: 1; padding: 5px 8px; border: 1px solid #e5e7eb; border-radius: 5px; font-size: 12px; outline: none; }
-.cfg-input-sm { width: 80px; padding: 5px 8px; border: 1px solid #e5e7eb; border-radius: 5px; font-size: 12px; outline: none; }
-.model-select-row { display: flex; gap: 6px; flex: 1; }
+.toggle-switch input:checked + .toggle-track {
+  background: #4f7ef8;
+}
+.toggle-switch input:checked + .toggle-track::after {
+  transform: translateX(16px);
+}
+.provider-config {
+  border-top: 1px solid #f3f4f6;
+  padding-top: 12px;
+}
+.cfg-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.cfg-row label {
+  font-size: 12px;
+  color: #6b7280;
+  width: 70px;
+  flex-shrink: 0;
+}
+.cfg-input,
+.cfg-select {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 5px;
+  font-size: 12px;
+  outline: none;
+}
+.cfg-input-sm {
+  width: 80px;
+  padding: 5px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 5px;
+  font-size: 12px;
+  outline: none;
+}
+.model-select-row {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+}
 .btn-pull {
-  padding: 4px 8px; background: #f0fdf4; border: 1px solid #bbf7d0;
-  border-radius: 5px; font-size: 11px; cursor: pointer; white-space: nowrap; color: #15803d;
+  padding: 4px 8px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 5px;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  color: #15803d;
 }
-.slider-row { display: flex; align-items: center; gap: 8px; flex: 1; }
-.slider { flex: 1; }
-.slider-val { font-weight: 600; color: #4f7ef8; width: 28px; font-size: 12px; }
-.provider-actions { display: flex; align-items: center; gap: 7px; margin-top: 10px; flex-wrap: wrap; }
-.btn-test, .btn-save, .btn-default {
-  padding: 5px 12px; border-radius: 6px; border: 1px solid; font-size: 12px; cursor: pointer;
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
 }
-.btn-test { border-color: #bfdbfe; color: #1d4ed8; background: #eff6ff; }
-.btn-test:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-save { border-color: #d1d5db; background: white; color: #374151; }
-.btn-default { border-color: #a7f3d0; color: #065f46; background: #ecfdf5; }
-.default-label { font-size: 12px; font-weight: 700; color: #10b981; margin-left: 4px; }
+.slider {
+  flex: 1;
+}
+.slider-val {
+  font-weight: 600;
+  color: #4f7ef8;
+  width: 28px;
+  font-size: 12px;
+}
+.provider-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.btn-test,
+.btn-save,
+.btn-default {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid;
+  font-size: 12px;
+  cursor: pointer;
+}
+.btn-test {
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+.btn-test:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-save {
+  border-color: #d1d5db;
+  background: white;
+  color: #374151;
+}
+.btn-default {
+  border-color: #a7f3d0;
+  color: #065f46;
+  background: #ecfdf5;
+}
+.default-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #10b981;
+  margin-left: 4px;
+}
 .test-result {
-  margin-top: 8px; padding: 7px 10px; border-radius: 6px; font-size: 12px;
+  margin-top: 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 12px;
 }
-.result--ok { background: #f0fdf4; color: #15803d; }
-.result--err { background: #fff5f5; color: #dc2626; }
+.result--ok {
+  background: #f0fdf4;
+  color: #15803d;
+}
+.result--err {
+  background: #fff5f5;
+  color: #dc2626;
+}
 .usage-stats {
-  display: flex; gap: 10px; margin-top: 10px; padding-top: 10px;
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
   border-top: 1px solid #f3f4f6;
 }
-.usage-item { flex: 1; text-align: center; }
-.usage-item span { display: block; font-size: 11px; color: #9ca3af; }
-.usage-item strong { font-size: 14px; color: #374151; }
-.card { background: white; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-.card-title { font-size: 15px; font-weight: 600; color: #374151; margin-bottom: 14px; }
-.lb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
-.lb-item label { display: block; font-size: 12px; color: #6b7280; margin-bottom: 5px; }
+.usage-item {
+  flex: 1;
+  text-align: center;
+}
+.usage-item span {
+  display: block;
+  font-size: 11px;
+  color: #9ca3af;
+}
+.usage-item strong {
+  font-size: 14px;
+  color: #374151;
+}
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 14px;
+}
+.lb-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.lb-item label {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 5px;
+}
 .btn-primary {
-  padding: 8px 20px; border: none; border-radius: 7px;
-  background: #4f7ef8; color: white; cursor: pointer; font-size: 13px;
+  padding: 8px 20px;
+  border: none;
+  border-radius: 7px;
+  background: #4f7ef8;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
 }
 </style>

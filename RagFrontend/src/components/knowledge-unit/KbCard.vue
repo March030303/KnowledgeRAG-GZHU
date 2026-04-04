@@ -187,8 +187,7 @@ const handleDropdown = (data: any) => {
   transition:
     transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.22s ease,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    border-color 0.22s ease;
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ border-color 0.22s ease;
   will-change: transform, box-shadow;
 }
 /* hover：浮起 + 阴影扩散 + 边框高亮 */

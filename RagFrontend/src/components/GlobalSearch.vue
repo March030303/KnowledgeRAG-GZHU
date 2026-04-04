@@ -28,14 +28,7 @@
                 @keydown.up.prevent="moveSelection(-1)"
                 @keydown.down.prevent="moveSelection(1)"
               />
-              <button
-                v-if="query"
-                class="search-clear"
-                @click="
-                  query = ''
-                  results = []
-                "
-              >
+              <button v-if="query" class="search-clear" @click="clearSearch">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -125,6 +118,11 @@ const searching = ref(false)
 const selectedIndex = ref(0)
 let searchTimer: ReturnType<typeof setTimeout>
 const close = () => emit('close')
+const clearSearch = () => {
+  query.value = ''
+  results.value = []
+  selectedIndex.value = 0
+}
 const navigateTo = (path: string) => {
   router.push(path)
   close()
@@ -239,7 +237,7 @@ const quickLinks = [
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>`
   },
   {
-    path: '/acmd_sre',
+    path: '/acmd_search',
     label: '学术检索',
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>`
   }

@@ -345,7 +345,44 @@ const taskHistory = ref<TaskRecord[]>([])
 const knowledgeBases = ref<{ id: string; title: string }[]>([])
 // ── 模型选择 ───────────────────────────────────────────
 const availableModels = ref<ModelInfo[]>([])
-const selectedModel = ref('deepseek-chat') // 默认用云端 DS
+function getPersistedModelId() {
+  const selected = localStorage.getItem('selected_model')
+  const agentSelected = localStorage.getItem('agent_selected_model')
+  if (selected) return selected
+  if (agentSelected) return agentSelected
+  try {
+    const cfg = JSON.parse(localStorage.getItem('user_model_config') || '{}')
+    return cfg.llm_model || ''
+  } catch {
+    return ''
+  }
+}
+function buildFallbackModels(): ModelInfo[] {
+  const persisted = getPersistedModelId()
+  const fallback: ModelInfo[] = []
+  if (persisted) {
+    fallback.push({
+      id: persisted,
+      name: `${persisted}（最近使用）`,
+      provider: persisted.includes(':') ? 'ollama' : 'deepseek',
+      available: true
+    })
+  }
+  if (!fallback.some(model => model.id === 'deepseek-chat')) {
+    fallback.push({
+      id: 'deepseek-chat',
+      name: 'DeepSeek Chat（待连接后端确认可用性）',
+      provider: 'deepseek',
+      available: !persisted
+    })
+  }
+  return fallback
+}
+function persistSelectedModel(modelId: string) {
+  localStorage.setItem('selected_model', modelId)
+  localStorage.setItem('agent_selected_model', modelId)
+}
+const selectedModel = ref(getPersistedModelId() || 'deepseek-chat')
 const selectedModelInfo = computed(() =>
   availableModels.value.find(m => m.id === selectedModel.value)
 )
@@ -375,29 +412,37 @@ async function loadModels() {
     const res = await axios.get<{ models: ModelInfo[] }>('/api/models/list')
     if (res.data?.models) {
       availableModels.value = res.data.models
-      // 优先选第一个 available 的云端模型
       const cloud = res.data.models.find(m => m.provider !== 'ollama' && m.available)
       const local = res.data.models.find(m => m.provider === 'ollama' && m.available)
-      const saved = localStorage.getItem('agent_selected_model')
+      const saved = getPersistedModelId()
       if (saved && res.data.models.find(m => m.id === saved && m.available)) {
         selectedModel.value = saved
       } else if (cloud) {
         selectedModel.value = cloud.id
       } else if (local) {
         selectedModel.value = local.id
+      } else if (res.data.models[0]) {
+        selectedModel.value = res.data.models[0].id
       }
+      persistSelectedModel(selectedModel.value)
     }
   } catch {
-    // 离线时使用默认模型列表
-    availableModels.value = [
-      { id: 'qwen2:0.5b', name: 'Qwen2 0.5B（本地）', provider: 'ollama', available: true },
-      { id: 'deepseek-chat', name: 'DeepSeek Chat（云端）', provider: 'deepseek', available: false }
-    ]
+    availableModels.value = buildFallbackModels()
+    selectedModel.value = getPersistedModelId() || availableModels.value[0]?.id || 'deepseek-chat'
   }
 }
 function onModelChange() {
-  localStorage.setItem('agent_selected_model', selectedModel.value)
+  persistSelectedModel(selectedModel.value)
 }
+const retrievalConfig = ref({
+  strategy: 'rrf',
+  topK: 6,
+  scoreThreshold: 0.3,
+  vectorWeight: 0.6,
+  bm25Weight: 0.4,
+  rerank: false,
+  rerankTopN: 3
+})
 const taskOptions = ref({
   useKnowledgeBase: false,
   selectedKbId: '',
@@ -539,6 +584,10 @@ async function runViaAgentTaskAPI(query: string, model: string, taskRecord: Task
       taskOptions.value.useKnowledgeBase && taskOptions.value.selectedKbId
         ? taskOptions.value.selectedKbId
         : null,
+    retrieval_config:
+      taskOptions.value.useKnowledgeBase && taskOptions.value.selectedKbId
+        ? retrievalConfig.value
+        : undefined,
     temperature: 0.7,
     max_tokens: 4096
   }

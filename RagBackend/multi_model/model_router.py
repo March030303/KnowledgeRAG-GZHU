@@ -5,6 +5,8 @@ API Key 优先级（每次请求动态读取，无需重启）：
   文件（models_config.json）> 环境变量（.env）> 空
 """
 
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
@@ -21,18 +23,28 @@ router = APIRouter()
 
 # - Config file user_model_config.py -
 _CONFIG_PATH = Path(__file__).parent.parent / "models_config.json"
+_DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434"
+
+
+def _read_config_data() -> dict:
+    try:
+        if _CONFIG_PATH.exists():
+            with open(_CONFIG_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception as e:
+        logger.warning("[model_router] 读取 models_config.json 失败: %s", e)
+    return {}
+
+
+def _write_config_data(data: dict) -> None:
+    _CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(_CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 def _read_cloud_keys() -> dict:
     """读取 models_config.json 中的云端 API Key，不存在则返回空字典。每次调用都重新读取，实时生效。"""
-    try:
-        if _CONFIG_PATH.exists():
-            with open(_CONFIG_PATH, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            return data.get("cloud_keys", {})
-    except Exception as e:
-        logger.warning(f"[model_router] 读取 models_config.json 失败: {e}")
-    return {}
+    return _read_config_data().get("cloud_keys", {})
 
 
 def _get_key(provider: str, env_var: str) -> str:
@@ -47,36 +59,41 @@ def _get_base_url(provider: str, env_var: str, default: str) -> str:
     return keys.get(provider, {}).get("base_url", "") or os.getenv(env_var, default)
 
 
+def _resolve_default_model() -> str:
+    config_data = _read_config_data()
+    configured_default = str(config_data.get("default_model") or "").strip()
+    if configured_default:
+        return configured_default
+
+    try:
+        from models.user_model_config import get_effective_config
+
+        cfg = get_effective_config()
+        if cfg.llm_model:
+            return cfg.llm_model
+    except Exception as e:
+        logger.warning("[model_router] 解析默认模型失败: %s", e)
+
+    return str(os.getenv("MODEL", "")).strip()
+
+
+
 # - / -
 class ChatCompletionRequest(BaseModel):
-    model: str  # "gpt-4o", "hunyuan", "deepseek-chat", "qwen2:0.5b"
-    messages: list[dict]  # [{role, content}]
+    model: str
+    messages: list[dict]
     stream: bool = True
     temperature: float = 0.7
     max_tokens: int = 2048
-    kb_id: Optional[str] = None  # IDRAG
+    kb_id: Optional[str] = None
 
 
 class ModelListResponse(BaseModel):
     models: list[dict]
 
 
-# - Model configavailable -
+# - Model catalog -
 _MODEL_CATALOG = [
-    {
-        "id": "qwen2:0.5b",
-        "name": "Qwen2 0.5B（本地·推荐）",
-        "provider": "ollama",
-        "description": "本地 Ollama 模型，无需网络，响应快速",
-        "context_length": 8192,
-    },
-    {
-        "id": "qwen:7b-chat",
-        "name": "Qwen 7B Chat（本地·高质量）",
-        "provider": "ollama",
-        "description": "本地 Ollama 模型，质量更高，需要 17GB+ 内存",
-        "context_length": 8192,
-    },
     {
         "id": "deepseek-chat",
         "name": "DeepSeek Chat（云端·深度推理）",
@@ -127,29 +144,88 @@ _MODEL_CATALOG = [
     },
 ]
 
-# AVAILABLE_MODELS
 AVAILABLE_MODELS = _MODEL_CATALOG
 
 
+def _build_local_model_entries() -> list[dict]:
+    try:
+        from models.user_model_config import discover_local_models, get_effective_config
+
+        cfg = get_effective_config()
+        base_url = cfg.ollama_base_url or _DEFAULT_OLLAMA_BASE_URL
+        detected = discover_local_models(base_url)
+    except Exception as e:
+        logger.warning("[model_router] 本地模型发现失败: %s", e)
+        base_url = _DEFAULT_OLLAMA_BASE_URL
+        detected = []
+
+    configured = _resolve_default_model()
+    local_models: list[str] = []
+    for model_id in [configured, *detected]:
+        model_id = str(model_id or "").strip()
+        if model_id and model_id not in local_models:
+            local_models.append(model_id)
+
+    return [
+        {
+            "id": model_id,
+            "name": f"{model_id}（本地 Ollama）",
+            "provider": "ollama",
+            "description": f"本地 Ollama 模型 · {base_url}",
+            "context_length": 8192,
+            "available": model_id in detected if detected else bool(model_id),
+        }
+        for model_id in local_models
+    ]
+
+
+def _append_configured_cloud_models(catalog: list[dict]) -> list[dict]:
+    result = [dict(item) for item in catalog]
+    existing_ids = {item["id"] for item in result}
+    for provider, cfg in _read_cloud_keys().items():
+        model_id = str(cfg.get("model") or "").strip()
+        if (
+            provider in {"deepseek", "openai", "hunyuan"}
+            and model_id
+            and model_id not in existing_ids
+        ):
+            result.append(
+                {
+                    "id": model_id,
+                    "name": f"{model_id}（云端·{provider}）",
+                    "provider": provider,
+                    "description": "来自已保存的多模型配置",
+                    "context_length": 32768,
+                    "requires_key": {
+                        "deepseek": "DEEPSEEK_API_KEY",
+                        "openai": "OPENAI_API_KEY",
+                        "hunyuan": "HUNYUAN_SECRET_ID",
+                    }.get(provider),
+                }
+            )
+            existing_ids.add(model_id)
+    return result
+
+
 def _build_model_list() -> list:
-    """动态构建模型列表，available 字段实时反映当前配置状态"""
+    """动态构建模型列表，available 字段实时反映当前配置状态。"""
     has_deepseek = bool(_get_key("deepseek", "DEEPSEEK_API_KEY"))
     has_openai = bool(_get_key("openai", "OPENAI_API_KEY"))
     has_hunyuan = bool(
         _get_key("hunyuan", "HUNYUAN_SECRET_ID") or os.getenv("HUNYUAN_SECRET_ID")
     )
     provider_available = {
-        "ollama": True,
         "deepseek": has_deepseek,
         "openai": has_openai,
         "hunyuan": has_hunyuan,
     }
-    result = []
-    for m in _MODEL_CATALOG:
+    result = _build_local_model_entries()
+    for m in _append_configured_cloud_models(_MODEL_CATALOG):
         entry = dict(m)
         entry["available"] = provider_available.get(m["provider"], False)
         result.append(entry)
     return result
+
 
 
 # - provider -
@@ -413,29 +489,45 @@ class ProviderConfigRequest(BaseModel):
 @router.post("/api/models/configure")
 async def configure_provider(req: ProviderConfigRequest):
     """
-    保存云端 Provider 的 API Key 到 models_config.json。
-    修复：前端 saveProvider 调用此接口，Key 持久化后后端实时生效（无需重启）。
+    保存 Provider 配置到 models_config.json，并同步统一默认模型配置。
+    修复：前端 saveProvider / setDefault 调用后，API Key、Ollama 地址、默认模型立即生效。
     """
     try:
-        data: dict = {}
-        if _CONFIG_PATH.exists():
-            with open(_CONFIG_PATH, "r", encoding="utf-8") as f:
-                data = json.load(f)
+        data = _read_config_data()
+        data.setdefault("cloud_keys", {})
 
-        # cloud_keys
-        if "cloud_keys" not in data:
-            data["cloud_keys"] = {}
-        data["cloud_keys"][req.provider_id] = req.config
+        provider_config = dict(req.config or {})
+        is_default = bool(provider_config.pop("is_default", False))
+        data["cloud_keys"][req.provider_id] = provider_config
 
-        _CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
-        with open(_CONFIG_PATH, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        if req.provider_id == "ollama":
+            base_url = (
+                str(provider_config.get("base_url") or data.get("ollama_base_url") or _DEFAULT_OLLAMA_BASE_URL)
+                .strip()
+            )
+            model = str(provider_config.get("model") or data.get("llm_model") or "").strip()
+            if base_url:
+                data["ollama_base_url"] = base_url
+            if model:
+                data["llm_model"] = model
+                if is_default or not str(data.get("default_model") or "").strip():
+                    data["default_model"] = model
+        elif is_default:
+            model = str(provider_config.get("model") or "").strip()
+            if model:
+                data["default_model"] = model
 
-        logger.info(f"[model_router] Provider {req.provider_id!r} 配置已保存")
-        return {"status": "ok", "message": f"{req.provider_id} 配置已保存，立即生效"}
+        _write_config_data(data)
+        logger.info("[model_router] Provider %r 配置已保存", req.provider_id)
+        return {
+            "status": "ok",
+            "message": f"{req.provider_id} 配置已保存，立即生效",
+            "default_model": data.get("default_model") or data.get("llm_model") or "",
+        }
     except Exception as e:
         logger.error(f"[model_router] 保存配置失败: {e}")
         raise HTTPException(status_code=500, detail=f"保存失败: {e}")
+
 
 
 class ProviderTestRequest(BaseModel):
@@ -632,7 +724,8 @@ async def agent_task(req: AgentTaskRequest):
       data: {"event":"done","answer":"...(full)"}     — 完成，带完整答案
       data: {"event":"error","message":"..."}         — 错误
     """
-    provider = _get_provider_for_model(req.model)
+    active_model = str(req.model or "").strip() or _resolve_default_model() or "deepseek-chat"
+    provider = _get_provider_for_model(active_model)
 
     async def generate():
         # - Step 1: -
@@ -641,7 +734,10 @@ async def agent_task(req: AgentTaskRequest):
 
         # - Step 2: RAG -
         rag_context = ""
+        rag_sources = []
+        retrieval_strategy = "model_only"
         if req.kb_id:
+            retrieval_strategy = "hybrid"
             yield f"data: {json.dumps({'event':'step','index':1,'name':'检索知识库','detail':f'知识库 {req.kb_id}'}, ensure_ascii=False)}\n\n"
             try:
                 import sys
@@ -652,11 +748,10 @@ async def agent_task(req: AgentTaskRequest):
                     sys.path.insert(0, _backend_root)
 
                 from RAG_M.RAG_app import _load_vectorstore_and_docs
+                from RAG_M.src.rag.hybrid_retriever import HybridRetriever
 
                 docs_dir = f"local-KLB-files/{req.kb_id}"
                 vectorstore, documents, _ = _load_vectorstore_and_docs(docs_dir)
-
-                from RAG_M.src.rag.hybrid_retriever import HybridRetriever
 
                 if documents:
                     retriever = HybridRetriever(
@@ -685,19 +780,23 @@ async def agent_task(req: AgentTaskRequest):
                     rag_parts = []
                     for item in results:
                         src = item["source_info"]
+                        file_name = src.get("file_name", "")
+                        if file_name and file_name not in rag_sources:
+                            rag_sources.append(file_name)
                         rag_parts.append(
                             f"【来源：{src.get('file_name','?')}】\n{item['document'].page_content.strip()}"
                         )
                     rag_context = "\n\n---\n\n".join(rag_parts)
                     yield f"data: {json.dumps({'event':'step_result','index':1,'detail':f'检索到 {len(results)} 个相关片段'}, ensure_ascii=False)}\n\n"
             except Exception as e:
+                retrieval_strategy = "model_only_fallback"
                 yield f"data: {json.dumps({'event':'step_result','index':1,'detail':f'知识库检索失败: {e}，将直接使用模型知识'}, ensure_ascii=False)}\n\n"
         else:
             yield f"data: {json.dumps({'event':'step','index':1,'name':'规划执行流程','detail':'基于模型知识直接推理'}, ensure_ascii=False)}\n\n"
             await asyncio.sleep(0.05)
 
         # - Step 3: Prompt -
-        yield f"data: {json.dumps({'event':'step','index':2,'name':'生成结构化草稿','detail':f'使用 {req.model}'}, ensure_ascii=False)}\n\n"
+        yield f"data: {json.dumps({'event':'step','index':2,'name':'生成结构化草稿','detail':f'使用 {active_model}'}, ensure_ascii=False)}\n\n"
 
         system_prompt = (
             "你是一个高效的任务执行 AI 助手。请严格按照用户要求完成任务，"
@@ -722,7 +821,7 @@ async def agent_task(req: AgentTaskRequest):
         try:
             if provider == "ollama":
                 async for chunk in _stream_ollama(
-                    req.model, messages, req.temperature, req.max_tokens
+                    active_model, messages, req.temperature, req.max_tokens
                 ):
                     yield chunk
                     if chunk.startswith("data: "):
@@ -734,7 +833,7 @@ async def agent_task(req: AgentTaskRequest):
                             pass
             elif provider == "deepseek":
                 async for chunk in _stream_deepseek(
-                    req.model, messages, req.temperature, req.max_tokens
+                    active_model, messages, req.temperature, req.max_tokens
                 ):
                     yield chunk
                     if chunk.startswith("data: "):
@@ -746,7 +845,7 @@ async def agent_task(req: AgentTaskRequest):
                             pass
             elif provider == "openai":
                 async for chunk in _stream_openai(
-                    req.model, messages, req.temperature, req.max_tokens
+                    active_model, messages, req.temperature, req.max_tokens
                 ):
                     yield chunk
                     if chunk.startswith("data: "):
@@ -758,7 +857,7 @@ async def agent_task(req: AgentTaskRequest):
                             pass
             elif provider == "hunyuan":
                 async for chunk in _stream_hunyuan(
-                    req.model, messages, req.temperature, req.max_tokens
+                    active_model, messages, req.temperature, req.max_tokens
                 ):
                     yield chunk
                     if chunk.startswith("data: "):
@@ -776,7 +875,7 @@ async def agent_task(req: AgentTaskRequest):
             return
 
         # - DONE -
-        yield f"data: {json.dumps({'event':'done','model':req.model,'provider':provider,'has_rag': bool(req.kb_id)}, ensure_ascii=False)}\n\n"
+        yield f"data: {json.dumps({'event':'done','model':active_model,'provider':provider,'answer': ''.join(full_answer),'has_rag': bool(req.kb_id),'sources': rag_sources,'retrieval_strategy': retrieval_strategy}, ensure_ascii=False)}\n\n"
 
     return StreamingResponse(
         generate(),

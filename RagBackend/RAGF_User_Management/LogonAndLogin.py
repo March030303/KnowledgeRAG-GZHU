@@ -37,7 +37,7 @@ class TokenData(BaseModel):
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login/login")
 
 # DB_CONFIG
-from RAGF_User_Management.db_config import get_db_connection
+from RAGF_User_Management.db_config import db_cursor, get_db_connection
 
 
 def create_user_table():
@@ -132,43 +132,27 @@ def create_user(email: str, password: str) -> bool:
     """
     创建用户
     """
-    conn = None
+    email = email.strip().lower()
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()
+
     try:
-        # /
-        email = email.strip().lower()
-        hashed_password = hashlib.sha256(password.encode()).hexdigest()
-        print(email, password)
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        with db_cursor() as cursor:
+            cursor.execute("SELECT id FROM user WHERE email = %s", (email,))
+            if cursor.fetchone():
+                logger.warning("邮箱已存在")
+                return False
 
-        cursor.execute("USE rag_user_db")
-
-        cursor.execute("SELECT * FROM user WHERE email = %s", (email,))
-        if cursor.fetchone():
-            logger.warn("邮箱已存在")
-            return False
-
-        cursor.execute(
-            "INSERT INTO user (email, password) VALUES (%s, %s)",
-            (email, hashed_password),
-        )
-        conn.commit()
-
-        cursor.execute("SELECT * FROM user WHERE email = %s", (email,))
-        if cursor.fetchone():
+            cursor.execute(
+                "INSERT INTO user (email, password) VALUES (%s, %s)",
+                (email, hashed_password),
+            )
             logger.info("用户创建成功")
-            return True
-        return False
-
+            return cursor.rowcount == 1
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.info(f"数据库操作出错: {e}")
-        return False
-    finally:
-        if conn:
-            try:
-                conn.close()
-            except:
-                pass
+        logger.error(f"创建用户时数据库操作出错: {e}")
+        raise
 
 
 # User login
@@ -176,33 +160,22 @@ def user_login(email: str, password: str) -> bool:
     """
     用户登录验证
     """
-    conn = None
+    email = email.strip().lower()
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()
+
     try:
-        email = email.strip().lower()
-        hashed_password = hashlib.sha256(password.encode()).hexdigest()
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        cursor.execute("USE rag_user_db")
-
-        cursor.execute(
-            "SELECT * FROM user WHERE email = %s AND password = %s",
-            (email, hashed_password),
-        )
-        user = cursor.fetchone()
-
-        return user is not None
-
+        with db_cursor() as cursor:
+            cursor.execute(
+                "SELECT id FROM user WHERE email = %s AND password = %s",
+                (email, hashed_password),
+            )
+            user = cursor.fetchone()
+            return user is not None
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"数据库操作出错: {e}")
-        return False
-    finally:
-        if conn:
-            try:
-                conn.close()
-            except:
-                pass
+        logger.error(f"用户登录时数据库操作出错: {e}")
+        raise
 
 
 def _get_jwt_secret() -> str:

@@ -26,10 +26,7 @@
           v-for="cat in categories"
           :key="cat.id"
           :class="['cat-tab', { active: activeCat === cat.id }]"
-          @click="
-            activeCat = cat.id
-            loadKbs(true)
-          "
+          @click="handleCategoryChange(cat.id)"
         >
           {{ cat.label }}
         </button>
@@ -40,13 +37,11 @@
           v-for="s in sortOptions"
           :key="s.value"
           :class="['sort-btn', { active: sortBy === s.value }]"
-          @click="
-            sortBy = s.value
-            loadKbs(true)
-          "
+          @click="handleSortChange(s.value)"
         >
           {{ s.label }}
         </button>
+
         <button class="view-toggle" @click="viewMode = viewMode === 'grid' ? 'list' : 'grid'">
           <svg
             v-if="viewMode === 'grid'"
@@ -73,14 +68,12 @@
         v-for="tag in hotTags"
         :key="tag"
         :class="['tag-chip', { active: activeTag === tag }]"
-        @click="
-          activeTag = activeTag === tag ? '' : tag
-          loadKbs(true)
-        "
+        @click="handleTagToggle(tag)"
       >
         #{{ tag }}
       </span>
     </div>
+
     <!-- 内容区 -->
     <div class="square-body">
       <!-- 左侧：推荐圈子 -->
@@ -322,7 +315,8 @@
 </template>
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+
 import { useRouter } from 'vue-router'
 import { MessagePlugin } from 'tdesign-vue-next'
 import ShareModal from '@/components/ShareModal.vue'
@@ -377,6 +371,22 @@ const sortOptions = [
 ]
 
 const hotTags = ['机器学习', 'Python', 'RAG', 'LLM', '论文', '考研', '编程', '生物', '法律']
+
+function handleCategoryChange(categoryId: string) {
+  activeCat.value = categoryId
+  void loadKbs(true)
+}
+
+function handleSortChange(sortValue: string) {
+  sortBy.value = sortValue
+  void loadKbs(true)
+}
+
+function handleTagToggle(tag: string) {
+  activeTag.value = activeTag.value === tag ? '' : tag
+  void loadKbs(true)
+}
+
 // ── 圈子数据 ──────────────────────────────────────────────────
 const hotCircles = ref<any[]>([])
 const myCircles = ref<any[]>([])
@@ -632,15 +642,14 @@ onMounted(async () => {
     }
   )
 })
-// 需要在 script setup 内引入 watch
-import { watch } from 'vue'
 </script>
+
 <style scoped>
 .square-page {
   min-height: 100vh;
   background: #f4f6fb;
 }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 /* Banner */
 .square-banner {
   background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #8b5cf6 100%);
@@ -685,7 +694,7 @@ import { watch } from 'vue'
 .banner-search input::placeholder {
   color: rgba(255, 255, 255, 0.6);
 }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 .banner-search button {
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.4);
@@ -699,7 +708,7 @@ import { watch } from 'vue'
   background: rgba(255, 255, 255, 0.35);
 }
 /* Toolbar */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 .square-toolbar {
   display: flex;
   align-items: center;

@@ -188,9 +188,11 @@ def _email_exists(email: str) -> bool:
         with db_cursor() as cur:
             cur.execute("SELECT id FROM user WHERE email = %s", (email,))
             return cur.fetchone() is not None
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"_email_exists error: {e}")
-        return False
+        raise
 
 
 def _phone_exists(phone: str) -> bool:
@@ -202,9 +204,11 @@ def _phone_exists(phone: str) -> bool:
                 return False
             cur.execute("SELECT id FROM user WHERE phone = %s", (phone,))
             return cur.fetchone() is not None
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"_phone_exists error: {e}")
-        return False
+        raise
 
 
 def _reset_password_by_email(email: str, new_password: str) -> bool:
@@ -215,9 +219,11 @@ def _reset_password_by_email(email: str, new_password: str) -> bool:
                 "UPDATE user SET password = %s WHERE email = %s", (hashed, email)
             )
             return cur.rowcount > 0
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"_reset_password_by_email error: {e}")
-        return False
+        raise
 
 
 def _reset_password_by_phone(phone: str, new_password: str) -> bool:
@@ -228,9 +234,11 @@ def _reset_password_by_phone(phone: str, new_password: str) -> bool:
                 "UPDATE user SET password = %s WHERE phone = %s", (hashed, phone)
             )
             return cur.rowcount > 0
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"_reset_password_by_phone error: {e}")
-        return False
+        raise
 
 
 # ─────────────────────────────

@@ -113,7 +113,7 @@
               <button class="btn-cancel-sm" @click="keyConfigProvider = null">取消</button>
               <button class="btn-save-key" @click="saveApiKey">保存密钥</button>
             </div>
-            <p class="key-config__hint">密钥将保存在本地 localStorage，不上传服务器</p>
+            <p class="key-config__hint">密钥会同步保存到本地缓存与后端配置，保存后立即生效</p>
           </div>
         </div>
       </div>
@@ -184,6 +184,45 @@ const cloudGroups = computed(() => {
     })
   return groups
 })
+function getFallbackModelIds() {
+  const candidates = [
+    props.modelValue,
+    localStorage.getItem('selected_model'),
+    localStorage.getItem('default_model'),
+    localStorage.getItem('agent_selected_model'),
+    localStorage.getItem('creation_selected_model')
+  ].filter(Boolean) as string[]
+  try {
+    const cfg = JSON.parse(localStorage.getItem('user_model_config') || '{}')
+    if (cfg.llm_model) candidates.push(cfg.llm_model)
+  } catch {
+    /* ignore */
+  }
+  return [...new Set(candidates)]
+}
+function buildFallbackModels(): ModelInfo[] {
+  const fallbackIds = getFallbackModelIds()
+  if (fallbackIds.length > 0) {
+    return fallbackIds.map(id => ({
+      id,
+      name: `${id}（最近使用）`,
+      provider: id.includes(':') ? 'ollama' : 'deepseek',
+      description: '后端不可达时展示最近使用模型',
+      context_length: 8192,
+      available: true
+    }))
+  }
+  return [
+    {
+      id: 'deepseek-chat',
+      name: 'DeepSeek Chat',
+      provider: 'deepseek',
+      description: '连接后端后可获取完整模型列表',
+      context_length: 8192,
+      available: false
+    }
+  ]
+}
 async function fetchModels() {
   loading.value = true
   try {
@@ -191,25 +230,7 @@ async function fetchModels() {
     models.value = res.data.models || []
     // available 由后端动态计算（基于 models_config.json + 环境变量），前端直接信任后端结果
   } catch (_e) {
-    // 后端未连接时使用默认本地模型
-    models.value = [
-      {
-        id: 'qwen2:0.5b',
-        name: 'Qwen2 0.5B（本地）',
-        provider: 'ollama',
-        description: '推荐本地模型',
-        context_length: 8192,
-        available: true
-      },
-      {
-        id: 'qwen:7b-chat',
-        name: 'Qwen 7B Chat（本地）',
-        provider: 'ollama',
-        description: '高质量本地模型',
-        context_length: 8192,
-        available: true
-      }
-    ]
+    models.value = buildFallbackModels()
   } finally {
     loading.value = false
   }
