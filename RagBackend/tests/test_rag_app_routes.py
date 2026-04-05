@@ -384,7 +384,91 @@ class TestRagAppRoutes:
         assert "启动 ReAct Agent 模式" in resp.text
         assert "agent:agent 问题" in resp.text
 
+    def test_native_ingest_reports_load_summary_when_no_documents_loaded(self, monkeypatch):
+        module, _, _ = load_rag_app_module()
+        monkeypatch.setattr(module.os.path, "exists", lambda path: True)
+
+        async def fake_to_thread(fn, *args, **kwargs):
+            return fn(*args, **kwargs)
+
+        monkeypatch.setattr(module.asyncio, "to_thread", fake_to_thread)
+
+        fake_native_module = types.ModuleType("src.rag.native_rag")
+        fake_native_module.NativeVectorStore = object
+        fake_native_module.inspect_documents_from_dir = lambda _docs_dir: (
+            [],
+            {
+                "loaded_files": [],
+                "failed_files": [{"path": "kb/demo/bad.pdf", "extension": ".pdf", "reason": "pypdf 解析失败"}],
+                "skipped_files": [{"path": "kb/demo/legacy.doc", "extension": ".doc", "reason": "原生 RAG 暂不支持该文件类型"}],
+                "supported_extensions": [".pdf", ".txt", ".xlsx"],
+            },
+        )
+        fake_native_module.summarize_document_load_report = lambda report: "1 个文件解析失败，1 个文件被跳过"
+        fake_native_module.split_documents = lambda docs, chunk_size, chunk_overlap: []
+        monkeypatch.setitem(sys.modules, "src.rag.native_rag", fake_native_module)
+
+        with make_client(module) as client:
+            resp = client.post("/native_ingest", json={"docs_dir": "kb/demo"})
+
+        assert resp.status_code == 200
+        assert "文档加载摘要：1 个文件解析失败，1 个文件被跳过" in resp.text
+        assert "未找到可加载的文档" in resp.text
+        assert "当前支持类型：.pdf, .txt, .xlsx" in resp.text
+
+    def test_native_ingest_streams_summary_and_success_payload(self, monkeypatch):
+        module, _, _ = load_rag_app_module()
+        monkeypatch.setattr(module.os.path, "exists", lambda path: True)
+
+        async def fake_to_thread(fn, *args, **kwargs):
+            return fn(*args, **kwargs)
+
+        monkeypatch.setattr(module.asyncio, "to_thread", fake_to_thread)
+
+        docs = [Document(page_content="第一页", metadata={"source": "kb/demo/a.pdf", "page": 0})]
+        chunks = [Document(page_content="第一页", metadata={"chunk": 0})]
+
+        class FakeNativeVectorStore:
+            def __init__(self, model_name):
+                self.model_name = model_name
+                self.saved_path = None
+                self.index_docs = None
+
+            def build_index(self, documents):
+                self.index_docs = documents
+
+            def save(self, save_path):
+                self.saved_path = save_path
+
+        fake_native_module = types.ModuleType("src.rag.native_rag")
+        fake_native_module.NativeVectorStore = FakeNativeVectorStore
+        fake_native_module.inspect_documents_from_dir = lambda _docs_dir: (
+            docs,
+            {
+                "loaded_files": [{"path": "kb/demo/a.pdf", "extension": ".pdf", "documents_count": 1}],
+                "failed_files": [],
+                "skipped_files": [],
+                "supported_extensions": [".pdf", ".txt", ".xlsx"],
+            },
+        )
+        fake_native_module.summarize_document_load_report = lambda report: "成功加载 1 个文件"
+        fake_native_module.split_documents = lambda raw_docs, chunk_size, chunk_overlap: chunks
+        monkeypatch.setitem(sys.modules, "src.rag.native_rag", fake_native_module)
+
+        with make_client(module) as client:
+            resp = client.post("/native_ingest", json={"docs_dir": "kb/demo"})
+
+        assert resp.status_code == 200
+        assert "文档加载摘要：成功加载 1 个文件" in resp.text
+        assert "加载完成，共 1 页原始文档" in resp.text
+        assert "分块完成，共 1 个文本块" in resp.text
+        assert "向量存储已保存至:" in resp.text
+        assert "native_vectorstore" in resp.text
+        assert '"documents_count": 1' in resp.text
+
+
     def test_init_project_failure_returns_500(self, monkeypatch):
+
         module, _, _ = load_rag_app_module()
         scripts_pkg = types.ModuleType("src.scripts")
         scripts_pkg.__path__ = []

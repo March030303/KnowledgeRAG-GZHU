@@ -22,14 +22,83 @@ import os
 import pathlib
 import pickle
 import re
+import shutil
+import tempfile
 from typing import Any, Dict, Generator, List, Optional, Tuple
+
 
 import requests
 
 logger = logging.getLogger(__name__)
 
 
+def _resolve_hf_cache_folder() -> Optional[str]:
+    """解析 HuggingFace 本地缓存目录，优先环境变量，其次回退到用户默认缓存目录。"""
+    hf_home = os.environ.get("HF_HOME", "").strip()
+    if hf_home:
+        return hf_home
+
+    default_cache = os.path.join(os.path.expanduser("~"), ".cache", "hf")
+    return default_cache if os.path.exists(default_cache) else None
+
+
+def _has_local_model_cache(model_name: str, cache_folder: Optional[str]) -> bool:
+    """检测 sentence-transformers 模型是否已缓存在本地。"""
+    if not model_name:
+        return False
+
+    if os.path.isdir(model_name):
+        return True
+
+    if not cache_folder:
+        return False
+
+    model_key = model_name.replace("/", "--")
+    candidate_dirs = [
+        os.path.join(cache_folder, f"models--{model_key}"),
+        os.path.join(cache_folder, "hub", f"models--{model_key}"),
+    ]
+    return any(os.path.exists(path) for path in candidate_dirs)
+
+
+
+def _create_faiss_temp_dir(prefix: str) -> str:
+    """创建尽量规避 Windows 非 ASCII 路径问题的临时目录。"""
+    candidates = []
+    if os.name == "nt":
+        system_root = os.environ.get("SystemRoot") or os.environ.get("SYSTEMROOT")
+        if system_root:
+            candidates.append(os.path.join(system_root, "Temp", "knowledge-rag-faiss"))
+    candidates.append(os.path.join(tempfile.gettempdir(), "knowledge-rag-faiss"))
+
+    last_error: Optional[Exception] = None
+    for base_dir in candidates:
+        try:
+            os.makedirs(base_dir, exist_ok=True)
+            return tempfile.mkdtemp(prefix=prefix, dir=base_dir)
+        except OSError as exc:
+            last_error = exc
+
+    raise RuntimeError(f"无法创建 FAISS 临时目录: {last_error}")
+
+
+
+def _promote_saved_files(temp_dir: str, save_path: str) -> None:
+    """将临时目录中的索引与元数据移动到最终目录。"""
+    os.makedirs(save_path, exist_ok=True)
+    for file_name in os.listdir(temp_dir):
+        src = os.path.join(temp_dir, file_name)
+        dst = os.path.join(save_path, file_name)
+        if os.path.isdir(dst):
+            shutil.rmtree(dst)
+        elif os.path.exists(dst):
+            os.remove(dst)
+        shutil.move(src, dst)
+
+
+
 # ────────────────────────────────────────────────
+
 # 0.
 # ────────────────────────────────────────────────
 
@@ -51,62 +120,141 @@ class NativeDocument:
 # 1. Document loading
 # ────────────────────────────────────────────────
 
-SUPPORTED_EXTENSIONS = {".pdf", ".txt", ".md", ".docx", ".csv"}
+SUPPORTED_EXTENSIONS = {
+    ".pdf",
+    ".txt",
+    ".md",
+    ".docx",
+    ".csv",
+    ".xlsx",
+    ".xls",
+    ".rtf",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".bmp",
+}
+IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".bmp"}
+IGNORE_DIRS = {
+    "vectorstore",
+    "native_vectorstore",
+    "__pycache__",
+    ".git",
+    "node_modules",
+}
+IGNORE_FILENAMES = {"knowledge_data.json", "metadata.json", "config.json"}
 
 
-def _load_txt(file_path: str) -> List[NativeDocument]:
-    """加载纯文本 / Markdown"""
+
+def _build_native_document(
+    file_path: str,
+    text: str,
+    *,
+    page: Optional[int] = None,
+    extra_metadata: Optional[Dict[str, Any]] = None,
+) -> Optional[NativeDocument]:
+    clean_text = (text or "").strip()
+    if not clean_text:
+        return None
+
+    metadata: Dict[str, Any] = {"source": file_path}
+    if page is not None:
+        metadata["page"] = page
+    if extra_metadata:
+        metadata.update(extra_metadata)
+    return NativeDocument(page_content=clean_text, metadata=metadata)
+
+
+
+def _load_txt(file_path: str) -> Tuple[List[NativeDocument], Optional[str]]:
+    """加载纯文本 / Markdown。"""
     try:
         with open(file_path, "r", encoding="utf-8", errors="replace") as f:
             text = f.read()
-        return [NativeDocument(page_content=text, metadata={"source": file_path})]
+        document = _build_native_document(file_path, text)
+        if document is None:
+            return [], "文本内容为空"
+        return [document], None
     except Exception as e:
         logger.error(f"[NativeRAG] 加载文本文件失败 {file_path}: {e}")
-        return []
+        return [], str(e)
 
 
-def _load_pdf(file_path: str) -> List[NativeDocument]:
-    """加载 PDF（使用 pypdf）"""
+
+def _load_pdf(file_path: str) -> Tuple[List[NativeDocument], Optional[str]]:
+    """加载 PDF，优先 pypdf，失败后回退到 pdfplumber。"""
+    errors: List[str] = []
+
     try:
         import pypdf
 
-        docs = []
+        docs: List[NativeDocument] = []
         with open(file_path, "rb") as f:
             reader = pypdf.PdfReader(f)
             for i, page in enumerate(reader.pages):
-                text = page.extract_text() or ""
-                if text.strip():
-                    docs.append(
-                        NativeDocument(
-                            page_content=text, metadata={"source": file_path, "page": i}
-                        )
-                    )
-        return docs
+                document = _build_native_document(
+                    file_path,
+                    page.extract_text() or "",
+                    page=i,
+                )
+                if document is not None:
+                    docs.append(document)
+        if docs:
+            return docs, None
+        errors.append("pypdf 未提取到有效文本")
     except ImportError:
-        logger.warning("[NativeRAG] pypdf 未安装，尝试用文本模式读取 PDF")
-        return _load_txt(file_path)
+        errors.append("pypdf 未安装")
     except Exception as e:
-        logger.error(f"[NativeRAG] 加载 PDF 失败 {file_path}: {e}")
-        return []
+        logger.warning(f"[NativeRAG] pypdf 解析失败 {file_path}: {e}")
+        errors.append(f"pypdf 解析失败: {e}")
+
+    try:
+        import pdfplumber
+
+        docs = []
+        with pdfplumber.open(file_path) as pdf:
+            for i, page in enumerate(pdf.pages):
+                document = _build_native_document(
+                    file_path,
+                    page.extract_text() or "",
+                    page=i,
+                )
+                if document is not None:
+                    docs.append(document)
+        if docs:
+            return docs, None
+        errors.append("pdfplumber 未提取到有效文本")
+    except ImportError:
+        errors.append("pdfplumber 未安装")
+    except Exception as e:
+        logger.error(f"[NativeRAG] pdfplumber 解析失败 {file_path}: {e}")
+        errors.append(f"pdfplumber 解析失败: {e}")
+
+    return [], "；".join(errors)
 
 
-def _load_docx(file_path: str) -> List[NativeDocument]:
-    """加载 Word 文档（使用 docx2txt）"""
+
+def _load_docx(file_path: str) -> Tuple[List[NativeDocument], Optional[str]]:
+    """加载 Word 文档（使用 docx2txt）。"""
     try:
         import docx2txt
 
-        text = docx2txt.process(file_path)
-        return [NativeDocument(page_content=text, metadata={"source": file_path})]
+        document = _build_native_document(file_path, docx2txt.process(file_path) or "")
+        if document is None:
+            return [], "DOCX 内容为空"
+        return [document], None
     except ImportError:
         logger.warning("[NativeRAG] docx2txt 未安装，跳过 docx 文件")
-        return []
+        return [], "docx2txt 未安装"
     except Exception as e:
-        print(f"[NativeRAG] 加载 DOCX 失败 {file_path}: {e}")
-        return []
+        logger.error(f"[NativeRAG] 加载 DOCX 失败 {file_path}: {e}")
+        return [], str(e)
 
 
-def _load_csv(file_path: str) -> List[NativeDocument]:
-    """加载 CSV"""
+
+def _load_csv(file_path: str) -> Tuple[List[NativeDocument], Optional[str]]:
+    """加载 CSV。"""
     try:
         import csv
 
@@ -115,43 +263,208 @@ def _load_csv(file_path: str) -> List[NativeDocument]:
             reader = csv.reader(f)
             for row in reader:
                 rows.append(", ".join(row))
-        text = "\n".join(rows)
-        return [NativeDocument(page_content=text, metadata={"source": file_path})]
+        document = _build_native_document(file_path, "\n".join(rows))
+        if document is None:
+            return [], "CSV 内容为空"
+        return [document], None
     except Exception as e:
         logger.error(f"[NativeRAG] 加载 CSV 失败 {file_path}: {e}")
-        return []
+        return [], str(e)
 
 
-def load_documents_from_dir(docs_dir: str) -> List[NativeDocument]:
-    """扫描目录，加载所有支持格式的文档"""
-    docs = []
-    IGNORE_DIRS = {
-        "vectorstore",
-        "native_vectorstore",
-        "__pycache__",
-        ".git",
-        "node_modules",
+
+def _load_excel(file_path: str) -> Tuple[List[NativeDocument], Optional[str]]:
+    """加载 Excel，逐工作表转为文本。"""
+    try:
+        import pandas as pd
+
+        sheets = pd.read_excel(file_path, sheet_name=None)
+        docs: List[NativeDocument] = []
+        for sheet_name, dataframe in sheets.items():
+            normalized_df = dataframe.fillna("")
+            text = normalized_df.to_csv(index=False)
+            document = _build_native_document(
+                file_path,
+                text,
+                extra_metadata={"sheet_name": sheet_name},
+            )
+            if document is not None:
+                docs.append(document)
+        if docs:
+            return docs, None
+        return [], "Excel 内容为空"
+    except Exception as e:
+        logger.error(f"[NativeRAG] 加载 Excel 失败 {file_path}: {e}")
+        return [], str(e)
+
+
+
+def _load_rtf(file_path: str) -> Tuple[List[NativeDocument], Optional[str]]:
+    """加载 RTF，优先使用 striprtf，缺失时回退到轻量文本清洗。"""
+    try:
+        with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+            raw_text = f.read()
+
+        try:
+            from striprtf.striprtf import rtf_to_text
+
+            text = rtf_to_text(raw_text)
+        except ImportError:
+            text = raw_text
+            text = re.sub(r"\\par[d]?", "\n", text)
+            text = re.sub(r"\\tab", "\t", text)
+            text = re.sub(r"\\'[0-9a-fA-F]{2}", " ", text)
+            text = re.sub(r"\\[a-zA-Z]+-?\d* ?", "", text)
+            text = text.replace("{", "").replace("}", "")
+
+        document = _build_native_document(file_path, text)
+        if document is None:
+            return [], "RTF 内容为空"
+        return [document], None
+    except Exception as e:
+        logger.error(f"[NativeRAG] 加载 RTF 失败 {file_path}: {e}")
+        return [], str(e)
+
+
+
+def _load_image(file_path: str) -> Tuple[List[NativeDocument], Optional[str]]:
+    """加载图片并执行 OCR。"""
+    try:
+        from knowledge.ocr_parser import extract_text_from_image
+
+        with open(file_path, "rb") as f:
+            image_bytes = f.read()
+        text = extract_text_from_image(image_bytes, os.path.basename(file_path))
+        if not text or text.startswith("[OCR不可用]"):
+            return [], text or "图片 OCR 结果为空"
+        document = _build_native_document(file_path, text)
+        if document is None:
+            return [], "图片 OCR 结果为空"
+        return [document], None
+    except Exception as e:
+        logger.error(f"[NativeRAG] 加载图片失败 {file_path}: {e}")
+        return [], str(e)
+
+
+
+def _load_file(file_path: str) -> Tuple[List[NativeDocument], Optional[str]]:
+    ext = pathlib.Path(file_path).suffix.lower()
+    if ext in (".txt", ".md"):
+        return _load_txt(file_path)
+    if ext == ".pdf":
+        return _load_pdf(file_path)
+    if ext == ".docx":
+        return _load_docx(file_path)
+    if ext == ".csv":
+        return _load_csv(file_path)
+    if ext in (".xlsx", ".xls"):
+        return _load_excel(file_path)
+    if ext == ".rtf":
+        return _load_rtf(file_path)
+    if ext in IMAGE_EXTENSIONS:
+        return _load_image(file_path)
+    return [], f"原生 RAG 暂不支持该文件类型: {ext}"
+
+
+
+def inspect_documents_from_dir(
+    docs_dir: str,
+) -> Tuple[List[NativeDocument], Dict[str, Any]]:
+    """扫描目录，返回文档列表与加载报告。"""
+    docs: List[NativeDocument] = []
+    report: Dict[str, Any] = {
+        "loaded_files": [],
+        "failed_files": [],
+        "skipped_files": [],
+        "supported_extensions": sorted(SUPPORTED_EXTENSIONS),
     }
 
     for root, dirs, files in os.walk(docs_dir):
         dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
         for fname in files:
+            if fname in IGNORE_FILENAMES or fname.startswith("~$"):
+                continue
+
+            file_path = os.path.join(root, fname)
             ext = pathlib.Path(fname).suffix.lower()
             if ext not in SUPPORTED_EXTENSIONS:
-                continue
-            file_path = os.path.join(root, fname)
-            logger.info(f"[NativeRAG] 加载文件: {file_path}")
-            if ext in (".txt", ".md"):
-                docs.extend(_load_txt(file_path))
-            elif ext == ".pdf":
-                docs.extend(_load_pdf(file_path))
-            elif ext == ".docx":
-                docs.extend(_load_docx(file_path))
-            elif ext == ".csv":
-                docs.extend(_load_csv(file_path))
+                report["skipped_files"].append(
 
-    logger.info(f"[NativeRAG] 共加载原始文档 {len(docs)} 页")
+                    {
+                        "path": file_path,
+                        "extension": ext or "[no-extension]",
+                        "reason": "原生 RAG 暂不支持该文件类型",
+                    }
+                )
+                continue
+
+            logger.info(f"[NativeRAG] 加载文件: {file_path}")
+            loaded_docs, error = _load_file(file_path)
+            if loaded_docs:
+                docs.extend(loaded_docs)
+                report["loaded_files"].append(
+                    {
+                        "path": file_path,
+                        "extension": ext,
+                        "documents_count": len(loaded_docs),
+                    }
+                )
+                continue
+
+            report["failed_files"].append(
+                {
+                    "path": file_path,
+                    "extension": ext,
+                    "reason": error or "解析结果为空",
+                }
+            )
+
+    logger.info(
+        "[NativeRAG] 文档加载完成："
+        f"loaded={len(report['loaded_files'])}, "
+        f"failed={len(report['failed_files'])}, "
+        f"skipped={len(report['skipped_files'])}, "
+        f"docs={len(docs)}"
+    )
+    return docs, report
+
+
+
+def summarize_document_load_report(report: Dict[str, Any]) -> str:
+    """将加载报告压缩成适合 SSE/日志展示的中文摘要。"""
+    if not report:
+        return ""
+
+    parts: List[str] = []
+    if report.get("loaded_files"):
+        parts.append(f"成功加载 {len(report['loaded_files'])} 个文件")
+
+    failed_files = report.get("failed_files", [])
+    if failed_files:
+        examples = "；".join(
+            f"{os.path.basename(item['path'])}: {item['reason']}"
+            for item in failed_files[:2]
+        )
+        parts.append(f"{len(failed_files)} 个文件解析失败（{examples}）")
+
+    skipped_files = report.get("skipped_files", [])
+    if skipped_files:
+        skipped_exts = sorted({item["extension"] for item in skipped_files})
+        parts.append(
+            "跳过不支持类型 "
+            + ", ".join(skipped_exts[:5])
+            + (" 等" if len(skipped_exts) > 5 else "")
+        )
+
+    return "；".join(parts)
+
+
+
+def load_documents_from_dir(docs_dir: str) -> List[NativeDocument]:
+    """兼容旧调用：仅返回成功加载的文档列表。"""
+    docs, _ = inspect_documents_from_dir(docs_dir)
     return docs
+
 
 
 # ────────────────────────────────────────────────
@@ -204,9 +517,21 @@ class NativeVectorStore:
         if self._model is None:
             from sentence_transformers import SentenceTransformer
 
-            print(f"[NativeVectorStore] 加载 embedding 模型: {self.model_name}")
-            self._model = SentenceTransformer(self.model_name)
+            cache_folder = _resolve_hf_cache_folder()
+            local_files_only = _has_local_model_cache(self.model_name, cache_folder)
+
+            logger.info(
+                f"[NativeVectorStore] 加载 embedding 模型: {self.model_name}"
+                + (f"（本地缓存: {cache_folder}）" if cache_folder else "")
+                + (" [local-files-only]" if local_files_only else "")
+            )
+            self._model = SentenceTransformer(
+                self.model_name,
+                cache_folder=cache_folder,
+                local_files_only=local_files_only,
+            )
         return self._model
+
 
     def _encode(self, texts: List[str]):
         model = self._get_model()
@@ -229,13 +554,24 @@ class NativeVectorStore:
         """保存索引和文档到磁盘"""
         import faiss
 
-        os.makedirs(save_path, exist_ok=True)
-        faiss.write_index(self._index, os.path.join(save_path, "native.index"))
-        with open(os.path.join(save_path, "native_docs.pkl"), "wb") as f:
-            pickle.dump(self._documents, f)
-        with open(os.path.join(save_path, "native_config.json"), "w") as f:
-            json.dump({"model_name": self.model_name}, f)
+        save_path = os.path.abspath(os.path.normpath(save_path))
+        temp_dir = _create_faiss_temp_dir("native-faiss-")
+        try:
+            os.makedirs(save_path, exist_ok=True)
+            faiss.write_index(self._index, os.path.join(temp_dir, "native.index"))
+            with open(os.path.join(temp_dir, "native_docs.pkl"), "wb") as f:
+                pickle.dump(self._documents, f)
+            with open(
+                os.path.join(temp_dir, "native_config.json"),
+                "w",
+                encoding="utf-8",
+            ) as f:
+                json.dump({"model_name": self.model_name}, f, ensure_ascii=False)
+            _promote_saved_files(temp_dir, save_path)
+        finally:
+            shutil.rmtree(temp_dir, ignore_errors=True)
         print(f"[NativeVectorStore] 已保存到 {save_path}")
+
 
     @classmethod
     def load(cls, load_path: str) -> "NativeVectorStore":

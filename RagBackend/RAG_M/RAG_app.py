@@ -434,7 +434,8 @@ async def ingest_documents(ingest_body: IngestRequest):
 
             _vsm_cache.pop(ingest_body.docs_dir, None)
             vector_store_manager = VectorStoreManager(docs_dir=ingest_body.docs_dir)
-            vectorstore_path = ingest_body.docs_dir + "/vectorstore"
+            vectorstore_path = os.path.join(ingest_body.docs_dir, "vectorstore")
+
 
             msg_queue.put_nowait(
                 f"data: Using vector store path: {vectorstore_path}\n\n"
@@ -731,9 +732,11 @@ async def native_ingest_documents(req: NativeIngestRequest):
         try:
             from src.rag.native_rag import (
                 NativeVectorStore,
-                load_documents_from_dir,
+                inspect_documents_from_dir,
                 split_documents,
+                summarize_document_load_report,
             )
+
 
             msg_queue.put_nowait(
                 f"data: [原生RAG] 开始向量化，目录: {req.docs_dir}\n\n"
@@ -745,13 +748,24 @@ async def native_ingest_documents(req: NativeIngestRequest):
 
             # 1.
             msg_queue.put_nowait("data: [原生RAG] 正在加载文档...\n\n")
-            raw_docs = load_documents_from_dir(req.docs_dir)
+            raw_docs, load_report = inspect_documents_from_dir(req.docs_dir)
+            load_summary = summarize_document_load_report(load_report)
+            if load_summary:
+                msg_queue.put_nowait(
+                    f"data: [原生RAG] 文档加载摘要：{load_summary}\n\n"
+                )
             if not raw_docs:
-                msg_queue.put_nowait("data: [ERROR] 未找到可加载的文档\n\n")
+                supported = ", ".join(load_report.get("supported_extensions", []))
+                detail = load_summary or "目录中没有可被原生 RAG 解析的有效文本"
+                msg_queue.put_nowait(
+                    "data: [ERROR] 未找到可加载的文档。"
+                    f"{detail}。当前支持类型：{supported}\n\n"
+                )
                 return
             msg_queue.put_nowait(
                 f"data: [原生RAG] 加载完成，共 {len(raw_docs)} 页原始文档\n\n"
             )
+
 
             # 2.
             msg_queue.put_nowait("data: [原生RAG] 正在分块...\n\n")
