@@ -31,14 +31,14 @@
 
 ## 二、两种查询模式对比
 
-| 维度 | 普通 RAG（`/RAG_query`） | ReAct Agent（`/agent_query`） |
-|------|--------------------------|-------------------------------|
-| 检索时机 | **每次必执行检索** | **LLM 自主决定是否检索** |
-| 检索次数 | 固定 1 次 | 1 到 N 次（受 `max_iterations` 限制） |
-| 适合场景 | 明确需要查文档的问题 | 混合对话、复杂推理、多轮问答 |
-| 对话灵活性 | 低（每次都强制召回） | 高（简单对话不触发检索，节省资源） |
-| 推理过程透明度 | 无 | 返回完整 Thought / Action / Observation 步骤 |
-| 响应格式 | 流式文本 + SOURCES 来源 | 流式步骤日志 + 最终回答 |
+| 维度           | 普通 RAG（`/RAG_query`） | ReAct Agent（`/agent_query`）                |
+| -------------- | ------------------------ | -------------------------------------------- |
+| 检索时机       | **每次必执行检索**       | **LLM 自主决定是否检索**                     |
+| 检索次数       | 固定 1 次                | 1 到 N 次（受 `max_iterations` 限制）        |
+| 适合场景       | 明确需要查文档的问题     | 混合对话、复杂推理、多轮问答                 |
+| 对话灵活性     | 低（每次都强制召回）     | 高（简单对话不触发检索，节省资源）           |
+| 推理过程透明度 | 无                       | 返回完整 Thought / Action / Observation 步骤 |
+| 响应格式       | 流式文本 + SOURCES 来源  | 流式步骤日志 + 最终回答                      |
 
 ---
 
@@ -96,6 +96,7 @@ POST /api/RAG/agent_query
 ```
 
 **请求体：**
+
 ```json
 {
   "query": "你的问题",
@@ -106,6 +107,7 @@ POST /api/RAG/agent_query
 ```
 
 **响应（SSE 流式）：**
+
 ```
 data: 🤖 启动 ReAct Agent 模式...
 data: 📂 正在加载向量存储...
@@ -125,6 +127,7 @@ POST /api/RAG/agent_query_sync
 ```
 
 **响应（JSON）：**
+
 ```json
 {
   "status": "success",
@@ -138,7 +141,7 @@ POST /api/RAG/agent_query_sync
   ],
   "sources": ["文档A.pdf", "文档B.docx"],
   "mode": "react_agent",
-  "model": "qwen:7b-chat"
+  "model": "deepseek-chat"
 }
 ```
 
@@ -183,12 +186,12 @@ score(d) = Σ 1 / (k + rank_i(d))
 
 ## 七、模型配置
 
-| 配置项 | 文件 | 默认值 |
-|--------|------|--------|
-| LLM 模型 | `models_config.json` → `llm_model` | `qwen:7b-chat` |
+| 配置项         | 文件                                     | 默认值                                   |
+| -------------- | ---------------------------------------- | ---------------------------------------- |
+| LLM 模型       | `models_config.json` → `llm_model`       | `deepseek-chat`                          |
 | Embedding 模型 | `models_config.json` → `embedding_model` | `sentence-transformers/all-MiniLM-L6-v2` |
-| Ollama 地址 | `.env` → `OLLAMA_HOST` | `http://localhost:11434` |
-| 向量维度 | 由 Embedding 模型决定 | 384维（MiniLM-L6） |
+| Ollama 地址    | `.env` → `OLLAMA_HOST`                   | `http://localhost:11434`                 |
+| 向量维度       | 由 Embedding 模型决定                    | 384维（MiniLM-L6）                       |
 
 ---
 
@@ -202,4 +205,4 @@ score(d) = Σ 1 / (k + rank_i(d))
 
 ---
 
-*最后更新：2026-03-24*
+_最后更新：2026-03-24_

@@ -35,7 +35,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\"task\": \"分析知识库中关于 RAG 的所有文档，然后用通俗语言总结 RAG 的核心概念和优势\", \"kb_id\": \"kb_001\", \"model\": \"qwen2:0.5b\", \"max_steps\": 5, \"enable_web_search\": false}"
+          "raw": "{\"task\": \"分析知识库中关于 RAG 的所有文档，然后用通俗语言总结 RAG 的核心概念和优势\", \"kb_id\": \"kb_001\", \"model\": \"deepseek-chat\", \"max_steps\": 5, \"enable_web_search\": false}"
         },
         "description": "[SSE 流式] 启动 Agent 任务，实时推送 Thought/Action/Observation/FinalAnswer。\n\n**流式响应格式**：\ndata: {\"type\": \"thought\", \"content\": \"我需要检索关于 RAG 的文档...\"}\ndata: {\"type\": \"action\", \"tool\": \"kb_search\", \"input\": \"RAG 核心概念\"}\ndata: {\"type\": \"observation\", \"result\": \"检索到 12 条相关文档\"}\ndata: {\"type\": \"final_answer\", \"content\": \"RAG 是...\"}\ndata: [DONE]"
       }

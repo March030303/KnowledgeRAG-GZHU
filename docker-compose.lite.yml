@@ -1,4 +1,4 @@
-version: "3.9"
+version: '3.9'
 
 # ============================================================
 # KnowledgeRAG-GZHU 轻量版 Docker Compose
@@ -16,7 +16,7 @@ services:
     container_name: ragf-backend-lite
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - '8000:8000'
     environment:
       # 数据库：SQLite（无需 MySQL）
       - DB_TYPE=sqlite
@@ -36,7 +36,7 @@ services:
       # 方案C：本地 Ollama（宿主机已有 Ollama 服务）
       # - LLM_PROVIDER=ollama
       # - OLLAMA_BASE_URL=http://host.docker.internal:11434
-      # - MODEL=${MODEL:-qwen2:0.5b}
+      # - MODEL=${MODEL:-your-ollama-model}
 
       # ── 通用配置 ─────────────────────────────────────────
       - JWT_SECRET=${JWT_SECRET:-ragf_lite_secret_change_me}
@@ -45,7 +45,13 @@ services:
       - ragf_data:/app/data
       - ragf_kb:/app/local-KLB-files
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')"]
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')"
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -59,23 +65,21 @@ services:
     container_name: ragf-frontend-lite
     restart: unless-stopped
     ports:
-      - "8089:80"
+      - '8089:80'
     depends_on:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:80']
       interval: 30s
       timeout: 5s
       retries: 3
-
 
 volumes:
   ragf_data:
     driver: local
   ragf_kb:
     driver: local
-
 
 # ============================================================
 # 快速上手指南

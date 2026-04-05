@@ -898,7 +898,7 @@ async def call_model_once(
     适合 RAG / Agent 场景中需要一次性获取完整生成结果的调用。
 
     参数：
-        model       - 模型 ID（如 "qwen2:0.5b", "deepseek-chat"）
+        model       - 模型 ID（如 "llama3:8b", "deepseek-chat"）
         messages    - [{role, content}] 列表
         temperature - 生成温度
         max_tokens  - 最大生成 token 数

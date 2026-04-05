@@ -132,7 +132,7 @@ async def ai_answer_in_comment(req: AICommentRequest):
     prompt = f"{context}用户提问：{req.question}\n\n请基于文档内容简洁回答。"
 
     ollama_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-    model = os.getenv("MODEL", "qwen2:0.5b")
+    model = os.getenv("MODEL", "deepseek-chat")
 
     # AI
     conn = get_db()

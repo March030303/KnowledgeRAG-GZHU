@@ -69,7 +69,7 @@ class BaseConfig:
     )
     OLLAMA_TIMEOUT = int(_get_env_value("OLLAMA_TIMEOUT", default="300"))
     DEFAULT_LLM_MODEL = _get_env_value(
-        "MODEL", "DEFAULT_LLM_MODEL", default="qwen2:0.5b"
+        "MODEL", "DEFAULT_LLM_MODEL", default="deepseek-chat"
     )
 
     # 向量模型配置

@@ -55,10 +55,9 @@ def init_db():
         INSERT OR IGNORE INTO model_config
         (model_id, provider, display_name, enabled, priority, context_window, api_key_env, base_url)
         VALUES
-        -- 本地
-        ('qwen2:0.5b',      'ollama', 'Qwen2 0.5B (本地)', 1, 10, 4096,  '', 'http://localhost:11434'),
-        ('qwen:7b-chat',    'ollama', 'Qwen 7B Chat (本地)', 1, 8, 8192,  '', 'http://localhost:11434'),
-        -- 阿里云百炼
+        -- 本地 Ollama 模型（运行时通过 /api/tags 动态发现，此处无需预置）
+        -- 云端模型
+
         ('qwen-turbo',      'dashscope', '通义千问Turbo', 1, 7, 8192,  'DASHSCOPE_API_KEY', 'https://dashscope.aliyuncs.com/api/v1'),
         ('qwen-plus',       'dashscope', '通义千问Plus',  1, 6, 32768, 'DASHSCOPE_API_KEY', 'https://dashscope.aliyuncs.com/api/v1'),
         ('qwen-max',        'dashscope', '通义千问Max',   1, 5, 32768, 'DASHSCOPE_API_KEY', 'https://dashscope.aliyuncs.com/api/v1'),

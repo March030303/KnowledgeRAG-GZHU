@@ -122,7 +122,7 @@
 | 状态管理   | Pinia（跨路由持久化）                                       |
 | 后端框架   | FastAPI + uvicorn                                           |
 | LLM 框架   | LangChain                                                   |
-| 本地模型   | Ollama（推荐 `qwen2:0.5b`，低配友好）                       |
+| 本地模型   | Ollama（支持本地模型动态发现，低配友好）                    |
 | 关系数据库 | MySQL 8.0（Docker 默认编排）                                |
 | 重排能力   | 主链路 lightweight rerank + 独立 Cross-Encoder 接口（可选） |
 | 移动端     | React Native + Expo SDK 52 + zustand                        |
@@ -138,11 +138,11 @@
 ### 环境前置要求
 
 1. **安装 Ollama**：[https://ollama.com](https://ollama.com)
-2. **拉取推荐模型**（低配机器）：
+2. **拉取本地模型**（可选，低配机器推荐小参数模型）：
    ```bash
-   ollama pull qwen2:0.5b    # ~400MB，仅需 600MB 内存
+   ollama pull llama3.2:1b    # ~1GB，低配友好；也可使用其他已安装的 Ollama 模型
    ```
-3. **硬件最低要求**（运行 qwen2:0.5b）：
+3. **硬件最低要求**（运行小参数本地模型）：
 
    | 组件        | 最低要求                   |
    | ----------- | -------------------------- |
@@ -386,13 +386,12 @@ GET  /api/agent/web-search         -- 联网搜索工具
 
 **功能描述：** 统一的多模型路由层，支持本地和云端多种 LLM，按需切换。
 
-| 类型 | 模型                   | 说明                              |
-| ---- | ---------------------- | --------------------------------- |
-| 本地 | Ollama (`qwen2:0.5b`)  | ~400MB，仅需 600MB 内存，推荐低配 |
-| 本地 | Ollama（其他本地模型） | 通过用户配置动态切换              |
-| 云端 | OpenAI                 | 需配置 API Key                    |
-| 云端 | DeepSeek               | 需配置 API Key                    |
-| 云端 | 腾讯混元               | 需配置 API Key                    |
+| 类型 | 模型                   | 说明                                     |
+| ---- | ---------------------- | ---------------------------------------- |
+| 本地 | Ollama（任意本地模型） | 通过用户配置动态切换，低配可选小参数模型 |
+| 云端 | OpenAI                 | 需配置 API Key                           |
+| 云端 | DeepSeek               | 需配置 API Key                           |
+| 云端 | 腾讯混元               | 需配置 API Key                           |
 
 #### 用户自定义模型配置
 
@@ -1058,14 +1057,14 @@ JWT_EXPIRATION_HOURS=24
 # Ollama / 默认模型
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_TIMEOUT=300
-MODEL=qwen2:0.5b
-# DEFAULT_LLM_MODEL=qwen2:0.5b
+MODEL=deepseek-chat
+# DEFAULT_LLM_MODEL=deepseek-chat
 
 # 向量 / 重排 / 知识图谱
 EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
 EMBEDDING_DIMENSION=384
 RERANK_MODEL=bge-large
-KG_MODEL=qwen2:0.5b
+KG_MODEL=qwen3:0.6b
 
 # Redis（完整 Docker 栈默认会注入；本地单进程可保持关闭）
 REDIS_URL=redis://localhost:6379/0
@@ -1126,7 +1125,7 @@ SMTP_FROM=your_email@163.com
 ## 12. 常见问题 FAQ
 
 **Q: Ollama 内存不足 / 超时 / 500 错误？**  
-A: 优先切换小模型：`ollama pull qwen2:0.5b`；同时把 `.env` 中 `MODEL=qwen2:0.5b`、`OLLAMA_TIMEOUT=300`。Docker 场景访问的是宿主机 `11435 -> 11434` 映射端口，本地直连通常仍用 `11434`。
+A: 优先切换更小的模型（如 `llama3.2:1b`）；同时把 `.env` 中 `MODEL=你的模型名`、`OLLAMA_TIMEOUT=300`。Docker 场景访问的是宿主机 `11435 -> 11434` 映射端口，本地直连通常仍用 `11434`。
 
 **Q: 本地后端连不上 Docker MySQL？**  
 A: 当前 `docker-compose.yml` 把 MySQL 映射为 **宿主机 3307 -> 容器 3306**。如果你是本地运行 `uvicorn`，`.env` 里的 `DB_PORT` 应写 `3307`；如果是容器内服务互联，则保持 `3306`。

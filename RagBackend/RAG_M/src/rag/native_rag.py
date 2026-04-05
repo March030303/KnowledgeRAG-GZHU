@@ -444,7 +444,7 @@ _NATIVE_PROMPT_TEMPLATE = """<|im_start|>system
 <|im_start|>assistant
 """
 
-# qwen2:0.5b token
+# 轻量提示模板（适合参数量较小的本地模型）
 _NATIVE_PROMPT_TEMPLATE_LITE = """系统：你是中文知识库助手，只根据文档回答，引用来源格式为"根据【来源X】"，不确定时说"未找到相关内容"。
 
 文档：
@@ -486,7 +486,7 @@ class NativeRAGPipeline:
         self,
         vectorstore: NativeVectorStore,
         documents: Optional[List[NativeDocument]] = None,
-        llm_model: str = "qwen2:0.5b",
+        llm_model: str = "deepseek-chat",
         ollama_host: str = "http://localhost:11434",
         use_hybrid: bool = True,
         bm25_top_k: int = 5,

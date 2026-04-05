@@ -278,7 +278,7 @@ class SummarizeTool(AgentTool):
             import httpx
 
             ollama_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-            model = os.getenv("MODEL", "qwen2:0.5b")
+            model = os.getenv("MODEL", "deepseek-chat")
             prompt = f"请用{max_length}字以内总结以下内容：\n\n{text[:3000]}"
             resp = httpx.post(
                 f"{ollama_url}/api/generate",

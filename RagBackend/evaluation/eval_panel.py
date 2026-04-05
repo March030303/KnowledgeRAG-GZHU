@@ -224,7 +224,7 @@ _init_db()
 
 # - -
 class EvalRunRequest(BaseModel):
-    model_names: List[str] = ["qwen2:0.5b"]
+    model_names: List[str] = ["deepseek-chat"]
     question_ids: Optional[List[int]] = None  # None =
     kb_id: Optional[str] = None
 

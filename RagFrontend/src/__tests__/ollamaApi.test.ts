@@ -119,14 +119,14 @@ describe('ollamaApi service', () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce({
         ok: true,
-        json: vi.fn(async () => ({ models: [{ name: 'qwen2:0.5b' }] }))
+        json: vi.fn(async () => ({ models: [{ name: 'llama3:8b' }] }))
       } as unknown as Response)
       .mockResolvedValueOnce({
         ok: false,
         status: 500
       } as Response)
 
-    await expect(service.getModels()).resolves.toEqual([{ name: 'qwen2:0.5b' }])
+    await expect(service.getModels()).resolves.toEqual([{ name: 'llama3:8b' }])
     expect(fetch).toHaveBeenCalledWith(`${API_ENDPOINTS.OLLAMA.BASE}${API_ENDPOINTS.OLLAMA.TAGS}`)
 
     await expect(service.getModels()).rejects.toThrow('获取模型列表失败: HTTP error! status: 500')

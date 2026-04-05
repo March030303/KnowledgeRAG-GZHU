@@ -75,7 +75,7 @@ def summarize_messages(messages: List[Dict], model: str = None) -> str:
         import httpx
 
         ollama_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-        model = model or os.getenv("MODEL", "qwen2:0.5b")
+        model = model or os.getenv("MODEL", "deepseek-chat")
         history_text = "\n".join(
             f"{'用户' if m['role']=='user' else 'AI'}：{m['content'][:200]}"
             for m in messages

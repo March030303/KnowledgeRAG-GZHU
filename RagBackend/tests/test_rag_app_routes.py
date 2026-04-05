@@ -135,8 +135,8 @@ class TestRagAppHelpers:
             "deepseek",
             True,
         )
-        assert module._resolve_rag_model("qwen2:0.5b") == (
-            "qwen2:0.5b",
+        assert module._resolve_rag_model("llama3:8b") == (
+            "llama3:8b",
             "ollama",
             False,
         )
@@ -268,7 +268,7 @@ class TestRagAppRoutes:
 
     def test_health_endpoint_reports_features_and_vectorstore_state(self, monkeypatch):
         module, _, _ = load_rag_app_module()
-        monkeypatch.setenv("MODEL", "qwen2:0.5b")
+        monkeypatch.setenv("MODEL", "llama3:8b")
         monkeypatch.setenv("VECTORSTORE_PATH", "kb/demo/vectorstore")
         monkeypatch.setattr(module.os.path, "exists", lambda path: path == "kb/demo/vectorstore")
 
@@ -278,7 +278,7 @@ class TestRagAppRoutes:
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "healthy"
-        assert data["model"] == "qwen2:0.5b"
+        assert data["model"] == "llama3:8b"
         assert data["vectorstore_exists"] is True
         assert "react_agent" in data["features"]
 
@@ -355,7 +355,7 @@ class TestRagAppRoutes:
         docs = [Document(page_content="本地上下文", metadata={})]
         monkeypatch.setattr(module.os.path, "exists", lambda path: True)
         monkeypatch.setattr(module, "_load_vectorstore_and_docs", lambda docs_dir: (MagicMock(name="vectorstore"), docs, None))
-        monkeypatch.setattr(module, "_resolve_rag_model", lambda raw_model: ("qwen2:0.5b", "ollama", False))
+        monkeypatch.setattr(module, "_resolve_rag_model", lambda raw_model: ("llama3:8b", "ollama", False))
 
         with make_client(module) as client:
             resp = client.post(
@@ -372,7 +372,7 @@ class TestRagAppRoutes:
         docs = [Document(page_content="agent ctx", metadata={})]
         monkeypatch.setattr(module.os.path, "exists", lambda path: True)
         monkeypatch.setattr(module, "_load_vectorstore_and_docs", lambda docs_dir: (MagicMock(name="vectorstore"), docs, None))
-        monkeypatch.setattr(module, "_resolve_rag_model", lambda raw_model: ("qwen2:0.5b", "ollama", False))
+        monkeypatch.setattr(module, "_resolve_rag_model", lambda raw_model: ("llama3:8b", "ollama", False))
 
         with make_client(module) as client:
             resp = client.post(

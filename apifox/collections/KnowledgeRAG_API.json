@@ -11095,8 +11095,8 @@
             },
             "type": "array",
             "title": "Model Names",
-            "default": [
-              "qwen2:0.5b"
+              "default": [
+              "deepseek-chat"
             ]
           },
           "question_ids": {
@@ -12621,7 +12621,7 @@
           "llm_model": {
             "type": "string",
             "title": "Llm Model",
-            "default": "qwen2:0.5b"
+            "default": "deepseek-chat"
           },
           "timeout": {
             "type": "integer",
@@ -12831,7 +12831,7 @@
           "llm_model": {
             "type": "string",
             "title": "Llm Model",
-            "default": "qwen2:0.5b"
+            "default": "deepseek-chat"
           },
           "ollama_base_url": {
             "type": "string",

@@ -53,7 +53,7 @@ def _resolve_rag_model(raw_model: Optional[str]) -> tuple:
 
     支持格式：
       - None / ""          → 读用户配置 / 环境变量，走 Ollama
-      - "qwen2:0.5b"       → ('qwen2:0.5b', 'ollama', False)
+      - "llama3:8b"        → ('llama3:8b', 'ollama', False)
       - "deepseek-chat"    → ('deepseek-chat', 'deepseek', True)
       - "cloud:deepseek:deepseek-chat" → ('deepseek-chat', 'deepseek', True)
     """
@@ -65,9 +65,9 @@ def _resolve_rag_model(raw_model: Optional[str]) -> tuple:
             from models.user_model_config import get_effective_config
 
             cfg = get_effective_config()
-            raw_model = cfg.llm_model or os.getenv("MODEL", "qwen2:0.5b")
+            raw_model = cfg.llm_model or os.getenv("MODEL", "deepseek-chat")
         except Exception:
-            raw_model = os.getenv("MODEL", "qwen2:0.5b")
+            raw_model = os.getenv("MODEL", "deepseek-chat")
 
     # cloud:provider:model_id
     if raw_model.startswith("cloud:"):

@@ -6,11 +6,11 @@ from typing import Optional
 class ModelConfig:
     """统一模型配置管理类"""
 
-    # Model config qwen2:0.5b400MB
-    DEFAULT_LLM_MODEL = "qwen2:0.5b"
+    # 默认模型配置（本地 Ollama 需自行 pull，云端配置 API Key 后自动生效）
+    DEFAULT_LLM_MODEL = "deepseek-chat"
     DEFAULT_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
     DEFAULT_RERANK_MODEL = "bge-large"
-    DEFAULT_KG_MODEL = "qwen2:0.5b"
+    DEFAULT_KG_MODEL = "qwen3:0.6b"
 
     def __init__(self, config_path: Optional[str] = None):
         """

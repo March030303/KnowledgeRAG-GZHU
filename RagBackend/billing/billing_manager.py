@@ -73,11 +73,11 @@ def init_db():
         -- 预置价格方案
         INSERT OR IGNORE INTO plans VALUES
         ('free', 'free', '免费版', 0, 0,
-         '{"rag_queries":true,"basic_kb":true,"max_kb":3,"max_docs_per_kb":20,"models":["qwen2:0.5b"],"voice":false,"agent":false,"api_access":false}',
+         '{"rag_queries":true,"basic_kb":true,"max_kb":3,"max_docs_per_kb":20,"models":["ollama_local"],"voice":false,"agent":false,"api_access":false}',
          '{"kb_count":3,"doc_count":60,"query_per_month":200,"storage_mb":500}',
          1),
         ('pro', 'pro', 'Pro 版', 39, 390,
-         '{"rag_queries":true,"advanced_kb":true,"max_kb":20,"max_docs_per_kb":200,"models":["qwen2:0.5b","qwen-turbo","deepseek-chat"],"voice":true,"agent":true,"api_access":true,"priority_support":true}',
+         '{"rag_queries":true,"advanced_kb":true,"max_kb":20,"max_docs_per_kb":200,"models":["ollama_local","qwen-turbo","deepseek-chat"],"voice":true,"agent":true,"api_access":true,"priority_support":true}',
          '{"kb_count":20,"doc_count":4000,"query_per_month":5000,"storage_mb":10240}',
          1),
         ('enterprise', 'enterprise', '企业版', 0, 0,

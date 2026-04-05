@@ -35,7 +35,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\"question\": \"什么是 RAG？为什么要用它？\", \"kb_id\": \"kb_001\", \"model\": \"qwen2:0.5b\", \"top_k\": 5, \"use_reranker\": false, \"temperature\": 0.7}"
+          "raw": "{\"question\": \"什么是 RAG？为什么要用它？\", \"kb_id\": \"kb_001\", \"model\": \"deepseek-chat\", \"top_k\": 5, \"use_reranker\": false, \"temperature\": 0.7}"
         },
         "description": "[SSE 流式] 发送消息到 RAG 系统，接收流式回答。流式响应格式：data: {\"type\": \"thinking\", \"content\": \"正在检索相关文档...\"}"
       }

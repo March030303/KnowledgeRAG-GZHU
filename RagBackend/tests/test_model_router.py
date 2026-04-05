@@ -150,11 +150,13 @@ class TestModelRouterConfigHelpers:
 
         monkeypatch.setattr(mr, "_get_key", fake_get_key)
         monkeypatch.setenv("HUNYUAN_SECRET_ID", "env-hunyuan")
+        # 本地模型列表由 Ollama 动态发现，测试中 mock 为空列表避免网络依赖
+        monkeypatch.setattr(mr, "_build_local_model_entries", lambda: [])
 
         result = mr._build_model_list()
         lookup = {item["id"]: item for item in result}
 
-        assert lookup["qwen2:0.5b"]["available"] is True
+        # 云端模型可用性由 API Key 决定
         assert lookup["deepseek-chat"]["available"] is True
         assert lookup["gpt-4o"]["available"] is False
         assert lookup["hunyuan-pro"]["available"] is True
@@ -211,7 +213,7 @@ class TestModelRouterStreamHelpers:
 
         chunks = asyncio.run(
             collect_chunks(
-                mr._stream_ollama("qwen2:0.5b", [{"role": "user", "content": "hi"}], 0.5, 16)
+                mr._stream_ollama("llama3:8b", [{"role": "user", "content": "hi"}], 0.5, 16)
             )
         )
 
@@ -228,7 +230,7 @@ class TestModelRouterStreamHelpers:
         monkeypatch.setattr(mr, "_get_base_url", lambda provider, env, default: "http://ollama.local")
 
         chunks = asyncio.run(
-            collect_chunks(mr._stream_ollama("qwen2:0.5b", [], 0.7, 32))
+            collect_chunks(mr._stream_ollama("llama3:8b", [], 0.7, 32))
         )
 
         assert len(chunks) == 1

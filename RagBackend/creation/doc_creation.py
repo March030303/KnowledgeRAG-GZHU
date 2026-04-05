@@ -114,7 +114,7 @@ def _get_provider(model_id: str) -> tuple[str, str]:
     根据 model_id 判断 provider，返回 (real_model_id, provider)。
 
     支持格式：
-      - "qwen2:0.5b"                  → ('qwen2:0.5b', 'ollama')
+      - "llama3:8b"                    → ('llama3:8b', 'ollama')
       - "deepseek-chat"                → ('deepseek-chat', 'deepseek')
       - "cloud:deepseek:deepseek-chat" → ('deepseek-chat', 'deepseek')
     """

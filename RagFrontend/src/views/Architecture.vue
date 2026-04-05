@@ -109,7 +109,7 @@
             <div class="arch-node arch-node--ai">
               <div class="node-icon">🦙</div>
               <div class="node-name">Ollama 本地模型</div>
-              <div class="node-tech">qwen2:0.5b · qwen:7b · Port 11434/11435</div>
+              <div class="node-tech">本地任意 Ollama 模型 · Port 11434/11435</div>
             </div>
             <div class="arch-node arch-node--ai">
               <div class="node-icon">☁️</div>
@@ -220,7 +220,7 @@ npm run dev  # → http://localhost:5173
 
 # 4. 启动 Ollama（另开终端）
 ollama serve
-ollama run qwen2:0.5b</pre
+ollama run 你的模型名</pre
             >
           </div>
         </div>
@@ -314,7 +314,7 @@ const ragFlow = [
     desc: '主链路默认使用本地 token overlap 重排；Cross-Encoder 为独立 API 能力'
   },
   { name: 'Prompt 构建', desc: '将检索结果注入 Prompt 模板（ChatML/Lite）' },
-  { name: 'Ollama 推理', desc: 'qwen2:0.5b 生成回答（支持流式/SSE）' },
+  { name: 'Ollama 推理', desc: '本地模型生成回答（支持流式/SSE）' },
   { name: '返回结果', desc: 'SSE 流式推送 → 前端逐字显示' }
 ]
 
@@ -362,8 +362,7 @@ const techStack = [
     category: 'AI 模型',
     items: [
       { name: 'Ollama', desc: '本地 LLM 推理运行时' },
-      { name: 'qwen2:0.5b', desc: '轻量模型（默认，~400MB）' },
-      { name: 'qwen:7b-chat', desc: '高质量模型（需 17GB+ RAM）' },
+      { name: '本地模型（任意）', desc: '通过用户配置动态发现与切换' },
       { name: '阿里百炼 API', desc: '云端大模型（可配置）' },
       { name: 'DeepSeek API', desc: '高性价比云端模型' },
       { name: 'cross-encoder', desc: 'RAG 重排序模型' }
