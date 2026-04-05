@@ -1390,6 +1390,9 @@ const saveRetrievalConfig = async () => {
   }
 };*/
 // 运行搜索测试 - 调用后端接口（根据 ragMode 选择端点）
+const INGEST_TIMEOUT_MS = 600_000 // 向量化最长等待 10 分钟
+const QUERY_TIMEOUT_MS = 300_000 // RAG 查询最长等待 5 分钟
+
 const runSearchTest = async () => {
   isTesting.value = true
   isIngesting.value = true
@@ -1400,12 +1403,15 @@ const runSearchTest = async () => {
     ragMode.value === 'langchain'
       ? API_ENDPOINTS.KNOWLEDGE.INGEST
       : API_ENDPOINTS.KNOWLEDGE.NATIVE_INGEST
+  const abortCtrl = new AbortController()
+  const timer = setTimeout(() => abortCtrl.abort(), INGEST_TIMEOUT_MS)
   try {
     const docsDir = `local-KLB-files/${KLB_id}`
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ docs_dir: docsDir })
+      body: JSON.stringify({ docs_dir: docsDir }),
+      signal: abortCtrl.signal
     })
     const reader = response.body?.getReader()
     const decoder = new TextDecoder()
@@ -1436,8 +1442,13 @@ const runSearchTest = async () => {
     }
   } catch (error) {
     console.error('向量化请求失败:', error)
-    ingestResults.value.push(`错误: ${error instanceof Error ? error.message : String(error)}`)
+    const msg =
+      error instanceof DOMException && error.name === 'AbortError'
+        ? '向量化超时（超过 10 分钟），请检查后端服务或减少文档数量后重试'
+        : `错误: ${error instanceof Error ? error.message : String(error)}`
+    ingestResults.value.push(msg)
   } finally {
+    clearTimeout(timer)
     isIngesting.value = false
     isTesting.value = false
   }
@@ -1487,6 +1498,8 @@ const performRagQuery = async () => {
           return ''
         }
       })()
+    const queryAbortCtrl = new AbortController()
+    const queryTimer = setTimeout(() => queryAbortCtrl.abort(), QUERY_TIMEOUT_MS)
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -1494,8 +1507,10 @@ const performRagQuery = async () => {
         query: testQuery.value,
         docs_dir: docsDir,
         model: selectedModel || undefined
-      })
+      }),
+      signal: queryAbortCtrl.signal
     })
+    clearTimeout(queryTimer)
     const reader = response.body?.getReader()
     const decoder = new TextDecoder()
     let answerBuffer = ''
@@ -1559,7 +1574,11 @@ const performRagQuery = async () => {
     }
   } catch (error) {
     console.error('RAG查询请求失败:', error)
-    queryResults.value.push(`错误: ${error instanceof Error ? error.message : String(error)}`)
+    const msg =
+      error instanceof DOMException && error.name === 'AbortError'
+        ? 'RAG 查询超时（超过 5 分钟），请检查后端服务是否正常，或先执行向量化后再查询'
+        : `错误: ${error instanceof Error ? error.message : String(error)}`
+    queryResults.value.push(msg)
   } finally {
     isQuerying.value = false
   }

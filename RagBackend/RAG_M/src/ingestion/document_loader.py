@@ -2,15 +2,6 @@ import json
 import os
 from typing import List, Optional
 
-from langchain.document_loaders import (
-    CSVLoader,
-    Docx2txtLoader,
-    PyPDFLoader,
-    TextLoader,
-    UnstructuredExcelLoader,
-    UnstructuredWordDocumentLoader,
-)
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
     CSVLoader,
     Docx2txtLoader,
@@ -19,6 +10,7 @@ from langchain_community.document_loaders import (
     UnstructuredExcelLoader,
     UnstructuredWordDocumentLoader,
 )
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
 class DocumentLoader:

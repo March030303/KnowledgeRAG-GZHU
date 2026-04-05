@@ -1053,7 +1053,7 @@
           "RAG 服务接口"
         ],
         "summary": "Ingest Documents",
-        "description": "文档导入接口（SSE 流式进度输出）\n\n修复：原 generate() 为同步生成器，直接阻塞 event loop 执行向量化。\n现改为：同步耗时逻辑全部放入 asyncio.to_thread，通过 asyncio.Queue 推送进度到 SSE 流。",
+        "description": "文档导入接口（SSE 流式进度输出）\n\n**已修复**：\n1. `langchain.document_loaders` / `langchain.text_splitter` 旧路径已迁移至 `langchain_community.document_loaders` / `langchain_text_splitters`，修复 `No module named 'langchain.document_loaders'` 报错。\n2. 原 generate() 为同步生成器，直接阻塞 event loop；现改为：同步耗时逻辑全部放入 asyncio.to_thread，通过 asyncio.Queue 推送进度到 SSE 流。\n\n**SSE 消息格式**：\n- 进度：`data: <描述文本>`\n- 成功：`data: {\"message\": \"Successfully ingested N document chunks\", ...}`\n- 失败：`data: ERROR: Document ingestion failed: <错误详情>`\n\n**超时建议**：前端 fetch 请求建议设置 600 秒超时（大型知识库向量化耗时较长）。",
         "operationId": "ingest_documents_api_RAG_ingest_post",
         "requestBody": {
           "content": {
@@ -1173,7 +1173,7 @@
           "RAG 服务接口"
         ],
         "summary": "Native Ingest Documents",
-        "description": "原生文档向量化（SSE 流式）\n不依赖 LangChain：使用 pypdf / docx2txt + sentence-transformers + faiss-cpu\n\n修复：原 generate() 为同步生成器，Embedding 计算阻塞 event loop。\n现改为：耗时操作全部放入 asyncio.to_thread，通过 asyncio.Queue 推 SSE。",
+        "description": "原生文档向量化（SSE 流式）\n不依赖 LangChain：使用 pypdf / docx2txt + sentence-transformers + faiss-cpu\n\n**已修复**：\n1. `langchain.document_loaders` 旧路径已迁移至 `langchain_community.document_loaders` / `langchain_text_splitters`。\n2. 原 generate() 为同步生成器，Embedding 计算阻塞 event loop；现改为：耗时操作全部放入 asyncio.to_thread，通过 asyncio.Queue 推 SSE。\n\n**SSE 消息格式**：\n- 进度：`data: [原生RAG] <描述>`\n- 成功：`data: [原生RAG] 向量化完成 {...}`\n- 失败：`data: [ERROR] 原生向量化失败: <错误详情>`\n\n**超时建议**：前端 fetch 请求建议设置 600 秒超时。",
         "operationId": "native_ingest_documents_api_RAG_native_ingest_post",
         "requestBody": {
           "content": {
