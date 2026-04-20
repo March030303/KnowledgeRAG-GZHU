@@ -218,11 +218,30 @@ from feedback.feedback_router import router as feedback_router
 try:
     from integrations.feishu_bot import router as feishu_router
     from integrations.obsidian_sync import router as obsidian_router
+    from integrations.obsidian_memory import router as obsidian_memory_router
 
     _integrations_available = True
 except ImportError as _e:
     logger.warning(f"集成模块导入失败: {_e}")
     _integrations_available = False
+
+# UI Resources integration (Galaxy + Art Design Pro)
+try:
+    from integrations.ui_resources import router as ui_resources_router
+
+    _ui_resources_available = True
+except ImportError as _e:
+    logger.warning(f"UI资源集成模块导入失败: {_e}")
+    _ui_resources_available = False
+
+# Darwin Evolution Engine integration
+try:
+    from integrations.darwin_engine import router as darwin_router
+
+    _darwin_available = True
+except ImportError as _e:
+    logger.warning(f"达尔文进化引擎模块导入失败: {_e}")
+    _darwin_available = False
 
 app.include_router(
     knowledge_CURD, tags=["知识库CURD接口"]
@@ -270,7 +289,12 @@ if _whisper_available:
     app.include_router(whisper_router, tags=["多模态-语音识别(Whisper)"])
 if _integrations_available:
     app.include_router(obsidian_router, tags=["办公联动-Obsidian同步"])
+    app.include_router(obsidian_memory_router, tags=["办公联动-Obsidian无限记忆"])
     app.include_router(feishu_router, tags=["办公联动-飞书机器人"])
+if _ui_resources_available:
+    app.include_router(ui_resources_router, tags=["UI资源-Galaxy/ArtDesignPro"])
+if _darwin_available:
+    app.include_router(darwin_router, tags=["达尔文进化引擎-Skill优化"])
 
 # - 8 upgraded module router registrations -
 # Knowledge base management upgrade

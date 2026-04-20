@@ -1384,7 +1384,7 @@ const obsidianStatus = ref<any>({ configured: false, synced_files: 0 })
 const obsidianSyncResult = ref<any>(null)
 const obsidianLoading = ref(false)
 const obsidianExclude = ref('templates/,\\.trash/')
-const obsidianForm = reactive({ vault_path: '', kb_id: '' })
+const obsidianForm = reactive({ vault_path: 'D:\\obesdian', kb_id: '' })
 async function fetchObsidianStatus() {
   try {
     const res = await axios.get('/api/integrations/obsidian/status')
