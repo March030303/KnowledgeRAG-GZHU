@@ -243,6 +243,51 @@ except ImportError as _e:
     logger.warning(f"达尔文进化引擎模块导入失败: {_e}")
     _darwin_available = False
 
+# OpenMythos integration
+try:
+    from integrations.openmythos_engine import router as openmythos_router
+
+    _openmythos_available = True
+except ImportError as _e:
+    logger.warning(f"OpenMythos模块导入失败: {_e}")
+    _openmythos_available = False
+
+# Mano-P integration
+try:
+    from integrations.manop_engine import router as manop_router
+
+    _manop_available = True
+except ImportError as _e:
+    logger.warning(f"Mano-P模块导入失败: {_e}")
+    _manop_available = False
+
+# Apifox integration
+try:
+    from integrations.apifox_engine import router as apifox_router
+
+    _apifox_available = True
+except ImportError as _e:
+    logger.warning(f"Apifox模块导入失败: {_e}")
+    _apifox_available = False
+
+# Hermes Agent integration
+try:
+    from integrations.hermes_engine import router as hermes_router
+
+    _hermes_available = True
+except ImportError as _e:
+    logger.warning(f"Hermes Agent模块导入失败: {_e}")
+    _hermes_available = False
+
+# Task Orchestrator integration
+try:
+    from integrations.task_orchestrator import router as orchestrator_router
+
+    _orchestrator_available = True
+except ImportError as _e:
+    logger.warning(f"任务编排引擎模块导入失败: {_e}")
+    _orchestrator_available = False
+
 app.include_router(
     knowledge_CURD, tags=["知识库CURD接口"]
 )  # Knowledge base CRUD interface
@@ -295,6 +340,16 @@ if _ui_resources_available:
     app.include_router(ui_resources_router, tags=["UI资源-Galaxy/ArtDesignPro"])
 if _darwin_available:
     app.include_router(darwin_router, tags=["达尔文进化引擎-Skill优化"])
+if _openmythos_available:
+    app.include_router(openmythos_router, tags=["OpenMythos-RDT模型引擎"])
+if _manop_available:
+    app.include_router(manop_router, tags=["Mano-P-GUI智能体引擎"])
+if _apifox_available:
+    app.include_router(apifox_router, tags=["Apifox-API文档引擎"])
+if _hermes_available:
+    app.include_router(hermes_router, tags=["Hermes-Agent技能引擎"])
+if _orchestrator_available:
+    app.include_router(orchestrator_router, tags=["任务智能编排引擎"])
 
 # - 8 upgraded module router registrations -
 # Knowledge base management upgrade
