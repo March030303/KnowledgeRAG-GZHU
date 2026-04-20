@@ -177,70 +177,60 @@ const handleDropdown = (data: any) => {
 </script>
 <style scoped>
 .kb-card {
-  background: white;
-  border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.07);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
   overflow: hidden;
   cursor: pointer;
   position: relative;
-  /* 使用 CSS 变量定义的精细过渡 */
   transition:
-    transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.22s var(--ease-out),
     box-shadow 0.22s ease,
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ border-color 0.22s ease;
+    border-color 0.22s ease;
   will-change: transform, box-shadow;
 }
-/* hover：浮起 + 阴影扩散 + 边框高亮 */
 .kb-card:hover {
   transform: translateY(-4px) scale(1.005);
-  box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.13),
-    0 4px 8px rgba(0, 0, 0, 0.06);
-  border-color: rgba(79, 126, 248, 0.25);
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
+  border-color: rgba(124, 106, 255, 0.25);
 }
-/* active：按下感 */
 .kb-card:active {
   transform: translateY(-1px) scale(0.99) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: var(--shadow-sm) !important;
   transition-duration: 0.08s !important;
 }
 .kb-card--starred {
-  border-color: #fde68a;
+  border-color: rgba(251, 191, 36, 0.3);
 }
 .kb-card--starred:hover {
-  border-color: #fbbf24;
-  box-shadow:
-    0 12px 32px rgba(245, 158, 11, 0.15),
-    0 4px 8px rgba(0, 0, 0, 0.06);
+  border-color: rgba(251, 191, 36, 0.5);
+  box-shadow: var(--shadow-lg), 0 0 24px rgba(251, 191, 36, 0.12);
 }
-/* 置顶状态 */
 .kb-card--pinned {
-  border-color: #a5b4fc;
-  box-shadow: 0 0 0 2px rgba(79, 126, 248, 0.15);
+  border-color: rgba(124, 106, 255, 0.3);
+  box-shadow: 0 0 0 1px rgba(124, 106, 255, 0.15);
 }
 .kb-card--pinned:hover {
-  box-shadow:
-    0 12px 32px rgba(79, 126, 248, 0.18),
-    0 0 0 2px rgba(79, 126, 248, 0.25);
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
 }
 .kb-card__pin-badge {
   position: absolute;
   top: 6px;
   left: 8px;
   font-size: 10px;
-  background: linear-gradient(135deg, #4f7ef8, #818cf8);
+  background: var(--gradient-brand);
   color: white;
   padding: 2px 7px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   z-index: 2;
   font-weight: 600;
   letter-spacing: 0.3px;
-  /* 动效由全局 .pin-badge-anim 提供，自动应用于新出现时 */
 }
 .pin-btn--active {
-  color: #4f7ef8;
+  color: var(--accent-violet-light);
 }
-/* 顶部颜色条 */
 .kb-card__color-bar {
   height: 4px;
   width: 100%;
@@ -261,12 +251,12 @@ const handleDropdown = (data: any) => {
 .kb-card__icon {
   width: 38px;
   height: 38px;
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.2s var(--ease-spring);
 }
 .kb-card:hover .kb-card__icon {
   transform: scale(1.08) rotate(-3deg);
@@ -275,7 +265,6 @@ const handleDropdown = (data: any) => {
   width: 20px;
   height: 20px;
 }
-/* 操作按钮：平时透明，卡片hover时显示 */
 .kb-card__actions {
   display: flex;
   gap: 2px;
@@ -289,7 +278,6 @@ const handleDropdown = (data: any) => {
   opacity: 1;
   transform: translateY(0);
 }
-/* 星标始终亮着 */
 .kb-card--starred .kb-card__actions,
 .kb-card--starred .star-btn {
   opacity: 1;
@@ -300,22 +288,22 @@ const handleDropdown = (data: any) => {
   height: 28px;
   border: none;
   background: transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
+  color: var(--text-quaternary);
   transition:
     background 0.15s ease,
     color 0.15s ease,
     transform 0.15s ease;
-  overflow: hidden; /* 为 ripple */
+  overflow: hidden;
   position: relative;
 }
 .action-btn:hover {
-  background: rgba(79, 126, 248, 0.1);
-  color: #4f7ef8;
+  background: var(--accent-violet-subtle);
+  color: var(--accent-violet-light);
   transform: scale(1.12);
 }
 .action-btn:active {
@@ -328,16 +316,16 @@ const handleDropdown = (data: any) => {
   transition: transform 0.15s ease;
 }
 .star-btn--active {
-  color: #f59e0b;
+  color: var(--accent-amber);
 }
 .star-btn--active:hover {
-  background: rgba(245, 158, 11, 0.12) !important;
-  color: #d97706 !important;
+  background: var(--accent-amber-subtle) !important;
+  color: var(--accent-amber) !important;
 }
 .kb-card__title {
   font-size: 14.5px;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-primary);
   margin: 0 0 6px;
   white-space: nowrap;
   overflow: hidden;
@@ -346,11 +334,11 @@ const handleDropdown = (data: any) => {
   transition: color 0.2s ease;
 }
 .kb-card:hover .kb-card__title {
-  color: #4f7ef8;
+  color: var(--text-brand-strong);
 }
 .kb-card__desc {
   font-size: 12.5px;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 0 0 10px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -366,7 +354,7 @@ const handleDropdown = (data: any) => {
 }
 .kb-card__time {
   font-size: 11.5px;
-  color: #9ca3af;
+  color: var(--text-quaternary);
 }
 .kb-card__tags {
   display: flex;
@@ -375,18 +363,20 @@ const handleDropdown = (data: any) => {
 .kb-card__tag {
   font-size: 10.5px;
   padding: 1px 7px;
-  background: #f3f4f6;
-  color: #6b7280;
-  border-radius: 10px;
+  background: var(--bg-elevated);
+  color: var(--text-tertiary);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
   transition:
     background 0.2s ease,
-    color 0.2s ease;
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 .kb-card:hover .kb-card__tag {
-  background: rgba(79, 126, 248, 0.08);
-  color: #4f7ef8;
+  background: var(--accent-violet-subtle);
+  color: var(--accent-violet-light);
+  border-color: rgba(124, 106, 255, 0.15);
 }
-/* 紧凑模式 */
 .kb-card--compact .kb-card__body {
   padding: 10px 12px;
 }

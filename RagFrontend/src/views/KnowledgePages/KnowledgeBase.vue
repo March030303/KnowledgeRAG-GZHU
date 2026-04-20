@@ -492,10 +492,9 @@ loadOrder()
   height: 100vh;
   overflow-y: auto;
   padding: 28px 32px;
-  background: #f9fafb;
+  background: var(--bg-base);
   scrollbar-width: thin;
 }
-/* ===== 顶部 ===== */
 .kb-header {
   display: flex;
   align-items: center;
@@ -507,12 +506,12 @@ loadOrder()
 .kb-title {
   font-size: 22px;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-primary);
   margin: 0;
 }
 .kb-subtitle {
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   margin: 3px 0 0;
 }
 .kb-header__right {
@@ -520,27 +519,26 @@ loadOrder()
   align-items: center;
   gap: 10px;
 }
-/* 搜索框 */
 .kb-search-wrapper {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-md);
   padding: 7px 12px;
   width: 220px;
   transition: all 0.2s;
 }
 .kb-search-wrapper:focus-within {
-  border-color: #4f7ef8;
-  box-shadow: 0 0 0 3px rgba(79, 126, 248, 0.1);
+  border-color: var(--border-brand);
+  box-shadow: 0 0 0 2px var(--accent-violet-subtle);
   width: 280px;
 }
 .kb-search-icon {
   width: 16px;
   height: 16px;
-  color: #9ca3af;
+  color: var(--text-quaternary);
   flex-shrink: 0;
 }
 .kb-search-input {
@@ -548,12 +546,12 @@ loadOrder()
   border: none;
   outline: none;
   font-size: 13px;
-  color: #111827;
+  color: var(--text-primary);
   background: transparent;
   min-width: 0;
 }
 .kb-search-input::placeholder {
-  color: #9ca3af;
+  color: var(--text-quaternary);
 }
 .kb-search-clear {
   width: 16px;
@@ -561,7 +559,7 @@ loadOrder()
   border: none;
   background: transparent;
   cursor: pointer;
-  color: #9ca3af;
+  color: var(--text-quaternary);
   padding: 0;
   display: flex;
   align-items: center;
@@ -570,16 +568,15 @@ loadOrder()
   width: 14px;
   height: 14px;
 }
-/* 广场按钮 */
 .kb-square-btn {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  background: #fff;
-  color: #374151;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-md);
   font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
@@ -587,43 +584,43 @@ loadOrder()
   white-space: nowrap;
 }
 .kb-square-btn:hover {
-  border-color: #3b82f6;
-  color: #3b82f6;
-  background: #eff6ff;
+  border-color: var(--accent-violet);
+  color: var(--accent-violet-light);
+  background: var(--accent-violet-subtle);
 }
 .kb-square-btn svg {
   width: 16px;
   height: 16px;
 }
-/* 新建按钮 */
 .kb-create-btn {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: linear-gradient(135deg, #4f7ef8, #6366f1);
+  background: var(--gradient-brand);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
+  box-shadow: var(--shadow-glow);
 }
 .kb-create-btn:hover {
-  background: linear-gradient(135deg, #3b6de8, #5355e0);
-  box-shadow: 0 4px 12px rgba(79, 126, 248, 0.3);
+  filter: brightness(1.12);
+  box-shadow: var(--shadow-glow-strong);
+  transform: translateY(-1px);
 }
 .kb-create-btn svg {
   width: 16px;
   height: 16px;
 }
-/* ===== 弹窗 ===== */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
   z-index: 1000;
   display: flex;
@@ -631,23 +628,24 @@ loadOrder()
   justify-content: center;
 }
 .modal-card {
-  background: white;
-  border-radius: 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-xl);
   width: 400px;
   max-width: 92vw;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lg);
 }
 .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-subtle);
 }
 .modal-header h3 {
   font-size: 16px;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-primary);
   margin: 0;
 }
 .modal-close {
@@ -656,15 +654,15 @@ loadOrder()
   border: none;
   background: transparent;
   cursor: pointer;
-  color: #9ca3af;
-  border-radius: 6px;
+  color: var(--text-quaternary);
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .modal-close:hover {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
 }
 .modal-close svg {
   width: 16px;
@@ -677,22 +675,24 @@ loadOrder()
   display: block;
   font-size: 13px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-primary);
   margin-bottom: 6px;
 }
 .modal-input {
   width: 100%;
   padding: 9px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-md);
   font-size: 14px;
   outline: none;
   transition: all 0.2s;
   box-sizing: border-box;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
 }
 .modal-input:focus {
-  border-color: #4f7ef8;
-  box-shadow: 0 0 0 3px rgba(79, 126, 248, 0.1);
+  border-color: var(--border-brand);
+  box-shadow: 0 0 0 2px var(--accent-violet-subtle);
 }
 .modal-footer {
   display: flex;
@@ -702,36 +702,38 @@ loadOrder()
 }
 .btn-cancel {
   padding: 8px 18px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: white;
-  color: #6b7280;
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
   font-size: 13.5px;
   cursor: pointer;
   transition: all 0.15s;
 }
 .btn-cancel:hover {
-  background: #f9fafb;
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 .btn-confirm {
   padding: 8px 18px;
   border: none;
-  border-radius: 8px;
-  background: #4f7ef8;
+  border-radius: var(--radius-md);
+  background: var(--gradient-brand);
   color: white;
   font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s;
+  box-shadow: var(--shadow-glow);
 }
 .btn-confirm:hover:not(:disabled) {
-  background: #3b6de8;
+  filter: brightness(1.12);
+  transform: translateY(-1px);
 }
 .btn-confirm:disabled {
-  opacity: 0.5;
+  opacity: 0.35;
   cursor: not-allowed;
 }
-/* ===== 区块 ===== */
 .kb-section {
   margin-bottom: 32px;
 }
@@ -747,7 +749,7 @@ loadOrder()
   gap: 6px;
   font-size: 14px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary);
 }
 .kb-section__title svg {
   width: 16px;
@@ -755,12 +757,12 @@ loadOrder()
 }
 .kb-section__count {
   font-size: 12px;
-  color: #9ca3af;
-  background: #f3f4f6;
+  color: var(--text-quaternary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-full);
 }
-/* ===== 网格 ===== */
 .kb-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -770,16 +772,15 @@ loadOrder()
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 10px;
 }
-/* ===== 结束占位符 ===== */
 .kb-card-end {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  border: 2px dashed #e5e7eb;
-  border-radius: 12px;
-  color: #9ca3af;
+  border: 2px dashed var(--border-base);
+  border-radius: var(--radius-lg);
+  color: var(--text-quaternary);
 }
 .kb-card-end svg {
   width: 32px;
@@ -790,14 +791,13 @@ loadOrder()
 .kb-card-end p {
   font-size: 12px;
 }
-/* ===== 空状态 ===== */
 .kb-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: #9ca3af;
+  color: var(--text-quaternary);
   gap: 12px;
 }
 .kb-empty svg {
@@ -808,21 +808,20 @@ loadOrder()
 .kb-empty p {
   font-size: 14px;
 }
-/* ===== 加载 ===== */
 .kb-loading {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
   padding: 40px;
-  color: #9ca3af;
+  color: var(--text-quaternary);
   font-size: 14px;
 }
 .kb-spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid #e5e7eb;
-  border-top-color: #4f7ef8;
+  border: 2px solid var(--border-base);
+  border-top-color: var(--accent-violet);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -845,28 +844,27 @@ loadOrder()
     width: 190px;
   }
 }
-/* ===== 拖拽排序 ===== */
 .kb-drag-toggle {
   display: flex;
   align-items: center;
   gap: 5px;
   padding: 4px 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  background: white;
-  color: #6b7280;
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s;
 }
 .kb-drag-toggle:hover {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 .kb-drag-toggle.active {
-  background: #eef2ff;
-  border-color: #4f7ef8;
-  color: #4f7ef8;
+  background: var(--accent-violet-subtle);
+  border-color: var(--accent-violet);
+  color: var(--accent-violet-light);
 }
 .kb-drag-toggle svg {
   width: 14px;
@@ -874,10 +872,10 @@ loadOrder()
 }
 .kb-drag-hint {
   font-size: 11px;
-  color: #4f7ef8;
-  background: #eef2ff;
+  color: var(--accent-violet-light);
+  background: var(--accent-violet-subtle);
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   animation: pulse-hint 1.5s ease-in-out infinite;
 }
 @keyframes pulse-hint {
@@ -915,11 +913,11 @@ loadOrder()
   content: '';
   position: absolute;
   inset: -3px;
-  border: 2px dashed #4f7ef8;
-  border-radius: 14px;
+  border: 2px dashed var(--accent-violet);
+  border-radius: var(--radius-lg);
   z-index: 1;
   pointer-events: none;
-  background: rgba(79, 126, 248, 0.04);
+  background: var(--accent-violet-subtle);
 }
 .kb-drag-handle {
   position: absolute;
@@ -931,10 +929,11 @@ loadOrder()
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 6px;
-  color: #9ca3af;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-sm);
+  color: var(--text-quaternary);
+  border: 1px solid var(--border-subtle);
   cursor: grab;
 }
 .kb-drag-handle svg {

@@ -424,40 +424,47 @@ const toolNavItems: NavItem[] = [
 </script>
 
 <style scoped>
-/* ===== 侧边栏容器 ===== */
 .sidebar {
-  width: 240px;
+  width: 220px;
   height: 100vh;
-  background: #ffffff;
-  border-right: 1px solid #f0f0f0;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.25s var(--ease-out);
   overflow: hidden;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
   position: relative;
   z-index: 100;
 }
-
-.sidebar--collapsed {
-  width: 64px;
+.sidebar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(180deg, rgba(124, 106, 255, 0.08) 0%, transparent 30%, transparent 70%, rgba(34, 211, 238, 0.05) 100%);
+  pointer-events: none;
 }
 
-/* ===== Logo区域 ===== */
+.sidebar--collapsed {
+  width: 56px;
+}
+
 .sidebar__logo {
   display: flex;
   align-items: center;
-  padding: 16px 12px 14px;
-  border-bottom: 1px solid #f5f5f5;
-  gap: 10px;
-  min-height: 64px;
+  padding: 12px 10px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  gap: 8px;
+  min-height: 52px;
   position: relative;
 }
 
 .sidebar__logo-icon {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
 }
 
@@ -467,9 +474,9 @@ const toolNavItems: NavItem[] = [
 }
 
 .sidebar__logo-text {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
-  background: linear-gradient(135deg, #4f7ef8, #8b5cf6);
+  background: linear-gradient(135deg, var(--accent-violet-light), var(--accent-cyan));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   white-space: nowrap;
@@ -477,95 +484,107 @@ const toolNavItems: NavItem[] = [
 }
 
 .sidebar__collapse-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
   border: none;
   background: transparent;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
-  transition: all 0.2s;
+  color: var(--text-quaternary);
+  transition: all var(--transition-fast);
   flex-shrink: 0;
   margin-left: auto;
 }
 
 .sidebar__collapse-btn:hover {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
 }
 
 .collapse-icon {
-  width: 16px;
-  height: 16px;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 14px;
+  height: 14px;
+  transition: transform 0.25s var(--ease-out);
 }
 
 .rotate-180 {
   transform: rotate(180deg);
 }
 
-/* 折叠状态下隐藏折叠按钮文字，logo居中 */
 .sidebar--collapsed .sidebar__logo {
   justify-content: center;
-  padding: 16px 8px;
+  padding: 12px 6px;
 }
 .sidebar--collapsed .sidebar__collapse-btn {
   position: absolute;
-  right: 4px;
+  right: 2px;
   top: 50%;
   transform: translateY(-50%);
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
 }
 
-/* ===== 快速新建 ===== */
 .sidebar__quick-action {
-  padding: 10px 10px 6px;
+  padding: 8px 8px 4px;
 }
 
 .quick-new-btn {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1.5px dashed #dbeafe;
-  background: #f0f7ff;
-  color: #4f7ef8;
-  font-size: 13px;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed rgba(124, 106, 255, 0.2);
+  background: var(--accent-violet-subtle);
+  color: var(--accent-violet-light);
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-fast);
   white-space: nowrap;
   overflow: hidden;
+  position: relative;
+  will-change: transform;
 }
 
 .quick-new-btn:hover {
-  background: #dbeafe;
-  border-color: #93c5fd;
+  background: rgba(124, 106, 255, 0.12);
+  border-color: rgba(124, 106, 255, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(124, 106, 255, 0.12);
+}
+
+.quick-new-btn:active {
+  transform: translateY(0) scale(0.97) !important;
+  box-shadow: none !important;
+  transition-duration: 0.06s !important;
 }
 
 .quick-new-icon {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
+  transition: transform 0.25s var(--ease-spring);
+}
+
+.quick-new-btn:hover .quick-new-icon {
+  transform: rotate(90deg) scale(1.1);
 }
 
 .sidebar--collapsed .quick-new-btn {
   justify-content: center;
-  padding: 8px;
+  padding: 6px;
 }
 
-/* ===== 导航区域 ===== */
 .sidebar__nav {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 6px 0;
+  padding: 4px 0;
   scrollbar-width: none;
 }
 .sidebar__nav::-webkit-scrollbar {
@@ -573,17 +592,17 @@ const toolNavItems: NavItem[] = [
 }
 
 .sidebar__nav-section {
-  margin-bottom: 4px;
-  padding: 0 8px;
+  margin-bottom: 2px;
+  padding: 0 6px;
 }
 
 .sidebar__nav-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  color: #9ca3af;
+  color: var(--text-quaternary);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 8px 8px 4px;
+  letter-spacing: 0.06em;
+  padding: 6px 8px 3px;
   white-space: nowrap;
   overflow: hidden;
 }
@@ -594,52 +613,44 @@ const toolNavItems: NavItem[] = [
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
-/* ===== 导航项 ===== */
 .nav-item {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 10px;
-  border-radius: 8px;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: var(--radius-sm);
   border: none;
   background: transparent;
-  color: #4b5563;
-  font-size: 13.5px;
-  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 450;
   cursor: pointer;
-  /* 精细过渡：只用 transform/background/color，不用 all */
-  transition:
-    background 0.14s ease,
-    color 0.14s ease,
-    transform 0.14s ease,
-    box-shadow 0.14s ease;
+  transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease;
   text-align: left;
   white-space: nowrap;
   overflow: hidden;
   position: relative;
-  will-change: transform;
 }
 
 .nav-item:hover:not(.nav-item--active) {
-  background: rgba(79, 126, 248, 0.07);
-  color: #4f7ef8;
-  transform: translateX(3px);
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  transform: translateX(2px);
 }
 
 .nav-item:active {
-  transform: translateX(1px) scale(0.97) !important;
-  transition-duration: 0.06s !important;
+  transform: translateX(0) scale(0.97) !important;
+  transition-duration: 0.05s !important;
 }
 
 .nav-item--active {
-  background: #eff6ff;
-  color: #4f7ef8;
-  font-weight: 600;
-  box-shadow: inset 0 0 0 1px rgba(79, 126, 248, 0.15);
+  background: var(--accent-violet-subtle);
+  color: var(--text-brand-strong);
+  font-weight: 550;
 }
 
 .nav-item--active::before {
@@ -648,12 +659,11 @@ const toolNavItems: NavItem[] = [
   left: 0;
   top: 50%;
   transform: translateY(-50%) scaleY(1);
-  width: 3px;
-  height: 60%;
-  background: #4f7ef8;
-  border-radius: 0 3px 3px 0;
-  /* 进入时弹出 */
-  animation: navIndicatorIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  width: 2px;
+  height: 55%;
+  background: var(--accent-violet);
+  border-radius: 0 2px 2px 0;
+  animation: navIndicatorIn 0.25s var(--ease-spring);
 }
 
 @keyframes navIndicatorIn {
@@ -666,27 +676,27 @@ const toolNavItems: NavItem[] = [
 }
 
 .nav-item__icon {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.2s var(--ease-spring);
 }
 
-/* hover 时图标轻微弹跳 */
 .nav-item:hover .nav-item__icon {
-  transform: scale(1.15);
+  transform: scale(1.1);
 }
 
 .nav-item--active .nav-item__icon {
-  transform: scale(1.08);
+  transform: scale(1.05);
+  color: var(--accent-violet-light);
 }
 
 .nav-item__icon svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .nav-item__label {
@@ -696,191 +706,127 @@ const toolNavItems: NavItem[] = [
 }
 
 .nav-item--download .nav-item__icon {
-  color: #22c55e;
+  color: var(--accent-emerald);
 }
 .nav-item--download:hover {
-  background: #f0fdf4 !important;
-  color: #15803d !important;
+  background: var(--accent-emerald-subtle) !important;
+  color: var(--accent-emerald) !important;
 }
 
 .nav-item__badge {
-  background: #ef4444;
+  background: var(--accent-rose);
   color: white;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
-  padding: 1px 5px;
-  border-radius: 10px;
+  padding: 1px 4px;
+  border-radius: var(--radius-full);
   flex-shrink: 0;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.2s var(--ease-spring);
 }
 
 .nav-item:hover .nav-item__badge {
-  transform: scale(1.1);
-}
-
-/* 折叠状态导航项居中 */
-.sidebar--collapsed .nav-item {
-  justify-content: center;
-  padding: 9px;
-}
-
-.sidebar--collapsed .nav-item:hover {
   transform: scale(1.08);
 }
 
-/* ===== 快速新建按钮升级 ===== */
-.quick-new-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1.5px dashed #dbeafe;
-  background: #f0f7ff;
-  color: #4f7ef8;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 0.18s ease;
-  white-space: nowrap;
-  overflow: hidden;
-  position: relative;
-  will-change: transform;
-}
-
-.quick-new-btn:hover {
-  background: #dbeafe;
-  border-color: #93c5fd;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(79, 126, 248, 0.2);
-}
-
-.quick-new-btn:active {
-  transform: translateY(0) scale(0.97) !important;
-  box-shadow: none !important;
-  transition-duration: 0.07s !important;
-}
-
-/* 快速新建图标旋转 */
-.quick-new-icon {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.quick-new-btn:hover .quick-new-icon {
-  transform: rotate(90deg) scale(1.15);
-}
-
-.sidebar--collapsed .quick-new-btn {
+.sidebar--collapsed .nav-item {
   justify-content: center;
-  padding: 8px;
+  padding: 7px;
 }
 
-/* ===== 底部区域 ===== */
+.sidebar--collapsed .nav-item:hover {
+  transform: scale(1.06);
+}
+
 .sidebar__footer {
-  padding: 8px 8px 12px;
-  border-top: 1px solid #f5f5f5;
+  padding: 6px 6px 8px;
+  border-top: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
-/* 快捷搜索提示 */
 .shortcut-hint {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  color: #9ca3af;
-  font-size: 12.5px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  color: var(--text-quaternary);
+  font-size: 11.5px;
   cursor: pointer;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    transform 0.15s ease,
-    color 0.15s ease;
+  transition: all var(--transition-fast);
 }
 
 .shortcut-hint:hover {
-  background: #f3f4f6;
-  color: #6b7280;
-  border-color: #d1d5db;
+  background: var(--bg-hover);
+  color: var(--text-tertiary);
+  border-color: var(--border-base);
   transform: translateY(-1px);
 }
 
 .shortcut-hint:active {
   transform: translateY(0) scale(0.98) !important;
-  transition-duration: 0.07s !important;
+  transition-duration: 0.05s !important;
 }
 
 .shortcut-icon {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   flex-shrink: 0;
 }
 
 kbd {
   margin-left: auto;
-  background: #e5e7eb;
-  border-radius: 4px;
-  padding: 1px 6px;
-  font-size: 11px;
-  font-family: monospace;
-  color: #6b7280;
+  background: var(--bg-overlay);
+  border-radius: var(--radius-xs);
+  padding: 1px 5px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-quaternary);
+  border: 1px solid var(--border-subtle);
 }
 
-/* ===== 用户信息 ===== */
 .user-info {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 8px;
+  gap: 7px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition:
-    background 0.14s ease,
-    transform 0.14s ease;
+  transition: background 0.12s ease, transform 0.12s ease;
   overflow: hidden;
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 .user-info:hover {
-  background: rgba(79, 126, 248, 0.06);
-  transform: translateX(2px);
+  background: var(--bg-hover);
+  transform: translateX(1px);
 }
 
 .user-info:active {
   transform: translateX(0) scale(0.98) !important;
-  transition-duration: 0.07s !important;
+  transition-duration: 0.05s !important;
 }
 
 .user-info--collapsed {
   justify-content: center;
-  padding: 8px;
+  padding: 6px;
 }
 
 .user-info--collapsed:hover {
-  transform: scale(1.06);
+  transform: scale(1.05);
 }
 
 .user-avatar {
   flex-shrink: 0;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.2s var(--ease-spring);
 }
 
 .user-info:hover .user-avatar {
-  transform: scale(1.08);
+  transform: scale(1.06);
 }
 
 .user-meta {
@@ -891,26 +837,26 @@ kbd {
 }
 
 .user-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: #111827;
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .user-email {
-  font-size: 11px;
-  color: #9ca3af;
+  font-size: 10px;
+  color: var(--text-quaternary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .user-chevron {
-  width: 14px;
-  height: 14px;
-  color: #9ca3af;
+  width: 12px;
+  height: 12px;
+  color: var(--text-quaternary);
   flex-shrink: 0;
   transition: transform 0.2s ease;
 }
@@ -919,53 +865,11 @@ kbd {
   transform: rotate(90deg);
 }
 
-/* ===== 折叠按钮 ===== */
-.sidebar__collapse-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #9ca3af;
-  transition:
-    background 0.15s ease,
-    color 0.15s ease,
-    transform 0.15s ease;
-  flex-shrink: 0;
-  margin-left: auto;
-}
-
-.sidebar__collapse-btn:hover {
-  background: #f3f4f6;
-  color: #374151;
-  transform: scale(1.1);
-}
-
-.sidebar__collapse-btn:active {
-  transform: scale(0.92) !important;
-  transition-duration: 0.07s !important;
-}
-
-.collapse-icon {
-  width: 16px;
-  height: 16px;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.rotate-180 {
-  transform: rotate(180deg);
-}
-
-/* ===== 文字淡入淡出动画 ===== */
 .fade-text-enter-active,
 .fade-text-leave-active {
   transition:
-    opacity 0.15s ease,
-    max-width 0.25s ease;
+    opacity 0.12s ease,
+    max-width 0.2s ease;
   overflow: hidden;
 }
 
@@ -978,6 +882,6 @@ kbd {
 .fade-text-enter-to,
 .fade-text-leave-from {
   opacity: 1;
-  max-width: 200px;
+  max-width: 180px;
 }
 </style>

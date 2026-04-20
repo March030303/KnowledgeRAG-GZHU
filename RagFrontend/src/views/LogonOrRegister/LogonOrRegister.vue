@@ -274,7 +274,7 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 2px;
-  background: linear-gradient(90deg, transparent 0%, rgba(56, 189, 248, 0.4) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(124, 106, 255, 0.4) 50%, transparent 100%);
   animation: scan 6s linear infinite;
 }
 @keyframes scan {
