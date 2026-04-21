@@ -7,15 +7,20 @@
     @click="$emit('click')"
   >
     <!-- 置顶徽章 -->
-    <div v-if="pinned" class="kb-card__pin-badge">📌 置顶</div>
+    <div v-if="pinned" class="kb-card__pin-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+      </svg>
+      置顶
+    </div>
     <!-- 封面颜色条（基于title hash） -->
     <div class="kb-card__color-bar" :style="{ background: cardColor }"></div>
     <!-- 卡片主体 -->
     <div class="kb-card__body">
       <div class="kb-card__top">
         <!-- 图标 -->
-        <div class="kb-card__icon" :style="{ background: cardColorLight }">
-          <svg viewBox="0 0 24 24" fill="none" :stroke="cardColorDark" stroke-width="2">
+        <div class="kb-card__icon" :style="{ background: cardColorSubtle, borderColor: cardColorSubtle }">
+          <svg viewBox="0 0 24 24" fill="none" :stroke="cardColor" stroke-width="1.8">
             <path
               stroke-linecap="round"
               d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
@@ -35,7 +40,7 @@
               :class="{ 'like-pop': pinAnimating }"
               viewBox="0 0 24 24"
               fill="none"
-              :stroke="pinned ? '#4f7ef8' : 'currentColor'"
+              :stroke="pinned ? 'var(--accent-indigo)' : 'currentColor'"
               stroke-width="2"
             >
               <path
@@ -129,15 +134,22 @@ const handlePin = () => {
   }, 400)
   emit('pin')
 }
-// 颜色方案基于title hash
+// 颜色方案基于title hash（暗色主题优化版）
 const COLOR_SETS = [
-  { bar: 'linear-gradient(135deg,#4f7ef8,#818cf8)', light: '#eff6ff', dark: '#4f7ef8' },
-  { bar: 'linear-gradient(135deg,#10b981,#34d399)', light: '#f0fdf4', dark: '#059669' },
-  { bar: 'linear-gradient(135deg,#f59e0b,#fbbf24)', light: '#fffbeb', dark: '#d97706' },
-  { bar: 'linear-gradient(135deg,#ec4899,#f472b6)', light: '#fdf2f8', dark: '#db2777' },
-  { bar: 'linear-gradient(135deg,#8b5cf6,#a78bfa)', light: '#f5f3ff', dark: '#7c3aed' },
-  { bar: 'linear-gradient(135deg,#14b8a6,#2dd4bf)', light: '#f0fdfa', dark: '#0d9488' },
-  { bar: 'linear-gradient(135deg,#f97316,#fb923c)', light: '#fff7ed', dark: '#ea580c' }
+  // Indigo系 — 与主题主色呼应
+  { bar: 'linear-gradient(135deg, #6366f1, #818cf8)', subtle: 'rgba(99, 102, 241, 0.12)', glow: 'rgba(99, 102, 241, 0.3)' },
+  // Emerald系 — 清新绿
+  { bar: 'linear-gradient(135deg, #10b981, #34d399)', subtle: 'rgba(16, 185, 129, 0.12)', glow: 'rgba(16, 185, 129, 0.3)' },
+  // Amber系 — 温暖金
+  { bar: 'linear-gradient(135deg, #f59e0b, #fbbf24)', subtle: 'rgba(245, 158, 11, 0.12)', glow: 'rgba(245, 158, 11, 0.3)' },
+  // Rose系 — 玫瑰粉
+  { bar: 'linear-gradient(135deg, #ec4899, #f472b6)', subtle: 'rgba(236, 72, 153, 0.12)', glow: 'rgba(236, 72, 153, 0.3)' },
+  // Violet系 — 紫罗兰
+  { bar: 'linear-gradient(135deg, #8b5cf6, #a78bfa)', subtle: 'rgba(139, 92, 246, 0.12)', glow: 'rgba(139, 92, 246, 0.3)' },
+  // Teal系 — 蓝绿
+  { bar: 'linear-gradient(135deg, #14b8a6, #2dd4bf)', subtle: 'rgba(20, 184, 166, 0.12)', glow: 'rgba(20, 184, 166, 0.3)' },
+  // Orange系 — 活力橙
+  { bar: 'linear-gradient(135deg, #f97316, #fb923c)', subtle: 'rgba(249, 115, 22, 0.12)', glow: 'rgba(249, 115, 22, 0.3)' }
 ]
 const colorIndex = computed(() => {
   let hash = 0
@@ -146,9 +158,9 @@ const colorIndex = computed(() => {
   }
   return Math.abs(hash) % COLOR_SETS.length
 })
-const cardColor = computed(() => COLOR_SETS[colorIndex.value].bar)
-const cardColorLight = computed(() => COLOR_SETS[colorIndex.value].light)
-const cardColorDark = computed(() => COLOR_SETS[colorIndex.value].dark)
+const cardColor = computed(() => COLOR_SETS[colorIndex.value].bar.split(',')[0].replace('linear-gradient(135deg, ', '').trim())
+const cardColorSubtle = computed(() => COLOR_SETS[colorIndex.value].subtle)
+const cardGlow = computed(() => COLOR_SETS[colorIndex.value].glow)
 const formattedTime = computed(() => {
   const t = props.card.createdTime
   if (!t) return ''
@@ -176,68 +188,99 @@ const handleDropdown = (data: any) => {
 }
 </script>
 <style scoped>
+/* ===== 卡片主体 — 暗色主题 ===== */
 .kb-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--glass-border);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-base);
   overflow: hidden;
   cursor: pointer;
   position: relative;
+  /* Galaxy/Linear风格过渡 */
   transition:
-    transform 0.22s var(--ease-out),
-    box-shadow 0.22s ease,
-    border-color 0.22s ease;
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.2s ease,
+    background 0.2s ease;
   will-change: transform, box-shadow;
 }
+/* Hover：浮起 + Linear式Glow阴影 + 边框发光 */
 .kb-card:hover {
-  transform: translateY(-4px) scale(1.005);
-  box-shadow: var(--shadow-lg), var(--shadow-glow);
-  border-color: rgba(124, 106, 255, 0.25);
+  transform: translateY(-5px) scale(1.01);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.5),
+    0 8px 16px rgba(0, 0, 0, 0.3),
+    0 0 0 1px var(--border-active);
+  border-color: var(--border-active);
 }
+/* active：按下感（spring回弹） */
 .kb-card:active {
-  transform: translateY(-1px) scale(0.99) !important;
-  box-shadow: var(--shadow-sm) !important;
+  transform: translateY(-1px) scale(0.985) !important;
   transition-duration: 0.08s !important;
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.3) !important;
 }
+/* 星标状态 */
 .kb-card--starred {
-  border-color: rgba(251, 191, 36, 0.3);
+  border-color: rgba(245, 158, 11, 0.25);
 }
 .kb-card--starred:hover {
-  border-color: rgba(251, 191, 36, 0.5);
-  box-shadow: var(--shadow-lg), 0 0 24px rgba(251, 191, 36, 0.12);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.5),
+    0 0 24px rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.4);
 }
+/* 置顶状态 */
 .kb-card--pinned {
-  border-color: rgba(124, 106, 255, 0.3);
-  box-shadow: 0 0 0 1px rgba(124, 106, 255, 0.15);
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.1);
 }
 .kb-card--pinned:hover {
-  box-shadow: var(--shadow-lg), var(--shadow-glow);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.5),
+    0 0 28px rgba(99, 102, 241, 0.15),
+    0 0 0 1px rgba(99, 102, 241, 0.3);
+  border-color: rgba(99, 102, 241, 0.5);
 }
+/* 置顶徽章 */
 .kb-card__pin-badge {
   position: absolute;
-  top: 6px;
-  left: 8px;
+  top: 8px;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 10px;
-  background: var(--gradient-brand);
-  color: white;
-  padding: 2px 7px;
-  border-radius: var(--radius-sm);
-  z-index: 2;
   font-weight: 600;
-  letter-spacing: 0.3px;
+  background: var(--gradient-brand);
+  color: #fff;
+  padding: 3px 8px 3px 5px;
+  border-radius: var(--radius-full);
+  z-index: 2;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+  animation: pinBadgePop var(--transition-spring) ease-out both;
 }
-.pin-btn--active {
-  color: var(--accent-violet-light);
+.kb-card__pin-badge svg {
+  width: 11px;
+  height: 11px;
+  fill: #fff;
+  stroke: #fff;
 }
+@keyframes pinBadgePop {
+  0% { opacity: 0; transform: scale(0.6) translateY(-4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+/* 顶部颜色条 */
 .kb-card__color-bar {
-  height: 4px;
+  height: 3px;
   width: 100%;
-  transition: height 0.2s ease;
+  transition: height 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
 }
 .kb-card:hover .kb-card__color-bar {
-  height: 5px;
+  height: 4px;
+  opacity: 0.85;
 }
 .kb-card__body {
   padding: 14px 14px 12px;
@@ -248,80 +291,98 @@ const handleDropdown = (data: any) => {
   justify-content: space-between;
   margin-bottom: 10px;
 }
+/* 图标 — Galaxy风格发光hover */
 .kb-card__icon {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-sm);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: transform 0.2s var(--ease-spring);
+  border: 1px solid transparent;
+  transition:
+    transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    border-color 0.2s ease,
+    box-shadow 0.25s ease;
 }
 .kb-card:hover .kb-card__icon {
-  transform: scale(1.08) rotate(-3deg);
+  transform: scale(1.1) rotate(-3deg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 .kb-card__icon svg {
   width: 20px;
   height: 20px;
+  transition: transform 0.25s ease;
 }
+/* 操作按钮：平时透明，卡片hover时显示 */
 .kb-card__actions {
   display: flex;
   gap: 2px;
   opacity: 0;
-  transform: translateY(-3px);
+  transform: translateY(-4px) scale(0.95);
   transition:
-    opacity 0.18s ease,
-    transform 0.18s ease;
+    opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .kb-card:hover .kb-card__actions {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
 }
+/* 星标始终亮着 */
 .kb-card--starred .kb-card__actions,
 .kb-card--starred .star-btn {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
 }
 .action-btn {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border: none;
-  background: transparent;
-  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-quaternary);
+  color: var(--text-secondary);
   transition:
     background 0.15s ease,
     color 0.15s ease,
-    transform 0.15s ease;
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   overflow: hidden;
   position: relative;
 }
 .action-btn:hover {
-  background: var(--accent-violet-subtle);
-  color: var(--accent-violet-light);
+  background: var(--accent-indigo-subtle);
+  color: var(--accent-indigo);
   transform: scale(1.12);
 }
 .action-btn:active {
-  transform: scale(0.9) !important;
+  transform: scale(0.88) !important;
   transition-duration: 0.06s !important;
 }
 .action-btn svg {
   width: 15px;
   height: 15px;
-  transition: transform 0.15s ease;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+/* 星标激活 */
 .star-btn--active {
-  color: var(--accent-amber);
+  color: #f59e0b;
 }
 .star-btn--active:hover {
   background: var(--accent-amber-subtle) !important;
-  color: var(--accent-amber) !important;
+  color: #d97706 !important;
 }
+/* 置顶激活 */
+.pin-btn--active {
+  color: var(--accent-indigo);
+}
+.pin-btn--active:hover {
+  background: var(--accent-indigo-subtle) !important;
+}
+/* ===== 文字 ===== */
 .kb-card__title {
   font-size: 14.5px;
   font-weight: 600;
@@ -345,7 +406,12 @@ const handleDropdown = (data: any) => {
   -webkit-box-orient: vertical;
   overflow: hidden;
   line-height: 1.5;
+  transition: color 0.2s ease;
 }
+.kb-card:hover .kb-card__desc {
+  color: var(--text-primary);
+}
+/* ===== 底部 ===== */
 .kb-card__footer {
   display: flex;
   align-items: center;
@@ -354,7 +420,11 @@ const handleDropdown = (data: any) => {
 }
 .kb-card__time {
   font-size: 11.5px;
-  color: var(--text-quaternary);
+  color: var(--text-tertiary);
+  transition: color 0.2s ease;
+}
+.kb-card:hover .kb-card__time {
+  color: var(--text-secondary);
 }
 .kb-card__tags {
   display: flex;
@@ -362,21 +432,34 @@ const handleDropdown = (data: any) => {
 }
 .kb-card__tag {
   font-size: 10.5px;
-  padding: 1px 7px;
-  background: var(--bg-elevated);
+  font-weight: 500;
+  padding: 2px 8px;
+  background: var(--bg-subtle);
   color: var(--text-tertiary);
   border-radius: var(--radius-full);
   border: 1px solid var(--border-subtle);
+  letter-spacing: 0.02em;
   transition:
     background 0.2s ease,
     color 0.2s ease,
     border-color 0.2s ease;
 }
 .kb-card:hover .kb-card__tag {
-  background: var(--accent-violet-subtle);
-  color: var(--accent-violet-light);
-  border-color: rgba(124, 106, 255, 0.15);
+  background: var(--accent-indigo-subtle);
+  color: var(--text-brand);
+  border-color: var(--border-brand);
 }
+/* ===== like-pop动画（Galaxy风格弹簧） ===== */
+.like-pop {
+  animation: likeSpring var(--transition-spring) both;
+}
+@keyframes likeSpring {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.4) rotate(8deg); }
+  60% { transform: scale(0.9) rotate(-4deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+/* ===== 紧凑模式 ===== */
 .kb-card--compact .kb-card__body {
   padding: 10px 12px;
 }

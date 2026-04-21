@@ -397,3 +397,134 @@ html, body {
 .orb--cyan {
   background: rgba(34, 211, 238, 0.06);
 }
+
+/* ===== Linear 设计系统扩展 — 暗色主题专属 ===== */
+
+/* 背景层级 */
+.bg-base    { background: var(--bg-base) !important; }
+.bg-surface { background: var(--bg-surface) !important; }
+.bg-elevated { background: var(--bg-elevated) !important; }
+.bg-overlay { background: var(--bg-overlay) !important; }
+.bg-hover   { background: var(--bg-hover) !important; }
+
+/* 文字层级 */
+.text-primary   { color: var(--text-primary) !important; }
+.text-secondary  { color: var(--text-secondary) !important; }
+.text-tertiary  { color: var(--text-tertiary) !important; }
+.text-brand      { color: var(--text-brand) !important; }
+
+/* 边框层级 */
+.border-base    { border-color: var(--border-base) !important; }
+.border-active  { border-color: var(--border-active) !important; }
+.border-brand   { border-color: var(--border-brand) !important; }
+
+/* 圆角 */
+.radius-sm   { border-radius: var(--radius-sm) !important; }
+.radius-md   { border-radius: var(--radius-md) !important; }
+.radius-lg   { border-radius: var(--radius-lg) !important; }
+.radius-xl   { border-radius: var(--radius-xl) !important; }
+.radius-full { border-radius: var(--radius-full) !important; }
+
+/* 阴影 */
+.shadow-sm   { box-shadow: var(--shadow-sm) !important; }
+.shadow-md   { box-shadow: var(--shadow-md) !important; }
+.shadow-lg   { box-shadow: var(--shadow-lg) !important; }
+.shadow-glow { box-shadow: var(--shadow-glow) !important; }
+
+/* 渐变 */
+.gradient-brand    { background: var(--gradient-brand) !important; }
+.gradient-surface  { background: var(--gradient-surface) !important; }
+.gradient-glow     { background: var(--gradient-glow) !important; }
+
+/* 过渡动画 */
+.transition-fast   { transition: all var(--transition-fast) !important; }
+.transition-normal { transition: all var(--transition-normal) !important; }
+.transition-slow   { transition: all var(--transition-slow) !important; }
+.transition-spring { transition: all var(--transition-spring) !important; }
+
+/* TDesign 暗色组件覆盖 */
+.t-head-menu { background: transparent !important; }
+.t-header { background: var(--bg-surface) !important; border-color: var(--border-base) !important; }
+.t-menu { background: transparent !important; border: none !important; }
+.t-menu__logo { background: transparent !important; }
+.t-menu-item { color: var(--text-secondary) !important; border-radius: var(--radius-md) !important; }
+.t-menu-item:hover { color: var(--text-primary) !important; background: var(--bg-hover) !important; }
+.t-menu-item.is-active { color: var(--text-brand-strong) !important; }
+
+/* 暗色输入框 */
+.t-input__inner,
+.t-textarea__inner {
+  background: var(--bg-elevated) !important;
+  border-color: var(--border-base) !important;
+  color: var(--text-primary) !important;
+}
+.t-input:focus-within,
+.t-textarea:focus-within {
+  border-color: var(--border-brand) !important;
+  box-shadow: 0 0 0 3px var(--accent-indigo-subtle) !important;
+}
+.t-input__placeholder { color: var(--text-tertiary) !important; }
+
+/* 暗色下拉框 */
+.t-select-input { background: var(--bg-elevated) !important; border-color: var(--border-base) !important; color: var(--text-primary) !important; }
+.t-select-dropdown { background: var(--bg-overlay) !important; border-color: var(--border-base) !important; }
+.t-select-dropdown .t-select-option { color: var(--text-primary) !important; }
+.t-select-dropdown .t-select-option:hover { background: var(--bg-hover) !important; }
+
+/* 暗色消息提示 */
+.t-message__text { color: var(--text-primary) !important; }
+
+/* 暗色工具提示 */
+.t-tooltip__content { background: var(--bg-overlay) !important; border-color: var(--border-base) !important; color: var(--text-primary) !important; }
+
+/* 暗色分页 */
+.t-pagination .t-select { background: var(--bg-elevated) !important; border-color: var(--border-base) !important; }
+.t-pagination .t-pager li { background: var(--bg-elevated) !important; color: var(--text-secondary) !important; border-color: var(--border-base) !important; }
+.t-pagination .t-pager li.is-current { background: var(--accent-indigo) !important; color: #fff !important; border-color: var(--accent-indigo) !important; }
+
+/* 暗色表格 */
+.t-table { background: var(--bg-elevated) !important; color: var(--text-primary) !important; }
+.t-table th, .t-table td { background: var(--bg-elevated) !important; border-color: var(--border-base) !important; }
+.t-table thead tr { background: var(--bg-surface) !important; }
+.t-table tbody tr:hover td { background: var(--bg-hover) !important; }
+
+/* 暗色标签 */
+.t-tag { background: var(--bg-elevated) !important; color: var(--text-secondary) !important; border-color: var(--border-base) !important; }
+.t-tag--primary { background: var(--accent-indigo-subtle) !important; color: var(--text-brand-strong) !important; border-color: var(--border-brand) !important; }
+
+/* 暗色标签页 */
+.t-tabs .t-tabs__nav { background: transparent !important; }
+.t-tabs .t-tabs__item { color: var(--text-secondary) !important; }
+.t-tabs .t-tabs__item.is-active { color: var(--text-brand-strong) !important; }
+.t-tabs .t-tabs__content-wrapper { background: transparent !important; }
+
+/* 暗色弹出层 */
+.t-popup { background: var(--bg-overlay) !important; border-color: var(--border-base) !important; box-shadow: var(--shadow-lg) !important; }
+.t-popup__content { background: var(--bg-overlay) !important; border-color: var(--border-base) !important; }
+
+/* 暗色进度条 */
+.t-progress__inner { background: var(--gradient-brand) !important; }
+.t-progress__outer { background: var(--bg-elevated) !important; border-color: var(--border-base) !important; }
+
+/* 暗色穿梭框 */
+.t-transfer__list { background: var(--bg-elevated) !important; border-color: var(--border-base) !important; }
+.t-transfer__list-header { background: var(--bg-surface) !important; border-color: var(--border-base) !important; color: var(--text-primary) !important; }
+.t-transfer__list-item { color: var(--text-secondary) !important; }
+.t-transfer__list-item:hover { background: var(--bg-hover) !important; color: var(--text-primary) !important; }
+
+/* 暗色分割线 */
+.t-divider { background: var(--border-base) !important; }
+
+/* 暗色步骤条 */
+.t-steps .t-step { color: var(--text-secondary) !important; }
+.t-steps .t-step__title { color: var(--text-secondary) !important; }
+.t-steps .t-step--finish .t-step__title { color: var(--text-primary) !important; }
+.t-steps .t-step__icon { background: var(--bg-elevated) !important; border-color: var(--border-base) !important; }
+.t-steps .t-step--finish .t-step__icon { background: var(--accent-indigo-subtle) !important; border-color: var(--border-brand) !important; }
+
+/* 暗色日期选择器 */
+.t-date-picker__panel { background: var(--bg-overlay) !important; border-color: var(--border-base) !important; }
+.t-date-picker__header { color: var(--text-primary) !important; }
+.t-date-picker__cell { color: var(--text-secondary) !important; }
+.t-date-picker__cell:hover { background: var(--bg-hover) !important; }
+.t-date-picker__cell--actived { background: var(--accent-indigo) !important; color: #fff !important; }

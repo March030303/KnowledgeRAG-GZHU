@@ -1,21 +1,19 @@
 <template>
   <main class="kb-page">
-    <!-- 顶部欢迎区域 -->
+    <!-- 顶部欢迎区域 — Linear风格 -->
     <div class="kb-header">
       <div class="kb-header__left">
+        <div class="kb-header__meta">
+          <div class="kb-header__dot"></div>
+          <span class="kb-header__status">活跃</span>
+        </div>
         <h1 class="kb-title">知识库</h1>
         <p class="kb-subtitle">管理和检索你的所有知识内容</p>
       </div>
       <div class="kb-header__right">
-        <!-- 搜索框 -->
+        <!-- 搜索框 — Linear风格 -->
         <div class="kb-search-wrapper">
-          <svg
-            class="kb-search-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
+          <svg class="kb-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8" />
             <path stroke-linecap="round" d="M21 21l-4.35-4.35" />
           </svg>
@@ -27,24 +25,20 @@
             @input="handleSearch"
           />
           <button v-if="searchKeyword" class="kb-search-clear" @click="clearSearchKeyword">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <path stroke-linecap="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
         <!-- 去广场按钮 -->
-        <button class="kb-square-btn" @click="$router.push('/square')">
+        <button class="kb-btn kb-btn--ghost" @click="$router.push('/square')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           知识广场
         </button>
-        <!-- 新建按钮 -->
-        <button class="kb-create-btn" @click="toggleUploadModal">
+        <!-- 新建按钮 — Linear渐变 -->
+        <button class="kb-btn kb-btn--primary" @click="toggleUploadModal">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path stroke-linecap="round" d="M12 4v16m8-8H4" />
           </svg>
@@ -52,11 +46,21 @@
         </button>
       </div>
     </div>
-    <!-- 创建知识库弹窗 -->
+    <!-- 创建知识库弹窗 — Linear毛玻璃风格 -->
     <div v-if="showCreateModal" class="modal-overlay" @click.self="showCreateModal = false">
-      <div class="modal-card">
+      <div class="modal-card animate-fade-in-scale">
         <div class="modal-header">
-          <h3>新建知识库</h3>
+          <div class="modal-header__left">
+            <div class="modal-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="modal-title">新建知识库</h3>
+              <p class="modal-subtitle">创建一个新的知识空间，开始整理你的知识</p>
+            </div>
+          </div>
           <button class="modal-close" @click="showCreateModal = false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" d="M6 18L18 6M6 6l12 12" />
@@ -68,24 +72,39 @@
           <input
             type="text"
             v-model="kbName"
-            placeholder="输入知识库名称..."
+            placeholder="例如：产品文档、设计规范、会议记录..."
             class="modal-input"
             @keydown.enter="createKnowledgeBase"
+            ref="kbNameInput"
           />
+          <div class="modal-hints">
+            <span class="modal-hint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              名称将用于知识库的显示和搜索
+            </span>
+          </div>
         </div>
         <div class="modal-footer">
-          <button class="btn-cancel" @click="showCreateModal = false">取消</button>
-          <button class="btn-confirm" @click="createKnowledgeBase" :disabled="!kbName.trim()">
-            创建
+          <button class="kb-btn kb-btn--ghost" @click="showCreateModal = false">取消</button>
+          <button class="kb-btn kb-btn--primary" @click="createKnowledgeBase" :disabled="!kbName.trim()">
+            创建知识库
           </button>
         </div>
       </div>
     </div>
     <!-- 搜索状态 -->
-    <div v-if="isSearching" class="kb-section">
+    <div v-if="isSearching" class="kb-section animate-fade-in">
       <div class="kb-section__header">
-        <span class="kb-section__title">搜索结果</span>
-        <span class="kb-section__count">{{ filteredCards.length }} 个知识库</span>
+        <span class="kb-section__title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <path stroke-linecap="round" d="M21 21l-4.35-4.35" />
+          </svg>
+          搜索结果
+        </span>
+        <span class="kb-count">{{ filteredCards.length }} 个知识库</span>
       </div>
       <div v-if="filteredCards.length > 0" class="kb-grid">
         <KbCard
@@ -101,27 +120,27 @@
         />
       </div>
       <div v-else class="kb-empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="11" cy="11" r="8" />
-          <path stroke-linecap="round" d="M21 21l-4.35-4.35" />
-        </svg>
-        <p>没有找到 "{{ searchKeyword }}" 相关知识库</p>
+        <div class="kb-empty__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="11" cy="11" r="8" />
+            <path stroke-linecap="round" d="M21 21l-4.35-4.35" />
+          </svg>
+        </div>
+        <p class="kb-empty__title">没有找到 "{{ searchKeyword }}" 相关知识库</p>
+        <p class="kb-empty__hint">尝试其他关键词，或创建新的知识库</p>
       </div>
     </div>
     <template v-else>
       <!-- 星标知识库 -->
-      <div v-if="starredCards.length > 0" class="kb-section">
+      <div v-if="starredCards.length > 0" class="kb-section animate-fade-in">
         <div class="kb-section__header">
           <span class="kb-section__title">
             <svg viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="1.5">
-              <path
-                stroke-linecap="round"
-                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-              />
+              <path stroke-linecap="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
             </svg>
             星标知识库
           </span>
-          <span class="kb-section__count">{{ starredCards.length }}</span>
+          <span class="kb-count">{{ starredCards.length }}</span>
         </div>
         <div class="kb-grid">
           <KbCard
@@ -138,15 +157,15 @@
         </div>
       </div>
       <!-- 最近访问 -->
-      <div v-if="recentCards.length > 0" class="kb-section">
+      <div v-if="recentCards.length > 0" class="kb-section animate-fade-in stagger-1">
         <div class="kb-section__header">
           <span class="kb-section__title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             最近访问
           </span>
-          <span class="kb-section__count">{{ recentCards.length }}</span>
+          <span class="kb-count">{{ recentCards.length }}</span>
         </div>
         <div class="kb-grid kb-grid--compact">
           <KbCard
@@ -164,34 +183,43 @@
         </div>
       </div>
       <!-- 全部知识库 -->
-      <div class="kb-section">
+      <div class="kb-section animate-fade-in stagger-2">
         <div class="kb-section__header">
           <span class="kb-section__title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
             </svg>
             全部知识库
           </span>
-          <div style="display: flex; align-items: center; gap: 10px">
-            <span v-if="isDragMode" class="kb-drag-hint">拖拽排序中 · 松手完成</span>
+          <div class="kb-header__controls">
+            <span v-if="isDragMode" class="drag-hint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" d="M5 9l4 4 4-4M5 15l4 4 4-4" />
+              </svg>
+              拖拽排序中
+            </span>
             <button
-              class="kb-drag-toggle"
-              :class="{ active: isDragMode }"
+              class="kb-btn kb-btn--ghost kb-btn--sm"
+              :class="{ 'kb-btn--active': isDragMode }"
               @click="isDragMode = !isDragMode"
-              title="拖拽排序"
+              :title="isDragMode ? '完成排序' : '拖拽排序'"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" d="M4 8h16M4 12h16M4 16h16" />
               </svg>
               {{ isDragMode ? '完成排序' : '排序' }}
             </button>
-            <span class="kb-section__count">{{ sortableCards.length }}</span>
+            <span class="kb-count">{{ sortableCards.length }}</span>
           </div>
         </div>
+        <!-- 加载状态 -->
         <div v-if="cardDataStore.loading" class="kb-loading">
-          <div class="kb-spinner"></div>
-          <span>加载知识库...</span>
+          <div class="loading-spinner">
+            <div class="spinner-ring"></div>
+          </div>
+          <span>正在加载知识库...</span>
         </div>
+        <!-- 知识库网格 -->
         <div
           v-else-if="sortableCards.length > 0"
           class="kb-grid"
@@ -213,15 +241,15 @@
             @drop="onDrop($event, index)"
             @dragend="onDragEnd"
           >
-            <!-- 拖拽模式下的抓手图标 -->
+            <!-- 拖拽抓手 -->
             <div v-if="isDragMode" class="kb-drag-handle">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="9" cy="5" r="1" fill="currentColor" />
-                <circle cx="15" cy="5" r="1" fill="currentColor" />
-                <circle cx="9" cy="12" r="1" fill="currentColor" />
-                <circle cx="15" cy="12" r="1" fill="currentColor" />
-                <circle cx="9" cy="19" r="1" fill="currentColor" />
-                <circle cx="15" cy="19" r="1" fill="currentColor" />
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="9" cy="5" r="1.5" />
+                <circle cx="15" cy="5" r="1.5" />
+                <circle cx="9" cy="12" r="1.5" />
+                <circle cx="15" cy="12" r="1.5" />
+                <circle cx="9" cy="19" r="1.5" />
+                <circle cx="15" cy="19" r="1.5" />
               </svg>
             </div>
             <KbCard
@@ -234,22 +262,25 @@
               @delete="deleteCard(card)"
             />
           </div>
-          <!-- 结束占位符 -->
+          <!-- 结束占位符 — Linear风格 -->
           <div class="kb-card-end">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <div class="kb-card-end__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
             <p>Nothing more</p>
           </div>
         </div>
+        <!-- 空状态 -->
         <div v-else class="kb-empty">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path
-              stroke-linecap="round"
-              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-            />
-          </svg>
-          <p>还没有知识库，点击右上角创建一个吧</p>
+          <div class="kb-empty__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+          </div>
+          <p class="kb-empty__title">还没有知识库</p>
+          <p class="kb-empty__hint">点击右上角「新建知识库」开始整理你的知识</p>
         </div>
       </div>
     </template>
@@ -257,7 +288,7 @@
 </template>
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { MessagePlugin } from 'tdesign-vue-next'
 import axios from 'axios'
@@ -279,7 +310,6 @@ const clearSearchKeyword = () => {
 }
 // 导航
 const goToDetail = (id: string) => {
-  // 记录最近访问
   recordRecent(id)
   router.push(`/knowledge/knowledgeDetail/${id}`)
 }
@@ -352,16 +382,17 @@ const recentCards = computed(() => {
 // ======= 创建知识库 =======
 const showCreateModal = ref(false)
 const kbName = ref('')
+const kbNameInput = ref<HTMLInputElement | null>(null)
 const toggleUploadModal = () => {
   showCreateModal.value = true
   kbName.value = ''
+  nextTick(() => kbNameInput.value?.focus())
 }
 const createKnowledgeBase = async () => {
   if (!kbName.value.trim()) return
   try {
     const formData = new FormData()
     formData.append('kbName', kbName.value)
-    // 写入 owner_id，绑定到当前登录用户
     const userInfo = (() => {
       try {
         return JSON.parse(localStorage.getItem('user_info') || '{}')
@@ -391,7 +422,6 @@ const deleteCard = async (card: any) => {
   try {
     await axios.delete(`/api/delete-knowledgebase/${card.id}`)
     MessagePlugin.success(`知识库「${card.title}」已删除`)
-    // 从星标/最近移除
     starredIds.value.delete(card.id)
     recentIds.value = recentIds.value.filter(id => id !== card.id)
     localStorage.setItem(STAR_KEY, JSON.stringify([...starredIds.value]))
@@ -401,7 +431,6 @@ const deleteCard = async (card: any) => {
     MessagePlugin.error('删除失败')
   }
 }
-
 onMounted(async () => {
   loadStarred()
   loadRecent()
@@ -412,9 +441,7 @@ onMounted(async () => {
 const DRAG_ORDER_KEY = 'kb_card_order'
 const isDragMode = ref(false)
 const dragIndex = ref<number | null>(null)
-
 const dragOverIndex = ref<number | null>(null)
-// 可拖拽的知识库列表（持久化自定义顺序）
 const customOrder = ref<string[]>([])
 const loadOrder = () => {
   try {
@@ -427,7 +454,6 @@ const loadOrder = () => {
 const saveOrder = () => {
   localStorage.setItem(DRAG_ORDER_KEY, JSON.stringify(customOrder.value.map(id => id)))
 }
-// 按自定义顺序排列的卡片列表（置顶优先）
 const sortableCards = computed(() => {
   const cards = [...allCards.value]
   if (customOrder.value.length === 0) {
@@ -447,7 +473,6 @@ const sortableCards = computed(() => {
     return ai - bi
   })
 })
-// 当 allCards 变化时同步更新 customOrder（新增的卡片追加到末尾）
 watch(
   allCards,
   newCards => {
@@ -461,15 +486,9 @@ watch(
   },
   { immediate: true }
 )
-const onDragStart = (_e: DragEvent, index: number) => {
-  dragIndex.value = index
-}
-const onDragOver = (_e: DragEvent, index: number) => {
-  dragOverIndex.value = index
-}
-const onDragLeave = () => {
-  dragOverIndex.value = null
-}
+const onDragStart = (_e: DragEvent, index: number) => { dragIndex.value = index }
+const onDragOver = (_e: DragEvent, index: number) => { dragOverIndex.value = index }
+const onDragLeave = () => { dragOverIndex.value = null }
 const onDrop = (_e: DragEvent, dropIndex: number) => {
   if (dragIndex.value === null || dragIndex.value === dropIndex) return
   const cards = [...sortableCards.value]
@@ -484,41 +503,150 @@ const onDragEnd = () => {
   dragIndex.value = null
   dragOverIndex.value = null
 }
-// 初始化时加载顺序
 loadOrder()
 </script>
 <style scoped>
+/* ===== 页面 — 暗色主题 ===== */
 .kb-page {
   height: 100vh;
   overflow-y: auto;
-  padding: 28px 32px;
+  padding: 28px 32px 48px;
   background: var(--bg-base);
-  scrollbar-width: thin;
+  /* 顶部微渐变光晕 */
+  position: relative;
 }
+.kb-page::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 300px;
+  background: radial-gradient(ellipse 60% 200px at 30% 0%, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+/* ===== 顶部区域 ===== */
 .kb-header {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 28px;
+  margin-bottom: 32px;
   flex-wrap: wrap;
   gap: 16px;
 }
+.kb-header__left {}
+.kb-header__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.kb-header__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-emerald);
+  box-shadow: 0 0 6px var(--accent-emerald);
+  animation: pulseDot 2.5s ease-in-out infinite;
+}
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
+}
+.kb-header__status {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent-emerald);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 .kb-title {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 700;
   color: var(--text-primary);
-  margin: 0;
+  margin: 0 0 4px;
+  letter-spacing: -0.03em;
 }
 .kb-subtitle {
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--text-tertiary);
-  margin: 3px 0 0;
+  margin: 0;
+  letter-spacing: -0.01em;
 }
 .kb-header__right {
   display: flex;
   align-items: center;
   gap: 10px;
 }
+/* ===== 按钮系统 — Linear风格 ===== */
+.kb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  border: none;
+  white-space: nowrap;
+  font-family: inherit;
+  letter-spacing: -0.01em;
+}
+.kb-btn svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+/* 主按钮 — 渐变 */
+.kb-btn--primary {
+  background: var(--gradient-brand);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+}
+.kb-btn--primary:hover:not(:disabled) {
+  filter: brightness(1.12);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.5);
+  transform: translateY(-1px);
+}
+.kb-btn--primary:active:not(:disabled) {
+  transform: translateY(0);
+  filter: brightness(0.95);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+.kb-btn--primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+/* 次要按钮 — 毛玻璃描边 */
+.kb-btn--ghost {
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-base);
+}
+.kb-btn--ghost:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--border-active);
+}
+.kb-btn--ghost:active {
+  transform: scale(0.97);
+}
+.kb-btn--sm {
+  padding: 5px 12px;
+  font-size: 12.5px;
+}
+.kb-btn--active {
+  background: var(--accent-indigo-subtle) !important;
+  color: var(--text-brand) !important;
+  border-color: var(--border-brand) !important;
+}
+/* ===== 搜索框 ===== */
 .kb-search-wrapper {
   display: flex;
   align-items: center;
@@ -528,18 +656,22 @@ loadOrder()
   border-radius: var(--radius-md);
   padding: 7px 12px;
   width: 220px;
-  transition: all 0.2s;
+  transition: all var(--transition-normal);
 }
 .kb-search-wrapper:focus-within {
   border-color: var(--border-brand);
-  box-shadow: 0 0 0 2px var(--accent-violet-subtle);
+  box-shadow: 0 0 0 3px var(--accent-indigo-subtle);
   width: 280px;
 }
 .kb-search-icon {
   width: 16px;
   height: 16px;
-  color: var(--text-quaternary);
+  color: var(--text-tertiary);
   flex-shrink: 0;
+  transition: color var(--transition-fast);
+}
+.kb-search-wrapper:focus-within .kb-search-icon {
+  color: var(--accent-indigo);
 }
 .kb-search-input {
   flex: 1;
@@ -549,9 +681,10 @@ loadOrder()
   color: var(--text-primary);
   background: transparent;
   min-width: 0;
+  font-family: inherit;
 }
 .kb-search-input::placeholder {
-  color: var(--text-quaternary);
+  color: var(--text-tertiary);
 }
 .kb-search-clear {
   width: 16px;
@@ -559,69 +692,242 @@ loadOrder()
   border: none;
   background: transparent;
   cursor: pointer;
-  color: var(--text-quaternary);
+  color: var(--text-tertiary);
   padding: 0;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+.kb-search-clear:hover {
+  color: var(--text-secondary);
+  background: var(--bg-hover);
 }
 .kb-search-clear svg {
   width: 14px;
   height: 14px;
 }
-.kb-square-btn {
+/* ===== 区块 ===== */
+.kb-section {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 36px;
+}
+.kb-section__header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  background: var(--bg-elevated);
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.kb-section__title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13.5px;
+  font-weight: 600;
   color: var(--text-secondary);
+  letter-spacing: -0.01em;
+}
+.kb-section__title svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+.kb-count {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+.kb-header__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.drag-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--accent-indigo);
+  background: var(--accent-indigo-subtle);
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-brand);
+  animation: pulse-hint 1.5s ease-in-out infinite;
+}
+.drag-hint svg {
+  width: 12px;
+  height: 12px;
+}
+@keyframes pulse-hint {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+/* ===== 网格 ===== */
+.kb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.kb-grid--compact {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.kb-grid--drag { cursor: default; }
+/* ===== 拖拽排序 ===== */
+.kb-drag-wrapper {
+  position: relative;
+}
+.kb-drag-wrapper--draggable {
+  cursor: grab;
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+.kb-drag-wrapper--draggable:hover {
+  transform: translateY(-2px);
+}
+.kb-drag-wrapper--draggable:active { cursor: grabbing; }
+.kb-drag-wrapper--dragging {
+  opacity: 0.35;
+  transform: scale(0.96);
+}
+.kb-drag-wrapper--over::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border: 2px dashed var(--accent-indigo);
+  border-radius: var(--radius-xl);
+  z-index: 1;
+  pointer-events: none;
+  background: var(--accent-indigo-subtle);
+}
+.kb-drag-handle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-overlay);
   border: 1px solid var(--border-base);
   border-radius: var(--radius-md);
-  font-size: 13.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
+  color: var(--text-tertiary);
+  box-shadow: var(--shadow-md);
+  cursor: grab;
+  transition: all var(--transition-fast);
 }
-.kb-square-btn:hover {
-  border-color: var(--accent-violet);
-  color: var(--accent-violet-light);
-  background: var(--accent-violet-subtle);
+.kb-drag-handle:hover {
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+  border-color: var(--border-active);
 }
-.kb-square-btn svg {
-  width: 16px;
-  height: 16px;
+.kb-drag-handle svg { width: 14px; height: 14px; }
+/* ===== 结束占位符 ===== */
+.kb-card-end {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  border: 1.5px dashed var(--border-base);
+  border-radius: var(--radius-xl);
+  color: var(--text-quaternary);
+  gap: 8px;
+  min-height: 160px;
 }
-.kb-create-btn {
+.kb-card-end__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--bg-subtle);
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: var(--gradient-brand);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: 13.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-  box-shadow: var(--shadow-glow);
+  justify-content: center;
+  margin-bottom: 4px;
 }
-.kb-create-btn:hover {
-  filter: brightness(1.12);
-  box-shadow: var(--shadow-glow-strong);
-  transform: translateY(-1px);
+.kb-card-end__icon svg {
+  width: 20px;
+  height: 20px;
+  opacity: 0.6;
 }
-.kb-create-btn svg {
-  width: 16px;
-  height: 16px;
+.kb-card-end p {
+  font-size: 12px;
+  margin: 0;
 }
+/* ===== 空状态 ===== */
+.kb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 20px;
+  gap: 10px;
+}
+.kb-empty__icon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-2xl);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.kb-empty__icon svg {
+  width: 30px;
+  height: 30px;
+  color: var(--text-tertiary);
+  opacity: 0.7;
+}
+.kb-empty__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0;
+}
+.kb-empty__hint {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin: 0;
+  text-align: center;
+}
+/* ===== 加载 ===== */
+.kb-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 48px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.loading-spinner {
+  width: 22px;
+  height: 22px;
+}
+.spinner-ring {
+  width: 100%;
+  height: 100%;
+  border: 2px solid var(--border-base);
+  border-top-color: var(--accent-indigo);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+/* ===== 弹窗 — 毛玻璃暗色 ===== */
 .modal-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(6px);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -630,38 +936,68 @@ loadOrder()
 .modal-card {
   background: var(--bg-elevated);
   border: 1px solid var(--border-base);
-  border-radius: var(--radius-xl);
-  width: 400px;
+  border-radius: var(--radius-2xl);
+  width: 440px;
   max-width: 92vw;
   box-shadow: var(--shadow-lg);
+  overflow: hidden;
 }
 .modal-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  padding: 20px 24px 16px;
+  padding: 24px 24px 20px;
   border-bottom: 1px solid var(--border-subtle);
 }
-.modal-header h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0;
+.modal-header__left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
-.modal-close {
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  color: var(--text-quaternary);
-  border-radius: var(--radius-sm);
+.modal-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-lg);
+  background: var(--accent-indigo-subtle);
+  border: 1px solid var(--border-brand);
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+}
+.modal-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke: var(--accent-indigo);
+}
+.modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 3px;
+  letter-spacing: -0.02em;
+}
+.modal-subtitle {
+  font-size: 12.5px;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+.modal-close {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: var(--bg-hover);
+  cursor: pointer;
+  color: var(--text-tertiary);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
 }
 .modal-close:hover {
-  background: var(--bg-hover);
+  background: var(--bg-active);
   color: var(--text-secondary);
 }
 .modal-close svg {
@@ -669,275 +1005,62 @@ loadOrder()
   height: 16px;
 }
 .modal-body {
-  padding: 16px 24px;
+  padding: 20px 24px;
 }
 .modal-label {
   display: block;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 500;
-  color: var(--text-primary);
-  margin-bottom: 6px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
 }
 .modal-input {
   width: 100%;
-  padding: 9px 12px;
+  padding: 10px 14px;
+  background: var(--bg-overlay);
   border: 1px solid var(--border-base);
   border-radius: var(--radius-md);
   font-size: 14px;
-  outline: none;
-  transition: all 0.2s;
-  box-sizing: border-box;
-  background: var(--bg-elevated);
   color: var(--text-primary);
+  outline: none;
+  transition: all var(--transition-normal);
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.modal-input::placeholder {
+  color: var(--text-tertiary);
 }
 .modal-input:focus {
   border-color: var(--border-brand);
-  box-shadow: 0 0 0 2px var(--accent-violet-subtle);
+  box-shadow: 0 0 0 3px var(--accent-indigo-subtle);
+}
+.modal-hints {
+  margin-top: 10px;
+}
+.modal-hint {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+}
+.modal-hint svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
 }
 .modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  padding: 12px 24px 20px;
+  padding: 16px 24px 24px;
 }
-.btn-cancel {
-  padding: 8px 18px;
-  border: 1px solid var(--border-base);
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 13.5px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.btn-cancel:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-.btn-confirm {
-  padding: 8px 18px;
-  border: none;
-  border-radius: var(--radius-md);
-  background: var(--gradient-brand);
-  color: white;
-  font-size: 13.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-  box-shadow: var(--shadow-glow);
-}
-.btn-confirm:hover:not(:disabled) {
-  filter: brightness(1.12);
-  transform: translateY(-1px);
-}
-.btn-confirm:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-.kb-section {
-  margin-bottom: 32px;
-}
-.kb-section__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-.kb-section__title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-.kb-section__title svg {
-  width: 16px;
-  height: 16px;
-}
-.kb-section__count {
-  font-size: 12px;
-  color: var(--text-quaternary);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-}
-.kb-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-}
-.kb-grid--compact {
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 10px;
-}
-.kb-card-end {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  border: 2px dashed var(--border-base);
-  border-radius: var(--radius-lg);
-  color: var(--text-quaternary);
-}
-.kb-card-end svg {
-  width: 32px;
-  height: 32px;
-  margin-bottom: 8px;
-  opacity: 0.5;
-}
-.kb-card-end p {
-  font-size: 12px;
-}
-.kb-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  color: var(--text-quaternary);
-  gap: 12px;
-}
-.kb-empty svg {
-  width: 48px;
-  height: 48px;
-  opacity: 0.4;
-}
-.kb-empty p {
-  font-size: 14px;
-}
-.kb-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 40px;
-  color: var(--text-quaternary);
-  font-size: 14px;
-}
-.kb-spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--border-base);
-  border-top-color: var(--accent-violet);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* ===== 响应式 ===== */
 @media (max-width: 640px) {
-  .kb-page {
-    padding: 16px;
-  }
-  .kb-grid {
-    grid-template-columns: 1fr;
-  }
-  .kb-search-wrapper {
-    width: 160px;
-  }
-  .kb-search-wrapper:focus-within {
-    width: 190px;
-  }
-}
-.kb-drag-toggle {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border: 1px solid var(--border-base);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.kb-drag-toggle:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-.kb-drag-toggle.active {
-  background: var(--accent-violet-subtle);
-  border-color: var(--accent-violet);
-  color: var(--accent-violet-light);
-}
-.kb-drag-toggle svg {
-  width: 14px;
-  height: 14px;
-}
-.kb-drag-hint {
-  font-size: 11px;
-  color: var(--accent-violet-light);
-  background: var(--accent-violet-subtle);
-  padding: 2px 8px;
-  border-radius: var(--radius-xs);
-  animation: pulse-hint 1.5s ease-in-out infinite;
-}
-@keyframes pulse-hint {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-.kb-grid--drag {
-  cursor: default;
-}
-.kb-drag-wrapper {
-  position: relative;
-}
-.kb-drag-wrapper--draggable {
-  cursor: grab;
-  transition:
-    transform 0.15s,
-    box-shadow 0.15s;
-}
-.kb-drag-wrapper--draggable:hover {
-  transform: translateY(-2px);
-}
-.kb-drag-wrapper--draggable:active {
-  cursor: grabbing;
-}
-.kb-drag-wrapper--dragging {
-  opacity: 0.4;
-  transform: scale(0.97);
-}
-.kb-drag-wrapper--over::before {
-  content: '';
-  position: absolute;
-  inset: -3px;
-  border: 2px dashed var(--accent-violet);
-  border-radius: var(--radius-lg);
-  z-index: 1;
-  pointer-events: none;
-  background: var(--accent-violet-subtle);
-}
-.kb-drag-handle {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 10;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--glass-bg);
-  backdrop-filter: blur(8px);
-  border-radius: var(--radius-sm);
-  color: var(--text-quaternary);
-  border: 1px solid var(--border-subtle);
-  cursor: grab;
-}
-.kb-drag-handle svg {
-  width: 14px;
-  height: 14px;
+  .kb-page { padding: 16px; }
+  .kb-grid { grid-template-columns: 1fr; }
+  .kb-search-wrapper { width: 160px; }
+  .kb-search-wrapper:focus-within { width: 190px; }
 }
 </style>
