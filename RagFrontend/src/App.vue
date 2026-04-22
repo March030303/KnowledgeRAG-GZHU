@@ -206,6 +206,7 @@ defineExpose({ openSearch, handleQuickCreate })
    ============================================ */
 
 #nova-app {
+  display: flex;
   min-height: 100vh;
   background: var(--nova-bg-deep);
   position: relative;
