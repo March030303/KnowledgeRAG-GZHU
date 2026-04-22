@@ -45,7 +45,7 @@ export interface AppearanceConfig {
 }
 
 const DEFAULT_APPEARANCE: AppearanceConfig = {
-  theme:    'light',
+  theme:    'dark',
   color:    'blue',
   fontSize: 'medium',
   layout:   'normal',

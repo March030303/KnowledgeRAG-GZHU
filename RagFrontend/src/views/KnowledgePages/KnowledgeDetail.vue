@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-7xl mx-auto max-h-screen overflow-auto p-[7vw] x-6 py-8">
+  <div class="max-w-7xl mx-auto max-h-screen overflow-auto p-6 py-8 kd-page">
     <div class="flex items-center mb-6">
       <button @click="$router.back()" class="mr-3 text-gray-600 hover:text-blue-600">
         <svg
@@ -20,7 +20,7 @@
       <h1 class="text-2xl font-semibold text-gray-800">知识库: {{ kbName || '加载中...' }}</h1>
     </div>
     <!-- 数据集管理部分 -->
-    <div class="bg-white shadow rounded-lg p-6 mb-8">
+    <div class="kd-card rounded-lg p-6 mb-8">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-medium">数据集</h2>
         <p class="text-sm text-gray-500">解析成功后才能问答哦。</p>
@@ -234,7 +234,7 @@
           <button
             :disabled="currentPage === 1"
             :class="[
-              'relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium',
+              'relative inline-flex items-center rounded-md border border-gray-300 kd-btn px-4 py-2 text-sm font-medium',
               currentPage === 1
                 ? 'text-gray-300 cursor-not-allowed'
                 : 'text-gray-700 hover:bg-gray-50'
@@ -245,7 +245,7 @@
           <button
             :disabled="currentPage === totalPages"
             :class="[
-              'relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium',
+              'relative ml-3 inline-flex items-center rounded-md border border-gray-300 kd-btn px-4 py-2 text-sm font-medium',
               currentPage === totalPages
                 ? 'text-gray-300 cursor-not-allowed'
                 : 'text-gray-700 hover:bg-gray-50'
@@ -327,7 +327,7 @@
       </div>
     </div>
     <!-- 检索测试部分 -->
-    <div class="bg-white shadow rounded-lg p-6 mb-8">
+    <div class="kd-card rounded-lg p-6 mb-8">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-medium">检索模块</h2>
         <div class="flex items-center gap-3">
@@ -662,7 +662,7 @@
           </div>
         </div>
         <!-- 查询结果内容 -->
-        <div class="p-4 bg-white">
+        <div class="p-4 kd-card-inner">
           <div v-if="finalAnswer" class="mb-4 border-l-4 border-green-500 pl-4 py-2">
             <h4 class="font-medium text-lg mb-2">回答结果：</h4>
             <div class="text-gray-700 whitespace-pre-wrap">{{ finalAnswer }}</div>
@@ -686,7 +686,7 @@
         </div>
       </div>
     </div>
-    <div class="bg-white shadow rounded-lg p-6 mb-8">
+    <div class="kd-card rounded-lg p-6 mb-8">
       <Knowledge_graph_setting
         :kb-name="`${kbName || ''}`"
         :kb-id="`${id || ''}`"
@@ -699,11 +699,11 @@
       class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50"
     >
       <div
-        class="bg-white rounded-lg shadow-xl w-full max-w-2xl"
+        class="kd-modal rounded-lg shadow-xl w-full max-w-2xl"
         style="max-height: 90vh; display: flex; flex-direction: column"
       >
         <div class="p-6" style="overflow-y: auto; flex: 1">
-          <div class="flex justify-between items-center pb-4 border-b sticky top-0 bg-white z-10">
+          <div class="flex justify-between items-center pb-4 border-b sticky top-0 kd-modal-header z-10">
             <h3 class="text-xl font-semibold text-gray-800">上传文件</h3>
             <button @click="showUploadModal = false" class="text-gray-500 hover:text-gray-700">
               <svg
@@ -910,7 +910,7 @@
       v-if="showDeleteConfirmation"
       class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50"
     >
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+      <div class="kd-modal rounded-lg shadow-xl w-full max-w-md">
         <div class="p-6">
           <div class="flex justify-between items-center pb-4 border-b">
             <h3 class="text-xl font-semibold text-gray-800">删除知识库</h3>
@@ -959,7 +959,7 @@
       v-if="showUrlImportModal"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
     >
-      <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg">
+      <div class="kd-modal rounded-xl shadow-2xl w-full max-w-lg">
         <div class="p-6">
           <div class="flex justify-between items-center pb-4 border-b mb-4">
             <div class="flex items-center gap-2">
@@ -1872,8 +1872,10 @@ onMounted(() => {
   border-color: #3b82f6;
   background-color: #eff6ff;
 }
-.app-container {
-  background-color: #f9fafb;
+.kd-page {
+  min-height: 100%;
+  background-color: transparent;
+}
   height: 100vh;
   width: 100vw;
   position: fixed;
@@ -1881,8 +1883,36 @@ onMounted(() => {
   overflow-x: hidden;
 }
 /* ===== 笔记模块 ===== */
+/* ── Nova 暗色适配类 ── */
+.kd-page { min-height: 100%; background-color: transparent; }
+.kd-card {
+  background: var(--nova-bg-card);
+  border: 1px solid var(--nova-border);
+}
+.kd-card-inner {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 8px;
+}
+.kd-modal {
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--nova-border);
+}
+.kd-modal-header {
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(16px);
+}
+.kd-btn {
+  background: var(--nova-bg-elevated);
+  color: var(--nova-text-primary);
+  border-color: var(--nova-border);
+}
+.kd-btn:hover {
+  border-color: var(--nova-border-hover);
+}
+
 .note-section {
-  background: white;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   margin-bottom: 32px;

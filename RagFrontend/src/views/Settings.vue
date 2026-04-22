@@ -1800,7 +1800,7 @@ async function submitTicket() {
   display: flex;
   gap: 4px;
   margin-bottom: 24px;
-  background: white;
+  background: var(--nova-bg-card);
   border-radius: 10px;
   padding: 4px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
@@ -1844,7 +1844,7 @@ async function submitTicket() {
 }
 .section-header h2 {
   font-size: 18px;
-  color: #111827;
+  color: var(--nova-text-primary);
   margin: 0;
 }
 .section-desc {
@@ -1898,7 +1898,7 @@ async function submitTicket() {
   display: flex;
   align-items: center;
   gap: 16px;
-  background: white;
+  background: var(--nova-bg-card);
   border-radius: 10px;
   padding: 14px 18px;
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
@@ -1911,7 +1911,7 @@ async function submitTicket() {
 .key-card__name {
   font-weight: 600;
   font-size: 14px;
-  color: #111827;
+  color: var(--nova-text-primary);
 }
 .key-card__prefix {
   font-family: monospace;
@@ -1955,7 +1955,7 @@ async function submitTicket() {
   display: flex;
   align-items: center;
   gap: 14px;
-  background: white;
+  background: var(--nova-bg-card);
   border-radius: 10px;
   padding: 14px 18px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
@@ -2009,7 +2009,7 @@ async function submitTicket() {
   flex-wrap: wrap;
 }
 .stat-card {
-  background: white;
+  background: var(--nova-bg-card);
   border-radius: 10px;
   padding: 16px 20px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
@@ -2053,7 +2053,7 @@ async function submitTicket() {
   font-size: 13px;
 }
 .audit-table-wrapper {
-  background: white;
+  background: var(--nova-bg-card);
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
@@ -2154,7 +2154,7 @@ async function submitTicket() {
   justify-content: center;
 }
 .modal-card {
-  background: white;
+  background: var(--nova-bg-elevated);
   border-radius: 14px;
   padding: 24px;
   width: 420px;
@@ -2217,9 +2217,9 @@ async function submitTicket() {
 }
 .btn-cancel {
   padding: 8px 16px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--nova-border);
   border-radius: 7px;
-  background: white;
+  background: var(--nova-bg-elevated);
   cursor: pointer;
   font-size: 13px;
 }
@@ -2255,7 +2255,7 @@ async function submitTicket() {
   gap: 10px;
   font-family: monospace;
   font-size: 13px;
-  background: white;
+  background: var(--nova-bg-deep);
   border: 1px solid #a7f3d0;
   border-radius: 7px;
   padding: 10px 14px;
@@ -2293,9 +2293,9 @@ async function submitTicket() {
   cursor: pointer;
 }
 .btn-toggle {
-  border-color: #d1d5db;
-  background: white;
-  color: #374151;
+  border-color: var(--nova-border);
+  background: var(--nova-bg-elevated);
+  color: var(--nova-text-secondary);
 }
 .btn-delete {
   border-color: #fecaca;
@@ -2324,7 +2324,7 @@ async function submitTicket() {
 }
 /* 办公联动 */
 .integration-card {
-  background: white;
+  background: var(--nova-bg-card);
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
@@ -2344,11 +2344,11 @@ async function submitTicket() {
 .integration-card__title {
   font-weight: 600;
   font-size: 15px;
-  color: #111827;
+  color: var(--nova-text-primary);
 }
 .integration-card__desc {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--nova-text-secondary);
   margin-top: 3px;
 }
 .integration-status {
@@ -2409,10 +2409,10 @@ async function submitTicket() {
 }
 .btn-secondary {
   padding: 8px 18px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--nova-border);
   border-radius: 7px;
-  background: white;
-  color: #374151;
+  background: var(--nova-bg-elevated);
+  color: var(--nova-text-secondary);
   cursor: pointer;
   font-size: 13px;
 }
@@ -2462,9 +2462,9 @@ async function submitTicket() {
   flex: 1;
   font-size: 12px;
   font-family: monospace;
-  color: #1e40af;
-  background: white;
-  border: 1px solid #e2e8f0;
+  color: var(--nova-text-accent);
+  background: var(--nova-bg-deep);
+  border: 1px solid var(--nova-border);
   border-radius: 5px;
   padding: 4px 8px;
   word-break: break-all;
@@ -2516,16 +2516,17 @@ async function submitTicket() {
 .settings-win11 {
   display: flex;
   height: 100vh;
-  background: #f3f3f3;
+  background: var(--nova-bg-primary);
   overflow: hidden;
 }
 /* 左侧导航 */
 .settings-nav {
   width: 240px;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--nova-bg-card);
   backdrop-filter: blur(12px);
-  border-right: 1px solid rgba(0, 0, 0, 0.06);
+  -webkit-backdrop-filter: blur(12px);
+  border-right: 1px solid var(--nova-border);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -2544,7 +2545,7 @@ async function submitTicket() {
 .settings-nav__title {
   font-size: 16px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--nova-text-primary);
 }
 .nav-group {
   margin-bottom: 4px;
@@ -2568,13 +2569,13 @@ async function submitTicket() {
   cursor: pointer;
   border-radius: 8px;
   font-size: 13.5px;
-  color: #374151;
+  color: var(--nova-text-secondary);
   text-align: left;
   transition: all 0.15s;
   position: relative;
 }
 .nav-item:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(99, 102, 241, 0.08);
 }
 .nav-item--active {
   background: rgba(79, 126, 248, 0.12);
@@ -2611,7 +2612,7 @@ async function submitTicket() {
   flex: 1;
   overflow-y: auto;
   padding: 28px 36px;
-  background: #f3f3f3;
+  background: transparent;
 }
 .settings-page-header {
   margin-bottom: 24px;
@@ -2621,7 +2622,7 @@ async function submitTicket() {
 .settings-page-title {
   font-size: 24px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--nova-text-primary);
   margin: 0 0 4px;
 }
 .settings-page-desc {
@@ -2643,7 +2644,7 @@ async function submitTicket() {
   margin-bottom: 20px;
 }
 .integration-platform-card {
-  background: white;
+  background: var(--nova-bg-elevated);
   border-radius: 12px;
   border: 2px solid transparent;
   padding: 16px 12px;
