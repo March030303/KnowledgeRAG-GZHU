@@ -1669,12 +1669,8 @@ import Knowledge_graph_setting from './knowledge_graph_setting.vue'
 const processFileUpload = async () => {
   await uploadFiles(uploadedFiles, isUploading, uploadProgress, KLB_id)
   try {
-    const response = await axios.get<Document[]>(API_ENDPOINTS.KNOWLEDGE.DOCUMENTS_LIST(KLB_id), {
-      headers: {
-        accept: 'application/json'
-      }
-    })
-    documents.value = response.data
+    // 上传成功后刷新文档列表，使用统一定义的 fetchDocuments
+    await fetchDocuments()
     uploadedFiles.value = []
   } catch (error) {
     console.error('刷新文档列表失败:', error)
@@ -1735,10 +1731,9 @@ const removeFileFromTest = (id: number) => {
   }
 };
 */
-// 将此函数移动到组件顶层作用域
+// 将此函数移动到组件顶层作用域（修复重复定义问题）
 const formatJsonOutput = (text: string) => {
   try {
-    // 如果字符串包含JSON对象，提取并格式化它
     const jsonMatch = text.match(/{.*}/)
     if (jsonMatch) {
       const jsonStr = jsonMatch[0]
@@ -1748,39 +1743,58 @@ const formatJsonOutput = (text: string) => {
     return text
   } catch (e) {
     console.error('解析JSON失败:', e)
-    return text // 如果解析失败，返回原始文本
+    return text
   }
 }
-// 页面挂载时获取数据
+
+// 数据字段映射函数 - 将后端返回的字段名转换为前端期望的格式
+const mapDocumentFields = (doc: any): Document => {
+  return {
+    id: doc.id || 0,
+    name: doc.name || doc.file_name || '未知文件',
+    fileType: doc.fileType || doc.file_type || 'unknown',
+    chunks: doc.chunks || 0,
+    uploadDate: doc.uploadDate || doc.upload_time || new Date().toISOString(),
+    slicingMethod: doc.slicingMethod || doc.slicing_method || 'default',
+    enabled: doc.enabled ?? (doc.status !== 'disabled'),
+    file_size: doc.file_size || 0,
+    file_hash: doc.file_hash || ''
+  }
+}
+
+// 获取文档列表（统一入口，修复重复定义问题）
 const fetchDocuments = async () => {
   try {
-    const response = await axios.get<Document[]>(API_ENDPOINTS.KNOWLEDGE.DOCUMENTS_LIST(KLB_id), {
+    const response = await axios.get(API_ENDPOINTS.KNOWLEDGE.DOCUMENTS_LIST(KLB_id), {
       headers: {
         accept: 'application/json'
       }
     })
-    documents.value = response.data
+    // 处理响应数据并映射字段
+    const rawData = response.data
+    if (Array.isArray(rawData)) {
+      documents.value = rawData.map(mapDocumentFields)
+    } else if (rawData && Array.isArray(rawData.data)) {
+      documents.value = rawData.data.map(mapDocumentFields)
+    } else if (rawData && typeof rawData === 'object') {
+      // 兼容其他可能的响应格式
+      documents.value = Array.isArray(rawData.documents) ? rawData.documents.map(mapDocumentFields) : []
+    } else {
+      documents.value = []
+    }
+    console.log('获取文档列表成功，共', documents.value.length, '个文档')
   } catch (error) {
     console.error('获取文档数据失败:', error)
+    documents.value = []
   }
 }
 onMounted(async () => {
   // 获取知识库配置（包含基本信息）
   await fetchKnowledgeBaseConfig()
-  // 获取文档列表
-  const fetchDocuments = async () => {
-    try {
-      const response = await axios.get<Document[]>(API_ENDPOINTS.KNOWLEDGE.DOCUMENTS_LIST(KLB_id), {
-        headers: {
-          accept: 'application/json'
-        }
-      })
-      documents.value = response.data
-    } catch (error) {
-      console.error('获取文档数据失败:', error)
-    }
-  }
+  // 获取文档列表（调用外部统一定义的函数）
   await fetchDocuments()
+  // 加载笔记
+  loadNotes()
 })
 onUnmounted(() => {
   if (intervalId) {
@@ -1860,12 +1874,9 @@ const formatNoteTime = (ts: number) => {
 }
 const insertMarkdown = (before: string, after: string) => {
   if (!activeNote.value) return
-  activeNote.value.content += `${before}文本${after}`
+  activeNote.content += `${before}文本${after}`
   markNoteUnsaved()
 }
-onMounted(() => {
-  loadNotes()
-})
 </script>
 <style scoped>
 .dragover {
