@@ -1,395 +1,394 @@
 <template>
-  <div
-    :class="[
-      'kb-card',
-      { 'kb-card--compact': compact, 'kb-card--starred': starred, 'kb-card--pinned': pinned }
-    ]"
+  <div 
+    class="kb-card" 
+    :class="{ 'kb-card--compact': compact }"
     @click="$emit('click')"
   >
-    <!-- 置顶徽章 -->
-    <div v-if="pinned" class="kb-card__pin-badge">📌 置顶</div>
-    <!-- 封面颜色条（基于title hash） -->
-    <div class="kb-card__color-bar" :style="{ background: cardColor }"></div>
-    <!-- 卡片主体 -->
+    <!-- 顶部渐变色条 -->
+    <div class="kb-card__accent" :style="{ background: accentGradient }"></div>
+    
+    <!-- 主内容 -->
     <div class="kb-card__body">
-      <div class="kb-card__top">
-        <!-- 图标 -->
-        <div class="kb-card__icon" :style="{ background: cardColorLight }">
-          <svg viewBox="0 0 24 24" fill="none" :stroke="cardColorDark" stroke-width="2">
-            <path
-              stroke-linecap="round"
-              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-            />
+      <!-- 头部：图标 + 标题 -->
+      <div class="kb-card__header">
+        <div class="kb-card__icon" :style="{ background: accentSubtle, color: accentColor }">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
           </svg>
         </div>
-        <!-- 操作按钮（悬浮显示） -->
-        <div class="kb-card__actions" @click.stop>
-          <!-- 置顶按钮 -->
-          <button
-            :class="['action-btn', 'pin-btn', { 'pin-btn--active': pinned }]"
-            @click.stop="handlePin"
-            @mousedown="ripple"
-            :title="pinned ? '取消置顶' : '置顶'"
-          >
-            <svg
-              :class="{ 'like-pop': pinAnimating }"
-              viewBox="0 0 24 24"
-              fill="none"
-              :stroke="pinned ? '#4f7ef8' : 'currentColor'"
-              stroke-width="2"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-              />
-            </svg>
-          </button>
-          <!-- 星标按钮 -->
-          <button
-            :class="['action-btn', 'star-btn', { 'star-btn--active': starred }]"
-            @click.stop="handleStar"
-            @mousedown="ripple"
-            :title="starred ? '取消星标' : '加入星标'"
-          >
-            <svg
-              :class="{ 'like-pop': starAnimating }"
-              viewBox="0 0 24 24"
-              :fill="starred ? '#f59e0b' : 'none'"
-              :stroke="starred ? '#f59e0b' : 'currentColor'"
-              stroke-width="2"
-            >
-              <path
-                stroke-linecap="round"
-                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-              />
-            </svg>
-          </button>
-          <!-- 更多操作 -->
-          <t-dropdown :options="dropdownOptions" trigger="click" @click="handleDropdown">
-            <button class="action-btn" @click.stop title="更多操作">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="12" cy="5" r="1.5" />
-                <circle cx="12" cy="12" r="1.5" />
-                <circle cx="12" cy="19" r="1.5" />
-              </svg>
-            </button>
-          </t-dropdown>
+        <div class="kb-card__info">
+          <h3 class="kb-card__title">{{ card.title }}</h3>
+          <span class="kb-card__date">{{ formatDate(card.created_at) }}</span>
         </div>
       </div>
-      <!-- 标题 -->
-      <h3 class="kb-card__title">{{ card.title }}</h3>
+
       <!-- 描述 -->
-      <p v-if="!compact && card.description" class="kb-card__desc">{{ card.description }}</p>
-      <!-- 底部信息 -->
+      <p v-if="card.description" class="kb-card__desc line-clamp-2">
+        {{ card.description }}
+      </p>
+
+      <!-- 底部：标签 + 操作 -->
       <div class="kb-card__footer">
-        <span class="kb-card__time">{{ formattedTime }}</span>
-        <div class="kb-card__tags" v-if="!compact">
-          <span class="kb-card__tag">RAG</span>
+        <div class="kb-card__tags">
+          <span class="badge badge-primary">
+            <span class="badge__dot"></span>
+            {{ card.document_count || 0 }} 文档
+          </span>
+        </div>
+        <div class="kb-card__actions">
+          <!-- 星标 -->
+          <button 
+            class="action-btn" 
+            :class="{ 'action-btn--active': starred }"
+            @click.stop="$emit('star')"
+            :title="starred ? '取消星标' : '添加星标'"
+          >
+            <svg viewBox="0 0 24 24" :fill="starred ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+            </svg>
+          </button>
+          <!-- 置顶 -->
+          <button 
+            class="action-btn" 
+            :class="{ 'action-btn--active': pinned }"
+            @click.stop="$emit('pin')"
+            :title="pinned ? '取消置顶' : '置顶'"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+          </button>
+          <!-- 删除 -->
+          <button 
+            class="action-btn action-btn--danger"
+            @click.stop="$emit('delete')"
+            title="删除"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>
+
+    <!-- 悬浮层效果 -->
+    <div class="kb-card__glow"></div>
   </div>
 </template>
+
 <script setup lang="ts">
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { computed, ref } from 'vue'
-import { DropdownProps } from 'tdesign-vue-next'
-import { useRipple } from '@/composables/useScrollReveal'
-const { ripple } = useRipple()
+import { computed } from 'vue'
+
 interface Card {
   id: string
   title: string
-  avatar?: string
   description?: string
-  cover?: string
-  createdTime?: string
+  created_at: string
+  document_count?: number
 }
-const props = defineProps<{
+
+const props = withDefaults(defineProps<{
   card: Card
   starred?: boolean
   pinned?: boolean
   compact?: boolean
+}>(), {
+  starred: false,
+  pinned: false,
+  compact: false
+})
+
+defineEmits<{
+  click: []
+  star: []
+  pin: []
+  delete: []
 }>()
-const emit = defineEmits(['click', 'star', 'pin', 'delete'])
-// 微交互状态
-const starAnimating = ref(false)
-const pinAnimating = ref(false)
-const handleStar = () => {
-  starAnimating.value = true
-  setTimeout(() => {
-    starAnimating.value = false
-  }, 500)
-  emit('star')
-}
-const handlePin = () => {
-  pinAnimating.value = true
-  setTimeout(() => {
-    pinAnimating.value = false
-  }, 400)
-  emit('pin')
-}
-// 颜色方案基于title hash
-const COLOR_SETS = [
-  { bar: 'linear-gradient(135deg,#4f7ef8,#818cf8)', light: '#eff6ff', dark: '#4f7ef8' },
-  { bar: 'linear-gradient(135deg,#10b981,#34d399)', light: '#f0fdf4', dark: '#059669' },
-  { bar: 'linear-gradient(135deg,#f59e0b,#fbbf24)', light: '#fffbeb', dark: '#d97706' },
-  { bar: 'linear-gradient(135deg,#ec4899,#f472b6)', light: '#fdf2f8', dark: '#db2777' },
-  { bar: 'linear-gradient(135deg,#8b5cf6,#a78bfa)', light: '#f5f3ff', dark: '#7c3aed' },
-  { bar: 'linear-gradient(135deg,#14b8a6,#2dd4bf)', light: '#f0fdfa', dark: '#0d9488' },
-  { bar: 'linear-gradient(135deg,#f97316,#fb923c)', light: '#fff7ed', dark: '#ea580c' }
-]
-const colorIndex = computed(() => {
-  let hash = 0
-  for (let i = 0; i < props.card.title.length; i++) {
-    hash = props.card.title.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  return Math.abs(hash) % COLOR_SETS.length
+
+// 根据标题生成唯一渐变色
+const accentGradient = computed(() => {
+  const hash = props.card.title.split('').reduce((acc, char) => {
+    return char.charCodeAt(0) + ((acc << 5) - acc)
+  }, 0)
+  
+  const gradients = [
+    'linear-gradient(135deg, #7c6aff 0%, #a78bfa 100%)',
+    'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)',
+    'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)',
+    'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+    'linear-gradient(135deg, #f87171 0%, #ef4444 100%)',
+    'linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)',
+    'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)',
+  ]
+  
+  return gradients[Math.abs(hash) % gradients.length]
 })
-const cardColor = computed(() => COLOR_SETS[colorIndex.value].bar)
-const cardColorLight = computed(() => COLOR_SETS[colorIndex.value].light)
-const cardColorDark = computed(() => COLOR_SETS[colorIndex.value].dark)
-const formattedTime = computed(() => {
-  const t = props.card.createdTime
-  if (!t) return ''
-  try {
-    const d = new Date(t)
-    const now = new Date()
-    const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000)
-    if (diffDays === 0) return '今天'
-    if (diffDays === 1) return '昨天'
-    if (diffDays < 7) return `${diffDays} 天前`
-    return d.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
-  } catch {
-    return t
-  }
+
+const accentColor = computed(() => {
+  return accentGradient.value.match(/#[a-fA-F0-9]{6}/)?.[0] || '#7c6aff'
 })
-const dropdownOptions: DropdownProps['options'] = [
-  { content: '打开', value: 'open' },
-  { content: '置顶/取消置顶', value: 'pin' },
-  { content: '删除', value: 'delete' }
-]
-const handleDropdown = (data: any) => {
-  if (data.value === 'open') emit('click')
-  if (data.value === 'pin') emit('pin')
-  if (data.value === 'delete') emit('delete')
+
+const accentSubtle = computed(() => {
+  const color = accentColor.value
+  return `${color}15`
+})
+
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  
+  if (days === 0) return '今天'
+  if (days === 1) return '昨天'
+  if (days < 7) return `${days} 天前`
+  if (days < 30) return `${Math.floor(days / 7)} 周前`
+  
+  return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
 }
 </script>
+
 <style scoped>
+/* =====================================================
+   知识卡片 — Geist x Linear 风格
+   ===================================================== */
+
 .kb-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+  position: relative;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--glass-border);
   overflow: hidden;
   cursor: pointer;
-  position: relative;
-  transition:
-    transform 0.22s var(--ease-out),
-    box-shadow 0.22s ease,
-    border-color 0.22s ease;
-  will-change: transform, box-shadow;
+  transition: all var(--transition-normal);
+  will-change: transform, box-shadow, border-color;
 }
+
 .kb-card:hover {
-  transform: translateY(-4px) scale(1.005);
-  box-shadow: var(--shadow-lg), var(--shadow-glow);
-  border-color: rgba(124, 106, 255, 0.25);
+  border-color: var(--border-brand);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md), var(--shadow-glow);
 }
-.kb-card:active {
-  transform: translateY(-1px) scale(0.99) !important;
-  box-shadow: var(--shadow-sm) !important;
-  transition-duration: 0.08s !important;
+
+/* 紧凑模式 */
+.kb-card--compact .kb-card__body {
+  padding: var(--space-3);
 }
-.kb-card--starred {
-  border-color: rgba(251, 191, 36, 0.3);
+
+.kb-card--compact .kb-card__title {
+  font-size: var(--text-sm);
 }
-.kb-card--starred:hover {
-  border-color: rgba(251, 191, 36, 0.5);
-  box-shadow: var(--shadow-lg), 0 0 24px rgba(251, 191, 36, 0.12);
+
+.kb-card--compact .kb-card__desc {
+  display: none;
 }
-.kb-card--pinned {
-  border-color: rgba(124, 106, 255, 0.3);
-  box-shadow: 0 0 0 1px rgba(124, 106, 255, 0.15);
-}
-.kb-card--pinned:hover {
-  box-shadow: var(--shadow-lg), var(--shadow-glow);
-}
-.kb-card__pin-badge {
-  position: absolute;
-  top: 6px;
-  left: 8px;
-  font-size: 10px;
-  background: var(--gradient-brand);
-  color: white;
-  padding: 2px 7px;
-  border-radius: var(--radius-sm);
-  z-index: 2;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-}
-.pin-btn--active {
-  color: var(--accent-violet-light);
-}
-.kb-card__color-bar {
-  height: 4px;
+
+/* 顶部渐变色条 */
+.kb-card__accent {
+  height: 3px;
   width: 100%;
-  transition: height 0.2s ease;
+  opacity: 0.8;
+  transition: opacity var(--transition-normal);
 }
-.kb-card:hover .kb-card__color-bar {
-  height: 5px;
+
+.kb-card:hover .kb-card__accent {
+  opacity: 1;
 }
+
+/* 发光效果 */
+.kb-card__glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity var(--transition-slow);
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    var(--accent-primary-subtle) 0%,
+    transparent 70%
+  );
+}
+
+.kb-card:hover .kb-card__glow {
+  opacity: 1;
+}
+
+/* 主体内容 */
 .kb-card__body {
-  padding: 14px 14px 12px;
+  padding: var(--space-4);
+  position: relative;
+  z-index: 1;
 }
-.kb-card__top {
+
+/* 头部 */
+.kb-card__header {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 10px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
 }
+
 .kb-card__icon {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-sm);
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: transform 0.2s var(--ease-spring);
+  transition: transform var(--transition-normal);
 }
+
 .kb-card:hover .kb-card__icon {
-  transform: scale(1.08) rotate(-3deg);
+  transform: scale(1.05);
 }
+
 .kb-card__icon svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
 }
-.kb-card__actions {
-  display: flex;
-  gap: 2px;
-  opacity: 0;
-  transform: translateY(-3px);
-  transition:
-    opacity 0.18s ease,
-    transform 0.18s ease;
+
+.kb-card__info {
+  flex: 1;
+  min-width: 0;
 }
-.kb-card:hover .kb-card__actions {
-  opacity: 1;
-  transform: translateY(0);
-}
-.kb-card--starred .kb-card__actions,
-.kb-card--starred .star-btn {
-  opacity: 1;
-  transform: translateY(0);
-}
-.action-btn {
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: transparent;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-quaternary);
-  transition:
-    background 0.15s ease,
-    color 0.15s ease,
-    transform 0.15s ease;
-  overflow: hidden;
-  position: relative;
-}
-.action-btn:hover {
-  background: var(--accent-violet-subtle);
-  color: var(--accent-violet-light);
-  transform: scale(1.12);
-}
-.action-btn:active {
-  transform: scale(0.9) !important;
-  transition-duration: 0.06s !important;
-}
-.action-btn svg {
-  width: 15px;
-  height: 15px;
-  transition: transform 0.15s ease;
-}
-.star-btn--active {
-  color: var(--accent-amber);
-}
-.star-btn--active:hover {
-  background: var(--accent-amber-subtle) !important;
-  color: var(--accent-amber) !important;
-}
+
 .kb-card__title {
-  font-size: 14.5px;
+  font-size: var(--text-base);
   font-weight: 600;
   color: var(--text-primary);
-  margin: 0 0 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin: 0 0 2px;
   line-height: 1.4;
-  transition: color 0.2s ease;
+  letter-spacing: -0.01em;
 }
-.kb-card:hover .kb-card__title {
-  color: var(--text-brand-strong);
+
+.kb-card__date {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
 }
+
+/* 描述 */
 .kb-card__desc {
-  font-size: 12.5px;
+  font-size: var(--text-sm);
   color: var(--text-secondary);
-  margin: 0 0 10px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  margin: 0 0 var(--space-3);
   line-height: 1.5;
 }
+
+/* 底部 */
 .kb-card__footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 8px;
+  gap: var(--space-2);
 }
-.kb-card__time {
-  font-size: 11.5px;
-  color: var(--text-quaternary);
-}
+
 .kb-card__tags {
   display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+/* 徽章 */
+.badge {
+  display: inline-flex;
+  align-items: center;
   gap: 4px;
-}
-.kb-card__tag {
-  font-size: 10.5px;
-  padding: 1px 7px;
-  background: var(--bg-elevated);
-  color: var(--text-tertiary);
+  padding: 2px 8px;
   border-radius: var(--radius-full);
-  border: 1px solid var(--border-subtle);
-  transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.4;
+  background: var(--accent-primary-subtle);
+  color: var(--text-brand-strong);
 }
-.kb-card:hover .kb-card__tag {
-  background: var(--accent-violet-subtle);
-  color: var(--accent-violet-light);
-  border-color: rgba(124, 106, 255, 0.15);
+
+.badge__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+  opacity: 0.7;
 }
-.kb-card--compact .kb-card__body {
-  padding: 10px 12px;
+
+/* 操作按钮 */
+.kb-card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  opacity: 0;
+  transform: translateX(4px);
+  transition: all var(--transition-normal);
 }
-.kb-card--compact .kb-card__icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 7px;
+
+.kb-card:hover .kb-card__actions {
+  opacity: 1;
+  transform: translateX(0);
 }
-.kb-card--compact .kb-card__icon svg {
-  width: 16px;
-  height: 16px;
+
+.action-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
 }
-.kb-card--compact .kb-card__title {
-  font-size: 13.5px;
+
+.action-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.action-btn:active {
+  transform: scale(0.92);
+}
+
+.action-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.action-btn--active {
+  color: var(--accent-warning);
+}
+
+.action-btn--active:hover {
+  color: var(--accent-warning);
+  background: var(--accent-warning-subtle);
+}
+
+.action-btn--danger {
+  opacity: 0;
+  transition: all var(--transition-fast);
+}
+
+.kb-card:hover .action-btn--danger {
+  opacity: 1;
+}
+
+.action-btn--danger:hover {
+  background: var(--accent-danger-subtle);
+  color: var(--accent-danger);
+}
+
+/* 响应式 */
+@media (max-width: 640px) {
+  .kb-card__actions {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  
+  .action-btn--danger {
+    opacity: 1;
+  }
 }
 </style>
