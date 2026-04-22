@@ -1876,12 +1876,7 @@ onMounted(() => {
   min-height: 100%;
   background-color: transparent;
 }
-  height: 100vh;
-  width: 100vw;
-  position: fixed;
-  z-index: -1;
-  overflow-x: hidden;
-}
+
 /* ===== 笔记模块 ===== */
 /* ── Nova 暗色适配类 ── */
 .kd-page { min-height: 100%; background-color: transparent; }
