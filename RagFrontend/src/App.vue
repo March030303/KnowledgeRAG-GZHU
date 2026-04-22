@@ -1,451 +1,479 @@
 <template>
-  <t-config-provider :global-config="{ classPrefix: 't' }">
-    <ErrorBoundary>
-      <!-- 路由切换顶部进度条 -->
-      <div v-if="pageLoading" class="page-loading-bar" />
-      <!-- 登录页：不显示侧边栏 -->
-      <div v-if="!showSidebar" class="app-fullpage">
+  <div id="nova-app">
+    <!-- ═══ 粒子背景层 ═══ -->
+    <div class="nova-particle-bg">
+      <div class="nova-particle-orb" />
+    </div>
+    <div class="nova-grid-overlay" />
+
+    <!-- 路由进度条 -->
+    <transition name="progress">
+      <div v-if="pageLoading" class="nova-progress-bar">
+        <div class="nova-progress-bar__inner" />
+      </div>
+    </transition>
+
+    <!-- 登录页：无侧边栏 -->
+    <div v-if="!showSidebar" class="nova-fullscreen">
+      <router-view v-slot="{ Component }">
+        <transition name="page-fade" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </router-view>
+    </div>
+
+    <!-- 主布局：侧边栏 + 内容区 -->
+    <template v-else>
+      <NovaSidebar ref="sidebarRef" />
+      
+      <main class="nova-main" ref="mainRef">
         <router-view v-slot="{ Component }">
-          <transition name="page" mode="out-in">
+          <transition name="page-slide" mode="out-in">
             <component :is="Component" />
           </transition>
         </router-view>
-      </div>
-      <!-- 主应用布局：左侧导航 + 右侧内容 -->
-      <div v-else class="app-layout">
-        <SideBar @openSearch="openSearch" @quickCreate="handleQuickCreate" />
-        <main class="app-main" ref="mainRef">
-          <router-view v-slot="{ Component }">
-            <transition
-              name="page"
-              mode="out-in"
-              @before-enter="onPageBeforeEnter"
-              @after-enter="onPageAfterEnter"
-            >
-              <component :is="Component" />
-            </transition>
-          </router-view>
-        </main>
-      </div>
-    </ErrorBoundary>
-    <!-- 全局快捷搜索 -->
+      </main>
+    </template>
+
+    <!-- 全局搜索 (Ctrl+K) -->
     <GlobalSearch :visible="searchVisible" @close="searchVisible = false" />
-    <!-- 右侧智能助理（登录后显示） -->
-    <SmartAssistant v-if="showSidebar" />
-    <!-- 回到顶部 FAB -->
-    <BackToTop v-if="showSidebar" />
-    <!-- 全局评测进度浮层（评测运行时始终可见） -->
-    <div v-if="showSidebar && evalStore.isRunning" class="eval-toast-bar" @click="goToEval">
-      <span class="eval-toast-spinner"></span>
-      <span class="eval-toast-text">{{
-        evalStore.progress || `正在评测 ${evalStore.models}...`
-      }}</span>
-      <span class="eval-toast-link">查看详情 →</span>
-    </div>
-    <!-- 全局快速新建知识库弹窗 -->
+
+    <!-- 快速新建知识库 -->
     <teleport to="body">
-      <div v-if="quickCreateVisible" class="qc-overlay" @click.self="quickCreateVisible = false">
-        <div class="qc-card">
-          <div class="qc-header">
-            <span class="qc-icon">📚</span>
-            <h3>新建知识库</h3>
-            <button class="qc-close" @click="quickCreateVisible = false">✕</button>
-          </div>
-          <input
-            v-model="quickCreateName"
-            class="qc-input"
-            placeholder="输入知识库名称..."
-            @keydown.enter="doQuickCreate"
-            @keydown.esc="quickCreateVisible = false"
-            ref="quickCreateInputRef"
-          />
-          <div class="qc-footer">
-            <button class="qc-btn-cancel" @click="quickCreateVisible = false">取消</button>
-            <button
-              class="qc-btn-confirm"
-              @click="doQuickCreate"
-              :disabled="!quickCreateName.trim()"
-            >
-              创建知识库
-            </button>
+      <transition name="modal-glow">
+        <div
+          v-if="quickCreateVisible"
+          class="nova-modal-overlay"
+          @click.self="quickCreateVisible = false"
+        >
+          <div class="nova-modal-card nova-animate-in">
+            <!-- 发光装饰 -->
+            <div class="nova-modal-card__glow" />
+            
+            <header class="nova-modal-header">
+              <div class="nova-modal-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                  <line x1="12" y1="6" x2="12" y2="14"/>
+                  <line x1="8" y1="10" x2="16" y2="10"/>
+                </svg>
+              </div>
+              <h3>新建知识库</h3>
+              <button class="nova-modal-close" @click="quickCreateVisible = false">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </header>
+
+            <div class="nova-modal-body">
+              <input
+                ref="quickCreateInputRef"
+                v-model="quickCreateName"
+                type="text"
+                class="nova-modal-input"
+                placeholder="输入知识库名称..."
+                @keydown.enter="doQuickCreate"
+                @keydown.esc="quickCreateVisible = false"
+              />
+            </div>
+
+            <footer class="nova-modal-footer">
+              <NovaButton variant="ghost" size="sm" @click="quickCreateVisible = false">取消</NovaButton>
+              <NovaButton 
+                variant="primary" 
+                size="sm" 
+                :disabled="!quickCreateName.trim()" 
+                @click="doQuickCreate"
+              >
+                创建知识库
+              </NovaButton>
+            </footer>
           </div>
         </div>
-      </div>
+      </transition>
     </teleport>
-  </t-config-provider>
+
+    <!-- 评测浮层 -->
+    <transition name="toast-up">
+      <div v-if="evalStore.isRunning" class="nova-toast-bar" @click="goToEval">
+        <span class="nova-toast-spinner" />
+        <span>{{ evalStore.progress || `正在评测 ${evalStore.models}...` }}</span>
+        <span class="nova-toast-action">查看详情 →</span>
+      </div>
+    </transition>
+  </div>
 </template>
+
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { computed, ref, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
-import SideBar from './components/SideBar.vue'
+
+import NovaSidebar from './components/nova/NovaSidebar.vue'
+import NovaButton from './components/nova/NovaButton.vue'
 import GlobalSearch from './components/GlobalSearch.vue'
-import ErrorBoundary from './components/ErrorBoundary.vue'
-import SmartAssistant from './components/SmartAssistant.vue'
-import BackToTop from './components/BackToTop.vue'
 import { initInteractions } from './composables/useInteractions'
 import { applyAllAppearance } from './composables/useTheme'
 import { setLocale } from './i18n/index'
 import { useEvalStore } from './store'
-import { MessagePlugin } from 'tdesign-vue-next'
-import '@/assets/scroll.css'
-import '@/styles/animations.css'
+
+import './styles/nova.css'
+
 const route = useRoute()
 const router = useRouter()
-// 评测全局状态
 const evalStore = useEvalStore()
 const goToEval = () => router.push('/settings')
-// 不需要显示侧边栏的路由（登录/注册页）
+
+// ── 侧边栏控制 ──
 const hideSidebarRoutes = ['/LogonOrRegister']
 const showSidebar = computed(() => !hideSidebarRoutes.includes(route.path))
-// 全局搜索开关
+
+// ── 全局搜索 ──
 const searchVisible = ref(false)
-const openSearch = () => {
-  searchVisible.value = true
-}
-// ── 全局快速新建知识库 ─────────────────────────────────────
+const openSearch = () => { searchVisible.value = true }
+
+// ── 快速新建知识库 ──
 const quickCreateVisible = ref(false)
 const quickCreateName = ref('')
 const quickCreateInputRef = ref<HTMLInputElement | null>(null)
+
 async function handleQuickCreate() {
   quickCreateName.value = ''
   quickCreateVisible.value = true
   await nextTick()
   quickCreateInputRef.value?.focus()
 }
+
 async function doQuickCreate() {
   const name = quickCreateName.value.trim()
   if (!name) return
+
   try {
     const formData = new FormData()
     formData.append('kbName', name)
-    // 绑定 owner_id
     const userInfo = (() => {
-      try {
-        return JSON.parse(localStorage.getItem('user_info') || '{}')
-      } catch {
-        return {}
-      }
+      try { return JSON.parse(localStorage.getItem('user_info') || '{}') }
+      catch { return {} }
     })()
     const ownerId = userInfo.id || userInfo.email || ''
     if (ownerId) formData.append('owner_id', ownerId)
+
     await axios.post('/api/create-knowledgebase/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
-    MessagePlugin.success(`知识库「${name}」创建成功 🎉`)
+
+    alert(`知识库「${name}」创建成功 🎉`)
     quickCreateVisible.value = false
-    // 若当前在知识库页面，刷新列表
-    if (route.path === '/knowledge') {
-      router.go(0)
-    } else {
-      router.push('/knowledge')
-    }
+    route.path === '/knowledge' ? router.go(0) : router.push('/knowledge')
   } catch (e: any) {
-    if (e.response?.status === 400) {
-      MessagePlugin.error('知识库名称已存在')
-    } else {
-      MessagePlugin.error('创建失败，请稍后重试')
-    }
+    alert(e.response?.status === 400 ? '知识库名称已存在' : '创建失败，请稍后重试')
   }
 }
-// 页面切换顶部进度条
-const pageLoading = ref(false)
-router.beforeEach(() => {
-  pageLoading.value = true
-})
 
-router.afterEach(() => {
-  setTimeout(() => {
-    pageLoading.value = false
-  }, 350)
-})
-// 路由切换后触发动效初始化
-const onPageBeforeEnter = () => {
-  /* 页面开始进入 */
-}
-const onPageAfterEnter = () => {
-  // DOM 就绪后重新扫描 reveal 元素 & 注入 ripple
-  setTimeout(() => initInteractions(), 50)
-}
-// 主内容区 ref（用于 BackToTop 的滚动监听）
+// ── 页面切换进度条 ──
+const pageLoading = ref(false)
+router.beforeEach(() => { pageLoading.value = true })
+router.afterEach(() => { setTimeout(() => { pageLoading.value = false }, 350) })
+
+// ── Refs & 快捷键 ──
 const mainRef = ref<HTMLElement | null>(null)
-// 全局 Ctrl+K 快捷键
+const sidebarRef = ref<InstanceType<typeof NovaSidebar> | null>(null)
+
 const handleKeydown = (e: KeyboardEvent) => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
     e.preventDefault()
     searchVisible.value = true
   }
 }
+
 onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
-  // ── 恢复外观设置（统一由 useTheme 管理，单一数据源）──
   applyAllAppearance()
-  // ── 初始化语言设置（确保默认语言在每次启动时生效）──
   const savedLocale = localStorage.getItem('locale') as 'zh' | 'en' | null
-  if (savedLocale && (savedLocale === 'zh' || savedLocale === 'en')) {
-    setLocale(savedLocale)
-  }
-  // ── 初始化全局交互动效 ──
-  initInteractions(router)
+  if (savedLocale && (savedLocale === 'zh' || savedLocale === 'en')) setLocale(savedLocale)
+  void initInteractions(router)
 })
+
 onUnmounted(() => document.removeEventListener('keydown', handleKeydown))
+
+defineExpose({ openSearch, handleQuickCreate })
 </script>
+
 <style>
-* {
-  box-sizing: border-box;
+/* ============================================
+   NOVA App — 全局应用样式 v2.0 Game-Grade
+   ============================================ */
+
+#nova-app {
+  min-height: 100vh;
+  background: var(--nova-bg-deep);
+  position: relative;
+  overflow-x: hidden;
 }
-html,
-body {
-  margin: 0;
-  padding: 0;
+
+/* 登录页 */
+.nova-fullscreen {
+  height: 100vh;
+  width: 100vw;
+  overflow-y: auto;
+}
+
+/* 主内容区 */
+.nova-main {
+  flex: 1;
+  height: 100vh;
+  overflow: hidden auto;
+  min-width: 0;
+  position: relative;
+
+  /* 滚动条隐藏但保留滚动功能（可选） */
+  /* scrollbar-width: none; */
+  /* &::-webkit-scrollbar { display: none; } */
+}
+
+/* ═══ 进度条 ═══ */
+.nova-progress-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  z-index: var(--nova-z-maximum);
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.nova-progress-bar__inner {
   height: 100%;
-  width: 100%;
+  width: 30%;
+  background: var(--nova-gradient-brand);
+  border-radius: 0 var(--radius-full) var(--radius-full) 0;
+  animation: progressSlide 0.8s ease-in-out infinite alternate;
+  box-shadow: 0 0 14px rgba(99, 102, 241, 0.5), 0 0 28px rgba(139, 92, 246, 0.3);
 }
-#app {
-  height: 100vh;
-  width: 100vw;
+
+@keyframes progressSlide {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(350%); }
 }
-.app-fullpage {
-  height: 100vh;
-  width: 100vw;
-  background-color: var(--bg-base);
+
+/* ═══ 页面过渡 ═══ */
+.page-fade-enter-active,
+.page-fade-leave-active,
+.page-slide-enter-active,
+.page-slide-leave-active {
+  transition: all var(--nova-duration-page) var(--nova-ease-out-expo);
 }
-.qc-overlay {
+.page-fade-enter-from,
+.page-fade-leave-to { opacity: 0; }
+
+.page-slide-enter-from {
+  opacity: 0;
+  transform: translateX(24px) scale(0.98);
+}
+.page-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-16px) scale(0.99);
+}
+
+/* 进度条过渡 */
+.progress-enter-active,
+.progress-leave-active { transition: opacity 0.25s ease; }
+.progress-enter-from,
+.progress-leave-to { opacity: 0; }
+
+/* ═══ 弹窗样式 ═══ */
+.nova-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9000;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+  z-index: var(--nova-z-modal);
+  background: rgba(3, 7, 18, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: qc-fade-in 0.12s ease;
+  padding: var(--nova-space-4);
 }
-@keyframes qc-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-.qc-card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-base);
-  border-radius: var(--radius-xl);
-  padding: 24px;
-  width: 400px;
-  box-shadow: var(--shadow-lg);
-  animation: qc-slide-up 0.2s var(--ease-spring);
-}
-@keyframes qc-slide-up {
-  from {
-    transform: translateY(16px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-.qc-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-.qc-icon {
-  font-size: 20px;
-}
-.qc-header h3 {
-  flex: 1;
-  font-size: 15px;
-  font-weight: 600;
-  margin: 0;
-  color: var(--text-primary);
-}
-.qc-close {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  color: var(--text-quaternary);
-  width: 26px;
-  height: 26px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-fast);
-}
-.qc-close:hover {
-  background: var(--bg-hover);
-  color: var(--text-secondary);
-}
-.qc-input {
+
+.nova-modal-card {
+  position: relative;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(28px) saturate(1.4);
+  -webkit-backdrop-filter: blur(28px) saturate(1.4);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: var(--radius-2xl);
   width: 100%;
-  padding: 9px 12px;
-  border: 1px solid var(--border-base);
-  border-radius: var(--radius-md);
-  font-size: 13.5px;
-  outline: none;
-  box-sizing: border-box;
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-}
-.qc-input:focus {
-  border-color: var(--border-brand);
-  box-shadow: 0 0 0 2px var(--accent-violet-subtle);
-}
-.qc-input::placeholder {
-  color: var(--text-quaternary);
-}
-.qc-footer {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  margin-top: 16px;
-}
-.qc-btn-cancel {
-  padding: 7px 16px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-base);
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-size: 13px;
-  transition: all var(--transition-fast);
-}
-.qc-btn-cancel:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-.qc-btn-confirm {
-  padding: 7px 18px;
-  border-radius: var(--radius-sm);
-  border: none;
-  background: var(--gradient-brand);
-  color: #fff;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all var(--transition-fast);
-  box-shadow: var(--shadow-glow);
-}
-.qc-btn-confirm:hover:not(:disabled) {
-  filter: brightness(1.12);
-  box-shadow: var(--shadow-glow-strong);
-  transform: translateY(-1px);
-}
-.qc-btn-confirm:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-.app-layout {
-  display: flex;
-  height: 100vh;
-  width: 100vw;
-  background-color: var(--bg-base);
+  max-width: 420px;
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.5),
+    0 0 60px rgba(99, 102, 241, 0.08),
+    inset 0 1px 0 rgba(255,255,255,0.04);
   overflow: hidden;
 }
-.app-main {
+
+.nova-modal-card__glow {
+  position: absolute;
+  top: -120px; left: 50%;
+  transform: translateX(-50%);
+  width: 300px; height: 200px;
+  background: radial-gradient(ellipse, rgba(99,102,241,0.15), transparent 70%);
+  pointer-events: none;
+}
+
+.nova-modal-header {
+  display: flex;
+  align-items: center;
+  gap: var(--nova-space-3);
+  padding: var(--nova-space-6) var(--nova-space-6) 0;
+  position: relative;
+}
+
+.nova-modal-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px; height: 44px;
+  background: var(--nova-gradient-brand);
+  border-radius: var(--radius-lg);
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
+
+.nova-modal-header h3 {
   flex: 1;
-  height: 100vh;
-  overflow: hidden;
-  min-width: 0;
+  font-size: var(--nova-text-lg);
+  font-weight: var(--nova-font-semibold);
+  color: var(--nova-text-primary);
+  margin: 0;
 }
-.page-enter-active {
-  transition:
-    opacity 0.18s ease,
-    transform 0.18s var(--ease-out);
+
+.nova-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--nova-text-muted);
+  cursor: pointer;
+  transition: all var(--nova-duration-fast) ease;
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--nova-error);
+  }
 }
-.page-leave-active {
-  transition:
-    opacity 0.14s ease,
-    transform 0.14s ease;
+
+.nova-modal-body {
+  padding: var(--nova-space-6);
 }
-.page-enter-from {
-  opacity: 0;
-  transform: translateY(6px);
+
+.nova-modal-input {
+  width: 100%;
+  padding: var(--nova-space-4) var(--nova-space-4);
+  font-size: var(--nova-text-base);
+  font-family: var(--nova-font-display);
+  color: var(--nova-text-primary);
+  background: rgba(3, 7, 18, 0.5);
+  border: 1.5px solid rgba(148, 163, 184, 0.12);
+  border-radius: var(--radius-xl);
+  outline: none;
+  transition: all var(--nova-duration-fast) ease;
+
+  &::placeholder { color: var(--nova-text-muted); }
+
+  &:focus {
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 
+      0 0 0 3px rgba(99, 102, 241, 0.08),
+      0 0 20px rgba(99, 102, 241, 0.06);
+  }
 }
-.page-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
+
+.nova-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--nova-space-3);
+  padding: 0 var(--nova-space-6) var(--nova-space-6);
+  background: rgba(3, 7, 18, 0.3);
 }
-.eval-toast-bar {
+
+/* 弹窗过渡 */
+.modal-glow-enter-active .nova-modal-card {
+  animation: novaBounceIn var(--nova-duration-slower) var(--nova-ease-spring);
+}
+.modal-glow-leave-active .nova-modal-card {
+  animation: modalFadeOut var(--nova-duration-normal) ease forwards;
+}
+.modal-glow-enter-active,
+.modal-glow-leave-active {
+  transition: opacity var(--nova-duration-normal) ease;
+}
+.modal-glow-enter-from,
+.modal-glow-leave-to { opacity: 0; }
+@keyframes modalFadeOut {
+  to { opacity: 0; transform: scale(0.95) translateY(10px); }
+}
+
+/* ═══ Toast 浮层 ═══ */
+.nova-toast-bar {
   position: fixed;
-  bottom: 20px;
+  bottom: var(--nova-space-8);
   left: 50%;
   transform: translateX(-50%);
+  z-index: var(--nova-z-toast);
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: var(--bg-overlay);
-  border: 1px solid var(--border-base);
-  color: var(--text-primary);
-  padding: 8px 16px;
+  gap: var(--nova-space-3);
+  padding: var(--nova-space-3) var(--nova-space-6);
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(99, 102, 241, 0.2);
   border-radius: var(--radius-full);
-  font-size: 12px;
-  z-index: 9999;
+  font-size: var(--nova-text-sm);
+  color: var(--nova-info);
   cursor: pointer;
-  box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(16px);
-  animation: toastIn 0.25s var(--ease-spring);
-}
-.eval-toast-bar:hover {
-  background: var(--bg-hover);
-  border-color: var(--border-active);
-}
-@keyframes toastIn {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 40px rgba(99, 102, 241, 0.1);
+
+  &:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow:
+      0 12px 40px rgba(0, 0, 0, 0.45),
+      0 0 50px rgba(99, 102, 241, 0.15);
   }
 }
-.eval-toast-spinner {
-  width: 12px;
-  height: 12px;
-  border: 1.5px solid var(--border-base);
-  border-top-color: var(--accent-violet-light);
+
+.nova-toast-spinner {
+  width: 16px; height: 16px;
+  border: 2px solid transparent;
+  border-top-color: var(--nova-info);
+  border-right-color: var(--nova-info);
   border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+  animation: novaSpin 0.75s linear infinite;
   flex-shrink: 0;
 }
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-.eval-toast-text {
-  flex: 1;
-  white-space: nowrap;
-  max-width: 240px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.eval-toast-link {
-  color: var(--accent-violet-light);
-  font-weight: 550;
+
+.nova-toast-action {
+  color: #a5b4fc;
+  font-weight: var(--nova-font-semibold);
   flex-shrink: 0;
 }
-.page-loading-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--gradient-brand);
-  z-index: 10000;
-  animation: loadingBar 0.8s ease-out forwards;
+
+/* Toast 过渡 */
+.toast-up-enter-active,
+.toast-up-leave-active {
+  transition: all var(--nova-duration-slow) var(--nova-ease-out-expo);
 }
-@keyframes loadingBar {
-  from { width: 0; }
-  to { width: 100%; }
+.toast-up-enter-from {
+  opacity: 0;
+  transform: translateX(-50%) translateY(20px);
+}
+.toast-up-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px) scale(0.96);
 }
 </style>

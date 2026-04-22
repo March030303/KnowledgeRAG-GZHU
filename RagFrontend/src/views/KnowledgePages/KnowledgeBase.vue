@@ -1,197 +1,203 @@
 <template>
   <main class="kb-page">
-    <!-- 顶部欢迎区域 -->
-    <div class="kb-header">
-      <div class="kb-header__left">
-        <h1 class="kb-title">知识库</h1>
-        <p class="kb-subtitle">管理和检索你的所有知识内容</p>
-      </div>
-      <div class="kb-header__right">
-        <!-- 搜索框 -->
-        <div class="kb-search-wrapper">
-          <svg
-            class="kb-search-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <path stroke-linecap="round" d="M21 21l-4.35-4.35" />
-          </svg>
-          <input
-            v-model="searchKeyword"
-            type="text"
-            placeholder="搜索知识库..."
-            class="kb-search-input"
-            @input="handleSearch"
-          />
-          <button v-if="searchKeyword" class="kb-search-clear" @click="clearSearchKeyword">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <!-- 去广场按钮 -->
-        <button class="kb-square-btn" @click="$router.push('/square')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          知识广场
-        </button>
-        <!-- 新建按钮 -->
-        <button class="kb-create-btn" @click="toggleUploadModal">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" d="M12 4v16m8-8H4" />
-          </svg>
-          新建知识库
-        </button>
-      </div>
-    </div>
-    <!-- 创建知识库弹窗 -->
-    <div v-if="showCreateModal" class="modal-overlay" @click.self="showCreateModal = false">
-      <div class="modal-card">
-        <div class="modal-header">
-          <h3>新建知识库</h3>
-          <button class="modal-close" @click="showCreateModal = false">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div class="modal-body">
-          <label class="modal-label">知识库名称</label>
-          <input
-            type="text"
-            v-model="kbName"
-            placeholder="输入知识库名称..."
-            class="modal-input"
-            @keydown.enter="createKnowledgeBase"
-          />
-        </div>
-        <div class="modal-footer">
-          <button class="btn-cancel" @click="showCreateModal = false">取消</button>
-          <button class="btn-confirm" @click="createKnowledgeBase" :disabled="!kbName.trim()">
-            创建
-          </button>
-        </div>
-      </div>
-    </div>
-    <!-- 搜索状态 -->
-    <div v-if="isSearching" class="kb-section">
-      <div class="kb-section__header">
-        <span class="kb-section__title">搜索结果</span>
-        <span class="kb-section__count">{{ filteredCards.length }} 个知识库</span>
-      </div>
-      <div v-if="filteredCards.length > 0" class="kb-grid">
-        <KbCard
-          v-for="card in filteredCards"
-          :key="card.id"
-          :card="card"
-          :starred="starredIds.has(card.id)"
-          :pinned="pinnedIds.has(card.id)"
-          @click="goToDetail(card.id)"
-          @star="toggleStar(card.id)"
-          @pin="togglePin(card.id)"
-          @delete="deleteCard(card)"
-        />
-      </div>
-      <div v-else class="kb-empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="11" cy="11" r="8" />
-          <path stroke-linecap="round" d="M21 21l-4.35-4.35" />
-        </svg>
-        <p>没有找到 "{{ searchKeyword }}" 相关知识库</p>
-      </div>
-    </div>
-    <template v-else>
-      <!-- 星标知识库 -->
-      <div v-if="starredCards.length > 0" class="kb-section">
-        <div class="kb-section__header">
-          <span class="kb-section__title">
-            <svg viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="1.5">
-              <path
-                stroke-linecap="round"
-                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-              />
-            </svg>
-            星标知识库
-          </span>
-          <span class="kb-section__count">{{ starredCards.length }}</span>
-        </div>
-        <div class="kb-grid">
-          <KbCard
-            v-for="card in starredCards"
-            :key="card.id"
-            :card="card"
-            :starred="true"
-            :pinned="pinnedIds.has(card.id)"
-            @click="goToDetail(card.id)"
-            @star="toggleStar(card.id)"
-            @pin="togglePin(card.id)"
-            @delete="deleteCard(card)"
-          />
-        </div>
-      </div>
-      <!-- 最近访问 -->
-      <div v-if="recentCards.length > 0" class="kb-section">
-        <div class="kb-section__header">
-          <span class="kb-section__title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2">
-              <path stroke-linecap="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            最近访问
-          </span>
-          <span class="kb-section__count">{{ recentCards.length }}</span>
-        </div>
-        <div class="kb-grid kb-grid--compact">
-          <KbCard
-            v-for="card in recentCards"
-            :key="card.id"
-            :card="card"
-            :starred="starredIds.has(card.id)"
-            :pinned="pinnedIds.has(card.id)"
-            compact
-            @click="goToDetail(card.id)"
-            @star="toggleStar(card.id)"
-            @pin="togglePin(card.id)"
-            @delete="deleteCard(card)"
-          />
-        </div>
-      </div>
-      <!-- 全部知识库 -->
-      <div class="kb-section">
-        <div class="kb-section__header">
-          <span class="kb-section__title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2">
-              <path stroke-linecap="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-            </svg>
-            全部知识库
-          </span>
-          <div style="display: flex; align-items: center; gap: 10px">
-            <span v-if="isDragMode" class="kb-drag-hint">拖拽排序中 · 松手完成</span>
-            <button
-              class="kb-drag-toggle"
-              :class="{ active: isDragMode }"
-              @click="isDragMode = !isDragMode"
-              title="拖拽排序"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" d="M4 8h16M4 12h16M4 16h16" />
+    <!-- ═══ 顶部 Hero 区域 ═══ -->
+    <header class="kb-hero">
+      <!-- 装饰光效 -->
+      <div class="kb-hero__glow kb-hero__glow--1" />
+      <div class="kb-hero__glow kb-hero__glow--2" />
+
+      <div class="kb-hero__content">
+        <div class="kb-hero__left">
+          <!-- 标题组 -->
+          <div class="kb-title-group nova-animate-in">
+            <div class="kb-title-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#kbIconGrad)" stroke-width="2" stroke-linecap="round">
+                <defs>
+                  <linearGradient id="kbIconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#3b82f6"/>
+                    <stop offset="50%" stop-color="#8b5cf6"/>
+                    <stop offset="100%" stop-color="#ec4899"/>
+                  </linearGradient>
+                </defs>
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
               </svg>
-              {{ isDragMode ? '完成排序' : '排序' }}
-            </button>
-            <span class="kb-section__count">{{ sortableCards.length }}</span>
+            </div>
+            <div>
+              <h1 class="kb-title">
+                <span class="nova-gradient-text-animated">知识库</span>
+              </h1>
+              <p class="kb-subtitle">管理和检索你的所有知识内容</p>
+            </div>
           </div>
         </div>
-        <div v-if="cardDataStore.loading" class="kb-loading">
-          <div class="kb-spinner"></div>
-          <span>加载知识库...</span>
+
+        <div class="kb-hero__actions nova-animate-in nova-animate-in--delay-2">
+          <!-- 搜索框 -->
+          <div class="kb-search">
+            <svg class="kb-search__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input
+              v-model="searchKeyword"
+              type="text"
+              placeholder="搜索知识库..."
+              class="kb-search__input"
+              @input="handleSearch"
+            />
+            <button
+              v-if="searchKeyword"
+              class="kb-search__clear"
+              @click="clearSearchKeyword"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <kbd class="kb-search__kbd">/</kbd>
+          </div>
+
+          <!-- 新建按钮 -->
+          <NovaButton variant="primary" size="lg" @click="toggleUploadModal">
+            <template #icon>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M12 4v16m8-8H4"/></svg>
+            </template>
+            新建知识库
+          </NovaButton>
         </div>
+      </div>
+    </header>
+
+    <!-- ═══ 创建弹窗 ═══ -->
+    <teleport to="body">
+      <transition name="modal-glow">
+        <div v-if="showCreateModal" class="nova-modal-overlay" @click.self="showCreateModal = false">
+          <div class="nova-modal-card nova-animate-in">
+            <header class="nova-modal-header">
+              <div class="nova-modal-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                  <line x1="12" y1="6" x2="12" y2="14"/>
+                  <line x1="8" y1="10" x2="16" y2="10"/>
+                </svg>
+              </div>
+              <h3>新建知识库</h3>
+              <button class="nova-modal-close" @click="showCreateModal = false">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </header>
+            <div class="nova-modal-body">
+              <label class="nova-label">知识库名称</label>
+              <input
+                v-model="kbName"
+                type="text"
+                class="nova-modal-input"
+                placeholder="输入名称..."
+                @keydown.enter="createKnowledgeBase"
+              />
+            </div>
+            <footer class="nova-modal-footer">
+              <NovaButton variant="ghost" size="sm" @click="showCreateModal = false">取消</NovaButton>
+              <NovaButton variant="primary" size="sm" :disabled="!kbName.trim()" @click="createKnowledgeBase">创建</NovaButton>
+            </footer>
+          </div>
+        </div>
+      </transition>
+    </teleport>
+
+    <!-- ═══ 搜索结果 ═══ -->
+    <section v-if="isSearching" class="kb-section nova-animate-in">
+      <div class="kb-section-head">
+        <h2 class="kb-section-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--nova-info)" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
+          搜索结果
+        </h2>
+        <NovaBadge type="primary">{{ filteredCards.length }} 个结果</NovaBadge>
+      </div>
+
+      <div v-if="filteredCards.length > 0" class="kb-grid nova-stagger-grid">
+        <div v-for="card in filteredCards" :key="card.id" class="kb-grid-item">
+          <NovaCard hoverable clickable accent="blue" @click="goToDetail(card.id)">
+            <template #header>
+              <div class="kb-card-header">
+                <div class="kb-card-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                </div>
+                <div class="kb-card-info">
+                  <h4>{{ card.title }}</h4>
+                  <span>知识库</span>
+                </div>
+              </div>
+            </template>
+            <p class="kb-card-desc">{{ card.description || '暂无描述' }}</p>
+          </NovaCard>
+        </div>
+      </div>
+
+      <div v-else class="kb-empty">
+        <div class="kb-empty-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
+        </div>
+        <p>没有找到「{{ searchKeyword }}」相关内容</p>
+      </div>
+    </section>
+
+    <!-- ═══ 主内容区 ═══ -->
+    <template v-else>
+      <!-- 星标区域 -->
+      <section v-if="starredCards.length > 0" class="kb-section nova-animate-in">
+        <div class="kb-section-head">
+          <h2 class="kb-section-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="2"><path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+            星标知识库
+          </h2>
+          <NovaBadge type="warning">{{ starredCards.length }}</NovaBadge>
+        </div>
+        <div class="kb-grid nova-stagger-grid">
+          <div v-for="card in starredCards" :key="card.id" class="kb-grid-item">
+            <NovaCard hoverable clickable accent="warning" @click="goToDetail(card.id)">
+              <template #header>
+                <div class="kb-card-header">
+                  <div class="kb-card-icon kb-card-icon--warning">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                  </div>
+                  <div class="kb-card-info">
+                    <h4>{{ card.title }}</h4>
+                    <span>知识库</span>
+                  </div>
+                </div>
+              </template>
+              <p class="kb-card-desc">{{ card.description || '暂无描述' }}</p>
+            </NovaCard>
+          </div>
+        </div>
+      </section>
+
+      <!-- 全部知识库 -->
+      <section class="kb-section nova-animate-in nova-animate-in--delay-1">
+        <div class="kb-section-head">
+          <h2 class="kb-section-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+            全部知识库
+          </h2>
+          <div class="kb-section-actions">
+            <button
+              class="kb-sort-btn"
+              :class="{ active: isDragMode }"
+              @click="isDragMode = !isDragMode"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              {{ isDragMode ? '完成' : '排序' }}
+            </button>
+            <NovaBadge type="primary">{{ sortableCards.length }}</NovaBadge>
+          </div>
+        </div>
+
+        <!-- 加载骨架屏 -->
+        <div v-if="cardDataStore.loading" class="kb-loading nova-stagger-grid">
+          <NovaSkeleton v-for="i in 6" :key="i" variant="card" />
+        </div>
+
+        <!-- 卡片网格 -->
         <div
           v-else-if="sortableCards.length > 0"
           class="kb-grid"
@@ -200,11 +206,10 @@
           <div
             v-for="(card, index) in sortableCards"
             :key="card.id"
-            class="kb-drag-wrapper"
+            class="kb-grid-item"
             :class="{
-              'kb-drag-wrapper--draggable': isDragMode,
-              'kb-drag-wrapper--dragging': dragIndex === index,
-              'kb-drag-wrapper--over': dragOverIndex === index && dragIndex !== index
+              'kb-grid-item--draggable': isDragMode,
+              'kb-grid-item--active': dragIndex === index,
             }"
             :draggable="isDragMode"
             @dragstart="onDragStart($event, index)"
@@ -213,731 +218,502 @@
             @drop="onDrop($event, index)"
             @dragend="onDragEnd"
           >
-            <!-- 拖拽模式下的抓手图标 -->
-            <div v-if="isDragMode" class="kb-drag-handle">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="9" cy="5" r="1" fill="currentColor" />
-                <circle cx="15" cy="5" r="1" fill="currentColor" />
-                <circle cx="9" cy="12" r="1" fill="currentColor" />
-                <circle cx="15" cy="12" r="1" fill="currentColor" />
-                <circle cx="9" cy="19" r="1" fill="currentColor" />
-                <circle cx="15" cy="19" r="1" fill="currentColor" />
-              </svg>
-            </div>
-            <KbCard
-              :card="card"
-              :starred="starredIds.has(card.id)"
-              :pinned="pinnedIds.has(card.id)"
+            <NovaCard
+              hoverable
+              clickable
+              :accent="starredIds.has(card.id) ? 'warning' : 'blue'"
               @click="isDragMode ? undefined : goToDetail(card.id)"
-              @star="toggleStar(card.id)"
-              @pin="togglePin(card.id)"
-              @delete="deleteCard(card)"
-            />
-          </div>
-          <!-- 结束占位符 -->
-          <div class="kb-card-end">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p>Nothing more</p>
+            >
+              <template #header>
+                <div class="kb-card-header">
+                  <div class="kb-card-icon" :class="{ 'kb-card-icon--warning': starredIds.has(card.id) }">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                  </div>
+                  <div class="kb-card-info">
+                    <h4>{{ card.title }}</h4>
+                    <span>知识库</span>
+                  </div>
+                  <div v-if="isDragMode" class="kb-drag-handle">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="5" r="1.5" fill="currentColor"/><circle cx="15" cy="5" r="1.5" fill="currentColor"/><circle cx="9" cy="12" r="1.5" fill="currentColor"/><circle cx="15" cy="12" r="1.5" fill="currentColor"/><circle cx="9" cy="19" r="1.5" fill="currentColor"/><circle cx="15" cy="19" r="1.5" fill="currentColor"/></svg>
+                  </div>
+                </div>
+              </template>
+              <p class="kb-card-desc">{{ card.description || '暂无描述' }}</p>
+            </NovaCard>
           </div>
         </div>
-        <div v-else class="kb-empty">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path
-              stroke-linecap="round"
-              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-            />
-          </svg>
-          <p>还没有知识库，点击右上角创建一个吧</p>
+
+        <!-- 空状态 -->
+        <div v-else class="kb-empty nova-animate-in">
+          <div class="kb-empty-art">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </div>
+          <h3>还没有知识库</h3>
+          <p>点击右上角「新建知识库」开始创建</p>
+          <NovaButton variant="primary" @click="toggleUploadModal">
+            <template #icon>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M12 4v16m8-8H4"/></svg>
+            </template>
+            创建第一个知识库
+          </NovaButton>
         </div>
-      </div>
+      </section>
     </template>
   </main>
 </template>
+
 <script setup lang="ts">
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { MessagePlugin } from 'tdesign-vue-next'
 import axios from 'axios'
 import { useCardDataStore } from '../../store'
 import { storeToRefs } from 'pinia'
-import KbCard from '@/components/knowledge-unit/KbCard.vue'
+import { NovaButton, NovaCard, NovaBadge, NovaSkeleton } from '@/components/nova'
+
 const router = useRouter()
 const cardDataStore = useCardDataStore()
 const { allCards, filteredCards } = storeToRefs(cardDataStore)
-// 搜索
+
+// ── 搜索 ──
 const searchKeyword = ref('')
 const isSearching = computed(() => searchKeyword.value.trim() !== '')
-const handleSearch = () => {
-  cardDataStore.filterCardData(searchKeyword.value)
-}
-const clearSearchKeyword = () => {
-  searchKeyword.value = ''
-  handleSearch()
-}
-// 导航
-const goToDetail = (id: string) => {
-  // 记录最近访问
-  recordRecent(id)
-  router.push(`/knowledge/knowledgeDetail/${id}`)
-}
-// ======= 星标功能（localStorage持久化） =======
-const STAR_KEY = 'kb_starred_ids'
-const RECENT_KEY = 'kb_recent_ids'
-const PIN_KEY = 'kb_pinned_ids'
+const handleSearch = () => cardDataStore.filterCardData(searchKeyword.value)
+const clearSearchKeyword = () => { searchKeyword.value = ''; handleSearch() }
+
+// ── 导航 ──
+const goToDetail = (id: string) => { recordRecent(id); router.push(`/knowledge/knowledgeDetail/${id}`) }
+
+// ── 星标 / 最近 / 置顶 (localStorage) ──
+const STAR_KEY = 'kb_starred_ids', RECENT_KEY = 'kb_recent_ids', PIN_KEY = 'kb_pinned_ids'
 const starredIds = ref<Set<string>>(new Set())
 const recentIds = ref<string[]>([])
 const pinnedIds = ref<Set<string>>(new Set())
-const loadStarred = () => {
-  try {
-    const raw = localStorage.getItem(STAR_KEY)
-    starredIds.value = new Set(raw ? JSON.parse(raw) : [])
-  } catch {
-    starredIds.value = new Set()
-  }
-}
-const loadRecent = () => {
-  try {
-    const raw = localStorage.getItem(RECENT_KEY)
-    recentIds.value = raw ? JSON.parse(raw) : []
-  } catch {
-    recentIds.value = []
-  }
-}
-const loadPinned = () => {
-  try {
-    const raw = localStorage.getItem(PIN_KEY)
-    pinnedIds.value = new Set(raw ? JSON.parse(raw) : [])
-  } catch {
-    pinnedIds.value = new Set()
-  }
-}
-const toggleStar = (id: string) => {
-  if (starredIds.value.has(id)) {
-    starredIds.value.delete(id)
-    MessagePlugin.info('已取消星标')
-  } else {
-    starredIds.value.add(id)
-    MessagePlugin.success('已加入星标')
-  }
-  localStorage.setItem(STAR_KEY, JSON.stringify([...starredIds.value]))
-}
-const togglePin = (id: string) => {
-  const s = new Set(pinnedIds.value)
-  if (s.has(id)) {
-    s.delete(id)
-    MessagePlugin.info('已取消置顶')
-  } else {
-    s.add(id)
-    MessagePlugin.success('已置顶')
-  }
-  pinnedIds.value = s
-  localStorage.setItem(PIN_KEY, JSON.stringify([...s]))
-}
-const recordRecent = (id: string) => {
-  const list = [id, ...recentIds.value.filter(i => i !== id)].slice(0, 6)
-  recentIds.value = list
-  localStorage.setItem(RECENT_KEY, JSON.stringify(list))
-}
+
+const loadStarred = () => { try { starredIds.value = new Set(JSON.parse(localStorage.getItem(STAR_KEY) || '')) } catch {} }
+const saveStarred = () => localStorage.setItem(STAR_KEY, JSON.stringify([...starredIds.value]))
+const toggleStar = (id: string) => { const s = starredIds.value; if (s.has(id)) s.delete(id); else s.add(id); starredIds.value = new Set(s); saveStarred() }
+
+const loadPinned = () => { try { pinnedIds.value = new Set(JSON.parse(localStorage.getItem(PIN_KEY) || '')) } catch {} }
+const togglePin = (id: string) => { const p = pinnedIds.value; if (p.has(id)) p.delete(id); else p.add(id); pinnedIds.value = new Set(p); localStorage.setItem(PIN_KEY, JSON.stringify([...p])) }
+
+const loadRecent = () => { try { recentIds.value = JSON.parse(localStorage.getItem(RECENT_KEY) || '') } catch {} }
+const recordRecent = (id: string) => { recentIds.value = [id, ...recentIds.value.filter(i => i !== id)].slice(0, 10); localStorage.setItem(RECENT_KEY, JSON.stringify(recentIds.value)) }
+
 const starredCards = computed(() => allCards.value.filter(c => starredIds.value.has(c.id)))
-const recentCards = computed(() => {
-  const MAX = 6
-  return recentIds.value
-    .map(id => allCards.value.find(c => c.id === id))
-    .filter(Boolean)
-    .slice(0, MAX) as any[]
+const sortableCards = computed(() => {
+  const pinned = allCards.value.filter(c => pinnedIds.value.has(c.id))
+  return [...pinned, ...allCards.value.filter(c => !pinnedIds.value.has(c.id))]
 })
-// ======= 创建知识库 =======
-const showCreateModal = ref(false)
-const kbName = ref('')
-const toggleUploadModal = () => {
-  showCreateModal.value = true
-  kbName.value = ''
-}
+
+// ── 拖拽排序 ──
+const isDragMode = ref(false), dragIndex = ref(-1), dragOverIndex = ref(-1)
+const onDragStart = (e: DragEvent, i: number) => { dragIndex.value = i; e.dataTransfer && (e.dataTransfer.effectAllowed = 'move') }
+const onDragOver = (_e: DragEvent, i: number) => { dragOverIndex.value = i }
+const onDragLeave = () => {}
+const onDrop = (_e: DragEvent, _targetIdx: number) => { dragIndex.value = -1; dragOverIndex.value = -1 }
+const onDragEnd = () => { dragIndex.value = -1; dragOverIndex.value = -1 }
+
+// ── 创建知识库 ──
+const showCreateModal = ref(false), kbName = ref('')
+const toggleUploadModal = () => { showCreateModal.value = !showCreateModal.value; if (!showCreateModal.value) kbName.value = '' }
+
 const createKnowledgeBase = async () => {
   if (!kbName.value.trim()) return
   try {
-    const formData = new FormData()
-    formData.append('kbName', kbName.value)
-    // 写入 owner_id，绑定到当前登录用户
-    const userInfo = (() => {
-      try {
-        return JSON.parse(localStorage.getItem('user_info') || '{}')
-      } catch {
-        return {}
-      }
-    })()
-    const ownerId = userInfo.id || userInfo.email || ''
-    if (ownerId) formData.append('owner_id', ownerId)
-    await axios.post('/api/create-knowledgebase/', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
-    MessagePlugin.success('知识库 "' + kbName.value + '" 创建成功')
-    kbName.value = ''
-    showCreateModal.value = false
+    const fd = new FormData(); fd.append('kbName', kbName.value)
+    let ui: any = {}
+    try { ui = JSON.parse(localStorage.getItem('user_info') || '{}') } catch {}
+    const oid = ui.id || ui.email || ''
+    if (oid) fd.append('owner_id', oid)
+    await axios.post('/api/create-knowledgebase/', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+    alert(`知识库「${kbName.value}」创建成功`)
+    showCreateModal.value = false; kbName.value = ''
     await cardDataStore.fetchCards()
-  } catch (error: any) {
-    if (error.response?.status === 400) {
-      MessagePlugin.error('知识库已存在')
-    } else {
-      MessagePlugin.error('创建失败，请稍后重试')
-    }
-  }
+  } catch (e: any) { alert(e.response?.status === 400 ? '知识库名称已存在' : '创建失败，请稍后重试') }
 }
-// ======= 删除知识库 =======
+
 const deleteCard = async (card: any) => {
-  try {
-    await axios.delete(`/api/delete-knowledgebase/${card.id}`)
-    MessagePlugin.success(`知识库「${card.title}」已删除`)
-    // 从星标/最近移除
-    starredIds.value.delete(card.id)
-    recentIds.value = recentIds.value.filter(id => id !== card.id)
-    localStorage.setItem(STAR_KEY, JSON.stringify([...starredIds.value]))
-    localStorage.setItem(RECENT_KEY, JSON.stringify(recentIds.value))
-    await cardDataStore.fetchCards()
-  } catch {
-    MessagePlugin.error('删除失败')
-  }
-}
-
-onMounted(async () => {
-  loadStarred()
-  loadRecent()
-  loadPinned()
+  if (!confirm(`确定删除知识库「${card.title}」吗？`)) return
+  await axios.delete(`/api/knowledgebases/${card.id}`)
+  alert('删除成功')
   await cardDataStore.fetchCards()
-})
-// ======= 拖拽排序 =======
-const DRAG_ORDER_KEY = 'kb_card_order'
-const isDragMode = ref(false)
-const dragIndex = ref<number | null>(null)
+}
 
-const dragOverIndex = ref<number | null>(null)
-// 可拖拽的知识库列表（持久化自定义顺序）
-const customOrder = ref<string[]>([])
-const loadOrder = () => {
-  try {
-    const raw = localStorage.getItem(DRAG_ORDER_KEY)
-    customOrder.value = raw ? JSON.parse(raw) : []
-  } catch {
-    customOrder.value = []
-  }
-}
-const saveOrder = () => {
-  localStorage.setItem(DRAG_ORDER_KEY, JSON.stringify(customOrder.value.map(id => id)))
-}
-// 按自定义顺序排列的卡片列表（置顶优先）
-const sortableCards = computed(() => {
-  const cards = [...allCards.value]
-  if (customOrder.value.length === 0) {
-    return cards.sort((a, b) => {
-      const ap = pinnedIds.value.has(a.id) ? 1 : 0
-      const bp = pinnedIds.value.has(b.id) ? 1 : 0
-      return bp - ap
-    })
-  }
-  const orderMap = new Map(customOrder.value.map((id, i) => [id, i]))
-  return cards.sort((a, b) => {
-    const ap = pinnedIds.value.has(a.id) ? 1 : 0
-    const bp = pinnedIds.value.has(b.id) ? 1 : 0
-    if (bp !== ap) return bp - ap
-    const ai = orderMap.has(a.id) ? orderMap.get(a.id)! : 9999
-    const bi = orderMap.has(b.id) ? orderMap.get(b.id)! : 9999
-    return ai - bi
-  })
-})
-// 当 allCards 变化时同步更新 customOrder（新增的卡片追加到末尾）
-watch(
-  allCards,
-  newCards => {
-    const newIds = newCards.map(c => c.id)
-    const existing = new Set(customOrder.value)
-    const appended = newIds.filter(id => !existing.has(id))
-    if (appended.length > 0) {
-      customOrder.value = [...customOrder.value.filter(id => newIds.includes(id)), ...appended]
-      saveOrder()
-    }
-  },
-  { immediate: true }
-)
-const onDragStart = (_e: DragEvent, index: number) => {
-  dragIndex.value = index
-}
-const onDragOver = (_e: DragEvent, index: number) => {
-  dragOverIndex.value = index
-}
-const onDragLeave = () => {
-  dragOverIndex.value = null
-}
-const onDrop = (_e: DragEvent, dropIndex: number) => {
-  if (dragIndex.value === null || dragIndex.value === dropIndex) return
-  const cards = [...sortableCards.value]
-  const [moved] = cards.splice(dragIndex.value, 1)
-  cards.splice(dropIndex, 0, moved)
-  customOrder.value = cards.map(c => c.id)
-  saveOrder()
-  dragIndex.value = null
-  dragOverIndex.value = null
-}
-const onDragEnd = () => {
-  dragIndex.value = null
-  dragOverIndex.value = null
-}
-// 初始化时加载顺序
-loadOrder()
+onMounted(async () => { void loadStarred(); void loadPinned(); void loadRecent(); await cardDataStore.fetchCards() })
 </script>
+
 <style scoped>
+/* ============================================
+   KB Page — Game-Grade Knowledge Base Page v2.0
+   ============================================ */
+
 .kb-page {
-  height: 100vh;
-  overflow-y: auto;
-  padding: 28px 32px;
-  background: var(--bg-base);
-  scrollbar-width: thin;
+  padding: var(--nova-space-8);
+  max-width: var(--nova-content-max-width);
+  margin: 0 auto;
+  min-height: 100%;
 }
-.kb-header {
+
+/* ═══ Hero 区域 ═══ */
+.kb-hero {
+  position: relative;
+  padding-bottom: var(--nova-space-10);
+  margin-bottom: var(--nova-space-8);
+  overflow: hidden;
+
+  /* 底部分隔线 */
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--nova-border-hover), transparent);
+  }
+}
+
+.kb-hero__glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.25;
+  pointer-events: none;
+}
+.kb-hero__glow--1 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(99,102,241,0.4), transparent 70%);
+  top: -200px; right: -100px;
+  animation: heroGlow1 15s ease-in-out infinite alternate;
+}
+.kb-hero__glow--2 {
+  width: 350px; height: 350px;
+  background: radial-gradient(circle, rgba(139,92,246,0.3), transparent 70%);
+  bottom: -150px; left: -80px;
+  animation: heroGlow2 18s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes heroGlow1 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(-40px, 30px) scale(1.15); }
+}
+@keyframes heroGlow2 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(30px, -40px) scale(1.1); }
+}
+
+.kb-hero__content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--nova-space-6);
+  flex-wrap: wrap;
+  position: relative;
+}
+
+/* 标题 */
+.kb-title-group {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 28px;
-  flex-wrap: wrap;
-  gap: 16px;
+  gap: var(--nova-space-4);
 }
+
+.kb-title-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px; height: 56px;
+  border-radius: var(--radius-xl);
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  box-shadow:
+    0 0 30px rgba(99, 102, 241, 0.1),
+    inset 0 0 20px rgba(99, 102, 241, 0.05);
+
+  /* 呼吸发光 */
+  animation: titleIconBreath 4s ease-in-out infinite alternate;
+}
+@keyframes titleIconBreath {
+  from { box-shadow: 0 0 30px rgba(99, 102, 241, 0.1), inset 0 0 20px rgba(99, 102, 241, 0.05); }
+  to { box-shadow: 0 0 50px rgba(139, 92, 246, 0.2), inset 0 0 25px rgba(139, 92, 246, 0.08); }
+}
+
 .kb-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text-primary);
+  font-size: var(--nova-text-4xl);
+  font-weight: var(--nova-font-extrabold);
+  line-height: var(--nova-leading-tight);
+  margin: 0 0 var(--nova-space-1);
+  letter-spacing: -0.02em;
+}
+
+.kb-subtitle {
+  font-size: var(--nova-text-base);
+  color: var(--nova-text-secondary);
   margin: 0;
 }
-.kb-subtitle {
-  font-size: 13px;
-  color: var(--text-tertiary);
-  margin: 3px 0 0;
-}
-.kb-header__right {
+
+/* Hero 操作区 */
+.kb-hero__actions {
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-.kb-search-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-base);
-  border-radius: var(--radius-md);
-  padding: 7px 12px;
-  width: 220px;
-  transition: all 0.2s;
-}
-.kb-search-wrapper:focus-within {
-  border-color: var(--border-brand);
-  box-shadow: 0 0 0 2px var(--accent-violet-subtle);
-  width: 280px;
-}
-.kb-search-icon {
-  width: 16px;
-  height: 16px;
-  color: var(--text-quaternary);
+  gap: var(--nova-space-4);
   flex-shrink: 0;
 }
-.kb-search-input {
-  flex: 1;
-  border: none;
-  outline: none;
-  font-size: 13px;
-  color: var(--text-primary);
-  background: transparent;
-  min-width: 0;
-}
-.kb-search-input::placeholder {
-  color: var(--text-quaternary);
-}
-.kb-search-clear {
-  width: 16px;
-  height: 16px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  color: var(--text-quaternary);
-  padding: 0;
+
+/* 搜索框 */
+.kb-search {
+  position: relative;
   display: flex;
   align-items: center;
-}
-.kb-search-clear svg {
-  width: 14px;
-  height: 14px;
-}
-.kb-square-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  background: var(--bg-elevated);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-base);
-  border-radius: var(--radius-md);
-  font-size: 13.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-.kb-square-btn:hover {
-  border-color: var(--accent-violet);
-  color: var(--accent-violet-light);
-  background: var(--accent-violet-subtle);
-}
-.kb-square-btn svg {
-  width: 16px;
-  height: 16px;
-}
-.kb-create-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: var(--gradient-brand);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: 13.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-  box-shadow: var(--shadow-glow);
-}
-.kb-create-btn:hover {
-  filter: brightness(1.12);
-  box-shadow: var(--shadow-glow-strong);
-  transform: translateY(-1px);
-}
-.kb-create-btn svg {
-  width: 16px;
-  height: 16px;
-}
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.modal-card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-base);
+  background: rgba(15, 23, 42, 0.65);
+  border: 1.5px solid var(--nova-border);
   border-radius: var(--radius-xl);
-  width: 400px;
-  max-width: 92vw;
-  box-shadow: var(--shadow-lg);
+  padding: 0 var(--nova-space-4);
+  min-width: 300px;
+  transition: all var(--nova-duration-fast) ease;
+
+  &:focus-within {
+    border-color: rgba(99, 102, 241, 0.45);
+    box-shadow:
+      0 0 0 3px rgba(99, 102, 241, 0.08),
+      0 0 30px rgba(99, 102, 241, 0.06);
+  }
 }
-.modal-header {
+
+.kb-search__icon {
+  color: var(--nova-text-muted);
+  flex-shrink: 0;
+  transition: color var(--nova-duration-fast) ease;
+}
+.kb-search:focus-within .kb-search__icon { color: var(--nova-info); }
+
+.kb-search__input {
+  flex: 1;
+  height: 48px;
+  padding: 0 var(--nova-space-3);
+  background: transparent;
+  border: none;
+  font-size: var(--nova-text-sm);
+  font-family: var(--nova-font-display);
+  color: var(--nova-text-primary);
+  outline: none;
+  &::placeholder { color: var(--nova-text-muted); }
+}
+
+.kb-search__clear {
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border: none; border-radius: var(--radius-full);
+  background: rgba(239,68,68,0.08); color: var(--nova-text-muted); cursor: pointer;
+  transition: all var(--nova-duration-fast) ease;
+  &:hover { background: rgba(239,68,68,0.18); color: var(--nova-error); }
+}
+
+.kb-search__kbd {
+  font-size: 11px;
+  font-family: var(--nova-font-mono);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: rgba(148,163,184,0.08);
+  color: var(--nova-text-muted);
+  border: 1px solid var(--nova-border);
+  margin-left: var(--nova-space-2);
+  pointer-events: none;
+}
+
+/* ═══ Section ═══ */
+.kb-section { margin-bottom: var(--nova-space-10); }
+
+.kb-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--nova-space-6);
+  gap: var(--nova-space-4);
+  flex-wrap: wrap;
+}
+
+.kb-section-title {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px 16px;
-  border-bottom: 1px solid var(--border-subtle);
-}
-.modal-header h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
+  gap: var(--nova-space-3);
+  font-size: var(--nova-text-lg);
+  font-weight: var(--nova-font-semibold);
+  color: var(--nova-text-primary);
   margin: 0;
 }
-.modal-close {
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  color: var(--text-quaternary);
-  border-radius: var(--radius-sm);
+
+.kb-section-actions {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: var(--nova-space-3);
 }
-.modal-close:hover {
-  background: var(--bg-hover);
-  color: var(--text-secondary);
-}
-.modal-close svg {
-  width: 16px;
-  height: 16px;
-}
-.modal-body {
-  padding: 16px 24px;
-}
-.modal-label {
-  display: block;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin-bottom: 6px;
-}
-.modal-input {
-  width: 100%;
-  padding: 9px 12px;
-  border: 1px solid var(--border-base);
+
+.kb-sort-btn {
+  display: inline-flex; align-items: center; gap: var(--nova-space-2);
+  padding: var(--nova-space-2) var(--nova-space-3);
+  font-size: var(--nova-text-xs);
+  font-weight: var(--nova-font-medium);
+  background: rgba(15,23,42,0.5);
+  border: 1px solid var(--nova-border);
   border-radius: var(--radius-md);
-  font-size: 14px;
-  outline: none;
-  transition: all 0.2s;
-  box-sizing: border-box;
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-}
-.modal-input:focus {
-  border-color: var(--border-brand);
-  box-shadow: 0 0 0 2px var(--accent-violet-subtle);
-}
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 12px 24px 20px;
-}
-.btn-cancel {
-  padding: 8px 18px;
-  border: 1px solid var(--border-base);
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 13.5px;
+  color: var(--nova-text-secondary);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--nova-duration-fast) ease;
+
+  &:hover, &.active {
+    background: rgba(99,102,241,0.12);
+    border-color: rgba(99,102,241,0.3);
+    color: #a5b4fc;
+  }
 }
-.btn-cancel:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-.btn-confirm {
-  padding: 8px 18px;
-  border: none;
-  border-radius: var(--radius-md);
-  background: var(--gradient-brand);
-  color: white;
-  font-size: 13.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-  box-shadow: var(--shadow-glow);
-}
-.btn-confirm:hover:not(:disabled) {
-  filter: brightness(1.12);
-  transform: translateY(-1px);
-}
-.btn-confirm:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-.kb-section {
-  margin-bottom: 32px;
-}
-.kb-section__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-.kb-section__title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-.kb-section__title svg {
-  width: 16px;
-  height: 16px;
-}
-.kb-section__count {
-  font-size: 12px;
-  color: var(--text-quaternary);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-}
+
+/* ═══ Grid ═══ */
 .kb-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--nova-space-6);
 }
-.kb-grid--compact {
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 10px;
+
+.kb-grid--drag { gap: var(--nova-space-8); }
+
+.kb-grid-item {
+  transition: all var(--nova-duration-normal) var(--nova-ease-out-expo);
 }
-.kb-card-end {
+
+.kb-grid-item--draggable { cursor: grab; }
+.kb-grid-item--draggable:active { cursor: grabbing; }
+.kb-grid-item--active {
+  opacity: 0.55;
+  transform: scale(0.97);
+}
+
+/* ═══ Card Header ═══ */
+.kb-card-header {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: var(--nova-space-3);
+}
+
+.kb-card-icon {
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
-  border: 2px dashed var(--border-base);
+  width: 40px; height: 40px;
   border-radius: var(--radius-lg);
-  color: var(--text-quaternary);
+  background: rgba(59,130,246,0.1);
+  color: var(--nova-info);
+  flex-shrink: 0;
 }
-.kb-card-end svg {
-  width: 32px;
-  height: 32px;
-  margin-bottom: 8px;
-  opacity: 0.5;
+.kb-card-icon--warning {
+  background: rgba(245,158,11,0.1);
+  color: var(--nova-warning);
 }
-.kb-card-end p {
-  font-size: 12px;
+
+.kb-card-info { flex: 1; min-width: 0; }
+
+.kb-card-info h4 {
+  font-size: var(--nova-text-base);
+  font-weight: var(--nova-font-semibold);
+  margin: 0 0 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+
+.kb-card-info span {
+  font-size: var(--nova-text-xs);
+  color: var(--nova-text-muted);
+}
+
+.kb-card-desc {
+  font-size: var(--nova-text-sm);
+  color: var(--nova-text-secondary);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.6;
+}
+
+.kb-drag-handle {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; color: var(--nova-text-muted); cursor: grab;
+}
+
+/* ═══ Loading ═══ */
+.kb-loading {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--nova-space-6);
+}
+
+/* ═══ Empty State ═══ */
 .kb-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
-  color: var(--text-quaternary);
-  gap: 12px;
+  padding: var(--nova-space-20) var(--nova-space-8);
+  text-align: center;
+  background: rgba(15,23,42,0.3);
+  border: 1.5px dashed var(--nova-border);
+  border-radius: var(--radius-3xl);
 }
-.kb-empty svg {
-  width: 48px;
-  height: 48px;
-  opacity: 0.4;
+
+.kb-empty-art {
+  color: var(--nova-text-muted);
+  margin-bottom: var(--nova-space-6);
+  opacity: 0.5;
 }
+
+.kb-empty h3 {
+  font-size: var(--nova-text-xl);
+  font-weight: var(--nova-font-semibold);
+  margin: 0 0 var(--nova-space-2);
+  color: var(--nova-text-primary);
+}
+
 .kb-empty p {
-  font-size: 14px;
+  color: var(--nova-text-muted);
+  margin: 0 0 var(--nova-space-6);
 }
-.kb-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 40px;
-  color: var(--text-quaternary);
-  font-size: 14px;
+
+/* ═══ 弹窗辅助样式 ═══ */
+.nova-label {
+  display: block;
+  font-size: var(--nova-text-xs);
+  font-weight: var(--nova-font-medium);
+  color: var(--nova-text-secondary);
+  margin-bottom: var(--nova-space-2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
-.kb-spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--border-base);
-  border-top-color: var(--accent-violet);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+
+.nova-modal-input {
+  width: 100%;
+  padding: var(--nova-space-4);
+  font-size: var(--nova-text-base);
+  font-family: var(--nova-font-display);
+  color: var(--nova-text-primary);
+  background: rgba(3,7,18,0.5);
+  border: 1.5px solid rgba(148,163,184,0.1);
+  border-radius: var(--radius-xl);
+  outline: none;
+  transition: all var(--nova-duration-fast) ease;
+  &::placeholder { color: var(--nova-text-muted); }
+  &:focus {
+    border-color: rgba(99,102,241,0.45);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.08), 0 0 20px rgba(99,102,241,0.06);
   }
 }
-@media (max-width: 640px) {
-  .kb-page {
-    padding: 16px;
-  }
-  .kb-grid {
-    grid-template-columns: 1fr;
-  }
-  .kb-search-wrapper {
-    width: 160px;
-  }
-  .kb-search-wrapper:focus-within {
-    width: 190px;
-  }
-}
-.kb-drag-toggle {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border: 1px solid var(--border-base);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.kb-drag-toggle:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-.kb-drag-toggle.active {
-  background: var(--accent-violet-subtle);
-  border-color: var(--accent-violet);
-  color: var(--accent-violet-light);
-}
-.kb-drag-toggle svg {
-  width: 14px;
-  height: 14px;
-}
-.kb-drag-hint {
-  font-size: 11px;
-  color: var(--accent-violet-light);
-  background: var(--accent-violet-subtle);
-  padding: 2px 8px;
-  border-radius: var(--radius-xs);
-  animation: pulse-hint 1.5s ease-in-out infinite;
-}
-@keyframes pulse-hint {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-.kb-grid--drag {
-  cursor: default;
-}
-.kb-drag-wrapper {
-  position: relative;
-}
-.kb-drag-wrapper--draggable {
-  cursor: grab;
-  transition:
-    transform 0.15s,
-    box-shadow 0.15s;
-}
-.kb-drag-wrapper--draggable:hover {
-  transform: translateY(-2px);
-}
-.kb-drag-wrapper--draggable:active {
-  cursor: grabbing;
-}
-.kb-drag-wrapper--dragging {
-  opacity: 0.4;
-  transform: scale(0.97);
-}
-.kb-drag-wrapper--over::before {
-  content: '';
-  position: absolute;
-  inset: -3px;
-  border: 2px dashed var(--accent-violet);
-  border-radius: var(--radius-lg);
-  z-index: 1;
-  pointer-events: none;
-  background: var(--accent-violet-subtle);
-}
-.kb-drag-handle {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 10;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--glass-bg);
-  backdrop-filter: blur(8px);
-  border-radius: var(--radius-sm);
-  color: var(--text-quaternary);
-  border: 1px solid var(--border-subtle);
-  cursor: grab;
-}
-.kb-drag-handle svg {
-  width: 14px;
-  height: 14px;
+
+/* ═══ Responsive ═══ */
+@media (max-width: 767px) {
+  .kb-page { padding: var(--nova-space-4); }
+  .kb-hero__content { flex-direction: column; }
+  .kb-hero__actions { flex-direction: column; width: 100%; }
+  .kb-search { min-width: auto; width: 100%; }
+  .kb-grid { grid-template-columns: 1fr; }
+  .kb-title { font-size: var(--nova-text-2xl); }
+  .kb-title-group { gap: var(--nova-space-3); }
+  .kb-title-icon { width: 44px; height: 44px; }
 }
 </style>

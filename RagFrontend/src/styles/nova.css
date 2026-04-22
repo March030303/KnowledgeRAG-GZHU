@@ -1,0 +1,762 @@
+/* ============================================
+   🎮 NOVA Design System v2.0 — Game-Grade Edition
+   
+   设计灵感：
+   - Yhello / madebywild: Three.js 粒子 + 鼠标跟随
+   - 视差滚动旅游站: 深度层次 + clip-path + glassmorphism  
+   - P3R官网: 游戏UI风格 + 蓝调时尚 + 开场特效
+   - 纪念碑谷交互式: 几何美学 + 3D空间变换
+   
+   核心技术栈：
+   - CSS @property 变量动画
+   - Scroll-driven Animations
+   - GPU 加速 transforms (will-change)
+   - 3D perspective + preserve-3d
+   - backdrop-filter glassmorphism
+   - CSS 粒子系统（伪元素模拟）
+   
+   ============================================ */
+
+/* ============================================
+   1. DESIGN TOKENS — 设计令牌系统
+   ============================================ */
+
+:root {
+  /* ── 色彩系统：深空蓝紫赛博风 ── */
+  --nova-bg-deep: #030712;
+  --nova-bg-primary: #0a0f1e;
+  --nova-bg-secondary: #111827;
+  --nova-bg-card: rgba(15, 23, 42, 0.75);
+  --nova-bg-elevated: rgba(30, 41, 59, 0.6);
+
+  --nova-text-primary: #f1f5f9;
+  --nova-text-secondary: #94a3b8;
+  --nova-text-muted: #64748b;
+  --nova-text-accent: #60a5fa;
+
+  --nova-border: rgba(148, 163, 184, 0.1);
+  --nova-border-hover: rgba(96, 165, 250, 0.3);
+  --nova-border-glow: rgba(99, 102, 241, 0.5);
+
+  /* ── 品牌渐变：电光蓝紫 → 品红 ── */
+  --nova-gradient-brand: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+  --nova-gradient-cyber: linear-gradient(135deg, #06b6d4 0%, #6366f1 50%, #a855f7 100%);
+  --nova-gradient-fire: linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%);
+  --nova-gradient-matrix: linear-gradient(180deg, transparent 0%, rgba(59, 130, 246, 0.08) 50%, transparent 100%);
+  --nova-gradient-shine: linear-gradient(
+    105deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.08) 40%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.08) 60%,
+    transparent 80%
+  );
+
+  /* ── 霓虹发光色 ── */
+  --nova-glow-blue: 0 0 20px rgba(59, 130, 246, 0.4), 0 0 60px rgba(59, 130, 246, 0.15);
+  --nova-glow-purple: 0 0 20px rgba(139, 92, 246, 0.4), 0 0 60px rgba(139, 92, 246, 0.15);
+  --nova-glow-pink: 0 0 20px rgba(236, 72, 153, 0.4), 0 0 60px rgba(236, 72, 153, 0.15);
+  --nova-glow-cyan: 0 0 20px rgba(6, 182, 212, 0.4), 0 0 60px rgba(6, 182, 212, 0.15);
+
+  /* ── 语义色 ── */
+  --nova-success: #10b981;
+  --nova-warning: #f59e0b;
+  --nova-error: #ef4444;
+  --nova-info: #3b82f6;
+
+  /* ── 字体系统 ── */
+  --nova-font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --nova-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --nova-text-xs: 0.6875rem;    /* 11px */
+  --nova-text-sm: 0.8125rem;    /* 13px */
+  --nova-text-base: 0.9375rem;  /* 15px */
+  --nova-text-lg: 1.0625rem;    /* 17px */
+  --nova-text-xl: 1.25rem;      /* 20px */
+  --nova-text-2xl: 1.5rem;      /* 24px */
+  --nova-text-3xl: 1.875rem;    /* 30px */
+  --nova-text-4xl: 2.5rem;      /* 40px */
+  --nova-text-5xl: 3.5rem;      /* 56px */
+
+  --nova-font-light: 300;
+  --nova-font-normal: 400;
+  --nova-font-medium: 500;
+  --nova-font-semibold: 600;
+  --nova-font-bold: 700;
+  --nova-font-extrabold: 800;
+
+  --nova-leading-tight: 1.2;
+  --nova-leading-normal: 1.6;
+  --nova-leading-relaxed: 1.8;
+
+  /* ── 间距系统 (8px grid) ── */
+  --nova-space-1: 0.25rem;   /* 4px */
+  --nova-space-2: 0.5rem;    /* 8px */
+  --nova-space-3: 0.75rem;   /* 12px */
+  --nova-space-4: 1rem;      /* 16px */
+  --nova-space-5: 1.25rem;   /* 20px */
+  --nova-space-6: 1.5rem;    /* 24px */
+  --nova-space-8: 2rem;      /* 32px */
+  --nova-space-10: 2.5rem;   /* 40px */
+  --nova-space-12: 3rem;     /* 48px */
+  --nova-space-16: 4rem;     /* 64px */
+  --nova-space-20: 5rem;     /* 80px */
+  --nova-space-24: 6rem;     /* 96px */
+
+  /* ── 圆角系统 ── */
+  --nova-radius-sm: 0.375rem;   /* 6px */
+  --nova-radius-md: 0.625rem;   /* 10px */
+  --nova-radius-lg: 0.875rem;   /* 14px */
+  --nova-radius-xl: 1rem;       /* 16px */
+  --nova-radius-2xl: 1.25rem;   /* 20px */
+  --nova-radius-3xl: 1.5rem;    /* 24px */
+  --nova-radius-full: 9999px;
+
+  /* ── 阴影系统：多层次深度 ── */
+  --nova-shadow-sm: 
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 1px 3px rgba(0, 0, 0, 0.15);
+  --nova-shadow-md: 
+    0 4px 6px rgba(0, 0, 0, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --nova-shadow-lg: 
+    0 10px 25px rgba(0, 0, 0, 0.35),
+    0 6px 10px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --nova-shadow-xl: 
+    0 20px 50px rgba(0, 0, 0, 0.4),
+    0 10px 20px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --nova-shadow-glow-blue: 
+    0 0 30px rgba(59, 130, 246, 0.2),
+    0 0 60px rgba(59, 130, 246, 0.1),
+    inset 0 0 30px rgba(59, 130, 246, 0.05);
+  --nova-shadow-glow-purple:
+    0 0 30px rgba(139, 92, 246, 0.2),
+    0 0 60px rgba(139, 92, 246, 0.1),
+    inset 0 0 30px rgba(139, 92, 246, 0.05);
+
+  /* ── 动画系统 ── */
+  --nova-ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --nova-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --nova-ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --nova-ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+  --nova-ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+
+  --nova-duration-instant: 100ms;
+  --nova-duration-fast: 200ms;
+  --nova-duration-normal: 350ms;
+  --nova-duration-slow: 500ms;
+  --nova-duration-slower: 800ms;
+  --nova-duration-page: 1200ms;
+
+  /* ── Z-index 层级 ── */
+  --nova-z-base: 0;
+  --nova-z-elevated: 10;
+  --nova-z-dropdown: 100;
+  --nova-z-sticky: 200;
+  --nova-z-overlay: 300;
+  --nova-z-modal: 400;
+  --nova-z-toast: 500;
+  --nova-z-maximum: 9999;
+
+  /* ── 3D 系统 ── */
+  --nova-perspective: 1200px;
+  --nova-rotate-x: rotateX(var(--nova-rx, 0deg));
+  --nova-rotate-y: rotateY(var(--nova-ry, 0deg));
+
+  /* ── 布局约束 ── */
+  --nova-content-max-width: 1400px;
+  --nova-sidebar-width: 280px;
+  --nova-header-height: 64px;
+}
+
+/* ============================================
+   2. CSS PROPERTY 动画变量
+   ============================================ */
+
+@property --nova-glow-intensity {
+  syntax: '<number>';
+  initial-value: 0;
+  inherits: false;
+}
+
+@property --nova-parallax-y {
+  syntax: '<length>';
+  initial-value: 0px;
+  inherits: false;
+}
+
+@property --nova-float-offset {
+  syntax: '<length-percentage>';
+  initial-value: 0px;
+  inherits: false;
+}
+
+/* ============================================
+   3. GLOBAL RESET & BASE
+   ============================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: var(--nova-font-display);
+  font-size: var(--nova-text-base);
+  line-height: var(--nova-leading-normal);
+  color: var(--nova-text-primary);
+  background-color: var(--nova-bg-deep);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ── 自定义滚动条：赛博霓虹风 ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--nova-bg-deep);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--nova-info), var(--nova-glow-purple));
+  border-radius: var(--nova-radius-full);
+  border: none;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #60a5fa, #a855f7);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.5) var(--nova-bg-deep);
+}
+
+/* ── 选中文本样式 ── */
+::selection {
+  background: rgba(99, 102, 241, 0.35);
+  color: white;
+}
+
+/* ============================================
+   4. PARTICLE BACKGROUND — 粒子背景层
+   ============================================ */
+
+.nova-particle-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--nova-bg-deep);
+}
+
+.nova-particle-bg::before,
+.nova-particle-bg::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.3;
+  animation: novaParticleFloat 20s ease-in-out infinite alternate;
+}
+
+.nova-particle-bg::before {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.4), transparent 70%);
+  top: -10%;
+  left: -5%;
+  animation-delay: 0s;
+}
+
+.nova-particle-bg::after {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.35), transparent 70%);
+  bottom: -10%;
+  right: -5%;
+  animation-delay: -10s;
+  animation-duration: 25s;
+}
+
+/* 第三颗粒子球 */
+.nova-particle-orb {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(236, 72, 153, 0.2), transparent 70%);
+  border-radius: 50%;
+  filter: blur(80px);
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: novaOrbFloat 18s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes novaParticleFloat {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(60px, -40px) scale(1.1); }
+  66% { transform: translate(-30px, 50px) scale(0.95); }
+  100% { transform: translate(40px, 20px) scale(1.05); }
+}
+
+@keyframes novaOrbFloat {
+  0% { transform: translate(-50%, -50%) translateX(0) translateY(0); }
+  50% { transform: translate(-50%, -50%) translateX(80px) translateY(-60px); }
+  100% { transform: translate(-50%, -50%) translateX(-60px) translateY(40px); }
+}
+
+/* 网格线背景 */
+.nova-grid-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
+}
+
+/* ============================================
+   5. GLASSMORPHISM — 玻璃拟态系统
+   ============================================ */
+
+.nova-glass {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid var(--nova-border);
+  box-shadow: var(--nova-shadow-md);
+}
+
+.nova-glass--light {
+  background: rgba(30, 41, 59, 0.45);
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  border: 1px solid rgba(148, 163, 184, 0.08);
+}
+
+.nova-glass--glow {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid var(--nova-border-glow);
+  box-shadow: var(--nova-shadow-glow-blue);
+}
+
+/* ============================================
+   6. GLOW EFFECTS — 霓虹发光效果
+   ============================================ */
+
+.nova-glow-text {
+  text-shadow:
+    0 0 10px currentColor,
+    0 0 20px currentColor,
+    0 0 40px currentColor,
+    0 0 80px currentColor;
+}
+
+.nova-glow-border {
+  position: relative;
+}
+
+.nova-glow-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--nova-gradient-brand);
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.6;
+  transition: opacity var(--nova-duration-normal) ease;
+  pointer-events: none;
+}
+
+.nova-glow-border:hover::before {
+  opacity: 1;
+  animation: novaGlowPulse 2s ease-in-out infinite;
+}
+
+@keyframes novaGlowPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* 扫光效果 */
+.nova-shine-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.nova-shine-effect::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: var(--nova-gradient-shine);
+  transform: rotate(25deg) translateX(-100%);
+  transition: transform var(--nova-duration-slower) var(--nova-ease-smooth);
+  pointer-events: none;
+}
+
+.nova-shine-effect:hover::after {
+  transform: rotate(25deg) translateX(100%);
+}
+
+/* ============================================
+   7. 3D CARD SYSTEM — 3D 卡片系统
+   ============================================ */
+
+.nova-3d-card {
+  perspective: var(--nova-perspective);
+  transform-style: preserve-3d;
+}
+
+.nova-3d-card__inner {
+  position: relative;
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition: transform var(--nova-duration-normal) var(--nova-ease-out-expo);
+}
+
+.nova-3d-card__inner:hover {
+  transform: translateZ(30px);
+}
+
+/* 鼠标跟随3D倾斜 */
+.nova-tilt {
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition: transform var(--nova-duration-fast) var(--nova-ease-out-expo);
+}
+
+.nova-tilt:hover {
+  box-shadow:
+    calc(var(--nova-ty, 0px) * -0.5) calc(var(--nova-tx, 0px) * 0.5) 30px rgba(0, 0, 0, 0.3),
+    var(--nova-glow-blue);
+}
+
+/* ============================================
+   8. ANIMATION KEYFRAMES — 动画关键帧库
+   ============================================ */
+
+/* 入场动画 */
+@keyframes novaFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes novaFadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes novaFadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes novaSlideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes novaSlideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 弹跳入场 */
+@keyframes novaBounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 浮动动画 */
+@keyframes novaFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes novaFloatSlow {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33% { transform: translateY(-6px) rotate(0.5deg); }
+  66% { transform: translateY(-3px) rotate(-0.5deg); }
+}
+
+/* 脉冲光环 */
+@keyframes novaPulseRing {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+@keyframes novaPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* 旋转加载 */
+@keyframes novaSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 流光骨架屏 */
+@keyframes novaShimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+/* 渐变流动 */
+@keyframes novaGradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* 边框旋转 */
+@keyframes novaBorderRotate {
+  from { --nova-angle: 0deg; }
+  to { --nova-angle: 360deg; }
+}
+
+@property --nova-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* 打字机闪烁光标 */
+@keyframes novaBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* 故障艺术效果 */
+@keyframes novaGlitch {
+  0%, 90%, 100% { 
+    transform: translate(0); 
+    filter: none;
+  }
+  92% { 
+    transform: translate(-2px, 1px); 
+    filter: hue-rotate(90deg);
+  }
+  94% { 
+    transform: translate(2px, -1px); 
+    filter: hue-rotate(-90deg);
+  }
+  96% { 
+    transform: translate(-1px, 2px); 
+  }
+}
+
+/* ============================================
+   9. UTILITY CLASSES — 工具类
+   ============================================ */
+
+/* 渐变文字 */
+.nova-gradient-text {
+  background: var(--nova-gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.nova-gradient-text-animated {
+  background: var(--nova-gradient-brand);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: novaGradientFlow 4s ease infinite;
+}
+
+/* 入场动画工具类 */
+.nova-animate-in {
+  animation: novaFadeInUp var(--nova-duration-slow) var(--nova-ease-out-expo) both;
+}
+
+.nova-animate-in--delay-1 { animation-delay: 0.1s; }
+.nova-animate-in--delay-2 { animation-delay: 0.2s; }
+.nova-animate-in--delay-3 { animation-delay: 0.3s; }
+.nova-animate-in--delay-4 { animation-delay: 0.4s; }
+.nova-animate-in--delay-5 { animation-delay: 0.5s; }
+.nova-animate-in--delay-6 { animation-delay: 0.6s; }
+
+/* 交错网格动画 */
+.nova-stagger-grid > * {
+  animation: novaFadeInUp var(--nova-duration-slow) var(--nova-ease-out-expo) both;
+}
+
+.nova-stagger-grid > *:nth-child(1) { animation-delay: 0.04s; }
+.nova-stagger-grid > *:nth-child(2) { animation-delay: 0.08s; }
+.nova-stagger-grid > *:nth-child(3) { animation-delay: 0.12s; }
+.nova-stagger-grid > *:nth-child(4) { animation-delay: 0.16s; }
+.nova-stagger-grid > *:nth-child(5) { animation-delay: 0.20s; }
+.nova-stagger-grid > *:nth-child(6) { animation-delay: 0.24s; }
+.nova-stagger-grid > *:nth-child(7) { animation-delay: 0.28s; }
+.nova-stagger-grid > *:nth-child(8) { animation-delay: 0.32s; }
+.nova-stagger-grid > *:nth-child(9) { animation-delay: 0.36s; }
+.nova-stagger-grid > *:nth-child(10) { animation-delay: 0.40s; }
+.nova-stagger-grid > *:nth-child(11) { animation-delay: 0.44s; }
+.nova-stagger-grid > *:nth-child(12) { animation-delay: 0.48s; }
+
+/* Hover 效果 */
+.nova-hover-lift {
+  transition: transform var(--nova-duration-normal) var(--nova-ease-spring), 
+              box-shadow var(--nova-duration-normal) ease;
+}
+
+.nova-hover-lift:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--nova-shadow-xl);
+}
+
+.nova-hover-scale {
+  transition: transform var(--nova-duration-normal) var(--nova-ease-spring);
+}
+
+.nova-hover-scale:hover {
+  transform: scale(1.03);
+}
+
+.nova-hover-glow:hover {
+  box-shadow: var(--nova-glow-blue);
+}
+
+/* Focus 可访问性 */
+.nova-focus-ring:focus-visible {
+  outline: 2px solid var(--nova-info);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+
+/* 减少动效偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ============================================
+   10. RESPONSIVE BREAKPOINTS — 响应式断点
+   ============================================ */
+
+/* 小屏幕 */
+@media (max-width: 639px) {
+  :root {
+    --nova-text-4xl: 2rem;
+    --nova-text-5xl: 2.5rem;
+    --nova-sidebar-width: 0px;
+  }
+}
+
+/* 中等屏幕 */
+@media (min-width: 640px) and (max-width: 1023px) {
+  :root {
+    --nova-text-5xl: 3rem;
+    --nova-sidebar-width: 260px;
+  }
+}
+
+/* 大屏幕 */
+@media (min-width: 1280px) {
+  :root {
+    --nova-content-max-width: 1400px;
+  }
+}
