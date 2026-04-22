@@ -21,7 +21,7 @@ const getAuthToken = (): string => {
   return '';
 };
 
-// 请求拦截：注入 Authorization 头
+// 请求拦截：注入 Authorization 头（每次请求动态读取最新 JWT）
 axios.interceptors.request.use((config) => {
   const auth = getAuthToken();
   if (auth && config.headers) {
@@ -29,22 +29,8 @@ axios.interceptors.request.use((config) => {
   }
   return config;
 });
-
-// 响应拦截：统一处理 401
-axios.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error?.response?.status === 401) {
-      // Token 过期或无效时清除并跳转登录页
-      try { localStorage.removeItem('jwt'); } catch {}
-      const currentPath = window.location.pathname;
-      if (!currentPath.includes('/login') && !currentPath.includes('/register')) {
-        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
-      }
-    }
-    return Promise.reject(error);
-  }
-);
+// 注意：401 认证失败由 router/index.ts 的路由守卫统一处理，
+// 此处不添加响应拦截器，避免与路由守卫冲突导致重复跳转。
 
 
 
