@@ -1316,31 +1316,30 @@ const documents = ref<Document[]>([])
 let intervalId: number | null = null
 const KLB_id = route.params.id as string
 // 获取知识库配置的函数
+// 后端 /api/get-knowledge-item/ 是列表接口（非单条），需请求全部后按 id 匹配
 const fetchKnowledgeBaseConfig = async () => {
   try {
     configLoading.value = true
-    const response = await axios.get<ApiResponse<KnowledgeBaseConfig>>(
-      API_ENDPOINTS.KNOWLEDGE.GET_ITEM(KLB_id),
+    const response = await axios.get<ApiResponse<KnowledgeBaseConfig[]>>(
+      API_ENDPOINTS.KNOWLEDGE.GET_LIST(),
       {
-        headers: {
-          accept: 'application/json'
-        }
+        headers: { accept: 'application/json' }
       }
     )
-    if (response.data.code === 200) {
-      const config = response.data.data
-      // 更新基本信息
-      kbName.value = config.title || config.name || 'Unknown Knowledge Base'
-      kbDescription.value = config.description || '暂无描述'
-      // 更新检索测试相关配置
-      similarityThreshold.value = config.similarity_threshold || 0.7
-      // 从知识图谱设置推断其他配置
-      useKnowledgeGraph.value = config.extract_knowledge_graph || false
-      // 注意：接口没有返回以下字段，保持默认值或从其他地方获取
-      // keywordWeight.value = config.keyword_weight || 50;
-      // selectedRerankModel.value = config.rerank_model || 'bge-large';
-      // selectedLanguage.value = config.cross_language || 'auto';
-      console.log('知识库配置获取成功:', config)
+    if (response.data.code === 200 && Array.isArray(response.data.data)) {
+      const config = response.data.data.find(
+        (kb: KnowledgeBaseConfig) => kb.id === KLB_id || kb.title === KLB_id || kb.name === KLB_id
+      )
+      if (config) {
+        kbName.value = config.title || config.name || 'Unknown Knowledge Base'
+        kbDescription.value = config.description || '暂无描述'
+        similarityThreshold.value = config.similarity_threshold || 0.7
+        useKnowledgeGraph.value = config.extract_knowledge_graph || false
+        console.log('知识库配置获取成功:', config)
+      } else {
+        console.warn('未找到匹配的知识库, KLB_id:', KLB_id)
+        setDefaultConfig()
+      }
     } else {
       console.error('获取配置失败:', response.data.message)
       setDefaultConfig()
