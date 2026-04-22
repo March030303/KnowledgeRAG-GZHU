@@ -1,15 +1,25 @@
 // file: apiClient.ts
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
 
-const token = localStorage.getItem('jwt');
+const getAuthHeader = (): string => {
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('jwt') : '';
+  return token ? `Bearer ${token}` : '';
+};
+
 const apiClient: AxiosInstance = axios.create({
   // baseURL: 'https://your-api.com/v1',
   timeout: 10000, // 请求超时时间
   headers: {
     'Content-Type': 'application/json', // 默认请求头
-    'Accept': 'application/json',
-    'Authorization': `Bearer ${token}`
+    'Accept': 'application/json'
   }
+});
+
+// 每次请求动态注入最新的 JWT（解决模块加载时 token 为空的 401 问题）
+apiClient.interceptors.request.use((config) => {
+  const auth = getAuthHeader();
+  if (auth) config.headers.Authorization = auth;
+  return config;
 });
 
 const request = async <T>(config: AxiosRequestConfig): Promise<T> => {
