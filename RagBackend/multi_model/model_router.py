@@ -680,10 +680,13 @@ async def providers_status():
 
 class AgentTaskRequest(BaseModel):
     query: str
-    model: str = "deepseek-chat"  # model idOllama
-    kb_id: Optional[str] = None  # IDRAG
+    model: str = "deepseek-chat"
+    kb_id: Optional[str] = None
     temperature: float = 0.7
     max_tokens: int = 4096
+    retrieval_config: Optional[dict] = None
+    max_iterations: int = 5
+    use_hybrid: bool = True
 
 
 def _get_provider_for_model(model_id: str) -> str:
@@ -732,12 +735,11 @@ async def agent_task(req: AgentTaskRequest):
         yield f"data: {json.dumps({'event':'step','index':0,'name':'理解任务目标','detail':req.query[:80]}, ensure_ascii=False)}\n\n"
         await asyncio.sleep(0.05)
 
-        # - Step 2: RAG -
+        # - Step 2: RAG (支持全部5种检索模式) -
         rag_context = ""
         rag_sources = []
         retrieval_strategy = "model_only"
         if req.kb_id:
-            retrieval_strategy = "hybrid"
             yield f"data: {json.dumps({'event':'step','index':1,'name':'检索知识库','detail':f'知识库 {req.kb_id}'}, ensure_ascii=False)}\n\n"
             try:
                 import sys
@@ -748,33 +750,25 @@ async def agent_task(req: AgentTaskRequest):
                     sys.path.insert(0, _backend_root)
 
                 from RAG_M.RAG_app import _load_vectorstore_and_docs
-                from RAG_M.src.rag.hybrid_retriever import HybridRetriever
+                from document_processing.retrieval_strategy import (
+                    RetrievalStrategyExecutor,
+                    RetrievalConfig,
+                )
 
                 docs_dir = f"local-KLB-files/{req.kb_id}"
                 vectorstore, documents, _ = _load_vectorstore_and_docs(docs_dir)
 
-                if documents:
-                    retriever = HybridRetriever(
-                        documents=documents,
-                        vectorstore=vectorstore,
-                        bm25_top_k=3,
-                        vector_top_k=3,
-                        final_top_k=3,
-                    )
-                    results = retriever.retrieve_with_scores(req.query)
-                else:
-                    raw = vectorstore.similarity_search_with_score(req.query, k=3)
-                    results = [
-                        {
-                            "document": d,
-                            "source_info": {
-                                "rank": i + 1,
-                                "file_name": d.metadata.get("source", ""),
-                                "rrf_score": s,
-                            },
-                        }
-                        for i, (d, s) in enumerate(raw)
-                    ]
+                # 根据前端传入的 retrieval_config 构建配置，支持全部5种策略
+                raw_config = req.retrieval_config or {}
+                strategy_name = raw_config.get("strategy", "rrf")
+                retrieval_config = RetrievalConfig.from_dict(raw_config)
+                retrieval_strategy = strategy_name
+
+                executor = RetrievalStrategyExecutor(
+                    vectorstore=vectorstore,
+                    documents=documents,
+                )
+                results = executor.retrieve(req.query, config=retrieval_config)
 
                 if results:
                     rag_parts = []
@@ -787,10 +781,10 @@ async def agent_task(req: AgentTaskRequest):
                             f"【来源：{src.get('file_name','?')}】\n{item['document'].page_content.strip()}"
                         )
                     rag_context = "\n\n---\n\n".join(rag_parts)
-                    yield f"data: {json.dumps({'event':'step_result','index':1,'detail':f'检索到 {len(results)} 个相关片段'}, ensure_ascii=False)}\n\n"
+                    yield f"data: {json.dumps({'event':'step_result','index':1,'detail':f'[{retrieval_strategy.upper()}] 检索到 {len(results)} 个相关片段'}, ensure_ascii=False)}\n\n"
             except Exception as e:
                 retrieval_strategy = "model_only_fallback"
-                yield f"data: {json.dumps({'event':'step_result','index':1,'detail':f'知识库检索失败: {e}，将直接使用模型知识'}, ensure_ascii=False)}\n\n"
+                yield f"data: {json.dumps({'event':'step_result','index':1,'detail':f'知识库检索失败({strategy_name}): {e}，将直接使用模型知识'}, ensure_ascii=False)}\n\n"
         else:
             yield f"data: {json.dumps({'event':'step','index':1,'name':'规划执行流程','detail':'基于模型知识直接推理'}, ensure_ascii=False)}\n\n"
             await asyncio.sleep(0.05)
