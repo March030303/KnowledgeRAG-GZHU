@@ -1,0 +1,902 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "KnowledgeRAG-GZHU 后端 API 文档",
+    "description": "基于 FastAPI + Ollama 的 RAG 后端服务完整 API 文档，涵盖知识库管理、文档处理、RAG 检索、用户管理、商业化等全部模块。可直接导入 Apifox 使用。",
+    "version": "2.0.0",
+    "contact": {
+      "name": "RAGF Team",
+      "email": "13425121993@163.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "本地开发环境"
+    }
+  ],
+  "tags": [
+    { "name": "知识库CURD接口", "description": "知识库创建、删除、更新、分页查询" },
+    { "name": "文件处理服务接口", "description": "文档解析、分块、启用/禁用、统计" },
+    { "name": "文档上传服务接口", "description": "文档分块上传、大文件处理" },
+    { "name": "封面图床管理", "description": "知识库封面图片管理" },
+    { "name": "OLLAMA模型列表获取接口", "description": "获取 Ollama 可用模型列表" },
+    { "name": "对话管理服务接口", "description": "聊天会话管理、历史记录、文档管理" },
+    { "name": "RAG 服务接口", "description": "RAG 智能查询、流式输出、文档向量化" },
+    { "name": "知识图谱接口", "description": "知识图谱生成与管理" },
+    { "name": "用户登录和注册接口", "description": "用户注册、登录、认证" },
+    { "name": "用户设置接口", "description": "用户偏好设置管理" },
+    { "name": "QQ OAuth2.0 登录", "description": "QQ 第三方登录" },
+    { "name": "密码重置", "description": "密码找回与重置" },
+    { "name": "文件列表服务接口", "description": "文件列表浏览与检索" },
+    { "name": "多模型适配接口", "description": "多 LLM 模型路由与负载均衡" },
+    { "name": "审计日志接口", "description": "操作审计日志记录与查询" },
+    { "name": "开放API-Key管理", "description": "API Key 的创建、吊销、查询" },
+    { "name": "多数据源接入", "description": "外部数据源配置与管理" },
+    { "name": "增量向量化", "description": "SHA256 哈希追踪的增量文档向量化" },
+    { "name": "Agent联网搜索", "description": "Agent 联网搜索工具" },
+    { "name": "用户反馈", "description": "用户反馈提交（邮件通知）" },
+    { "name": "知识库-OCR解析", "description": "图片/扫描件 OCR 文字识别" },
+    { "name": "知识库-文档版本管理", "description": "文档版本历史与回滚" },
+    { "name": "知识库-标签与归档", "description": "文档标签管理、批量归档" },
+    { "name": "知识库-角色权限管控", "description": "RBAC 角色权限管理" },
+    { "name": "知识库-文档评论区", "description": "文档评论与 AI 摘要" },
+    { "name": "RAG-效果评估与调优", "description": "RAG 检索效果评估指标" },
+    { "name": "RAG-对话记忆持久化", "description": "对话上下文窗口管理与摘要压缩" },
+    { "name": "RAG-检索可视化与纠错", "description": "检索结果可视化、人工纠错" },
+    { "name": "RAG-cross-encoder重排", "description": "Cross-Encoder 重排序" },
+    { "name": "语义分块-预览与向量化", "description": "语义感知分块 + INT8 量化向量化" },
+    { "name": "文档创作-摘要/翻译/大纲/优化", "description": "AI 辅助文档创作" },
+    { "name": "商业化-定价/订阅/工单系统", "description": "定价计划、订阅管理、工单系统" },
+    { "name": "知识库备份-Markdown/ZIP", "description": "知识库定时备份与下载" },
+    { "name": "全文检索-FTS5跨库搜索", "description": "SQLite FTS5 全文检索" },
+    { "name": "系统监控-Prometheus指标", "description": "Prometheus 指标采集" },
+    { "name": "知识广场-分享/圈子/搜索", "description": "知识分享社区" },
+    { "name": "企业合规-SSO/多租户/限流/脱敏", "description": "企业级合规功能" },
+    { "name": "多模型-百炼/星火/负载均衡/统计", "description": "扩展多模型路由" },
+    { "name": "用户模型配置", "description": "用户自定义模型参数" },
+    { "name": "模型评测面板", "description": "模型评测与 ECharts 可视化" }
+  ],
+  "paths": {
+    "/api/create-knowledgebase/": {
+      "post": {
+        "tags": ["知识库CURD接口"],
+        "summary": "创建知识库",
+        "operationId": "createKnowledgeBase",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["kbName"],
+                "properties": {
+                  "kbName": { "type": "string", "description": "知识库名称" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "成功创建" },
+          "422": { "description": "参数验证错误" }
+        }
+      }
+    },
+    "/api/get-knowledge-item/": {
+      "get": {
+        "tags": ["知识库CURD接口"],
+        "summary": "分页获取知识库项目列表",
+        "operationId": "listKnowledgeItems",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 }, "description": "页码" },
+          { "name": "page_size", "in": "query", "schema": { "type": "integer", "default": 10 }, "description": "每页数量" },
+          { "name": "search", "in": "query", "schema": { "type": "string" }, "description": "搜索关键词" }
+        ],
+        "responses": { "200": { "description": "返回分页结果" } }
+      }
+    },
+    "/api/get-knowledge-item/{item_id}": {
+      "get": {
+        "tags": ["知识库CURD接口"],
+        "summary": "根据ID获取单个知识库项目",
+        "operationId": "getKnowledgeItem",
+        "parameters": [
+          { "name": "item_id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "知识库ID" }
+        ],
+        "responses": { "200": { "description": "返回知识库详情" }, "404": { "description": "项目不存在" } }
+      }
+    },
+    "/api/delete-knowledge-item/{item_id}": {
+      "delete": {
+        "tags": ["知识库CURD接口"],
+        "summary": "删除知识库",
+        "operationId": "deleteKnowledgeItem",
+        "parameters": [
+          { "name": "item_id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "知识库ID" }
+        ],
+        "responses": { "200": { "description": "删除成功" }, "404": { "description": "项目不存在" } }
+      }
+    },
+    "/api/stats/usage": {
+      "get": {
+        "tags": ["文件处理服务接口"],
+        "summary": "获取系统使用统计",
+        "operationId": "getStatsUsage",
+        "description": "返回知识库数量、文档数量、向量数量等统计信息",
+        "responses": {
+          "200": {
+            "description": "统计信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "kb_count": { "type": "integer", "description": "知识库总数" },
+                    "doc_count": { "type": "integer", "description": "文档总数" },
+                    "vector_count": { "type": "integer", "description": "向量总数" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat/send": {
+      "post": {
+        "tags": ["对话管理服务接口"],
+        "summary": "发送聊天消息",
+        "operationId": "chatSend",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["message"],
+                "properties": {
+                  "message": { "type": "string", "description": "用户消息" },
+                  "conversation_id": { "type": "string", "description": "会话ID" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "聊天响应" } }
+      }
+    },
+    "/api/chat/history": {
+      "get": {
+        "tags": ["对话管理服务接口"],
+        "summary": "获取聊天历史",
+        "operationId": "chatHistory",
+        "parameters": [
+          { "name": "conversation_id", "in": "query", "required": true, "schema": { "type": "string" }, "description": "会话ID" }
+        ],
+        "responses": { "200": { "description": "聊天历史列表" } }
+      }
+    },
+    "/api/chat/delete": {
+      "delete": {
+        "tags": ["对话管理服务接口"],
+        "summary": "删除聊天会话",
+        "operationId": "chatDelete",
+        "parameters": [
+          { "name": "conversation_id", "in": "query", "required": true, "schema": { "type": "string" }, "description": "会话ID" }
+        ],
+        "responses": { "200": { "description": "删除成功" } }
+      }
+    },
+    "/api/RAG/RAG_query": {
+      "post": {
+        "tags": ["RAG 服务接口"],
+        "summary": "RAG智能查询（SSE流式）",
+        "operationId": "ragQuery",
+        "description": "混合检索（BM25+向量+RRF），流式生成回答，附带引用溯源",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["query"],
+                "properties": {
+                  "query": { "type": "string", "description": "用户查询" },
+                  "kb_ids": { "type": "array", "items": { "type": "string" }, "description": "知识库ID列表" },
+                  "model_name": { "type": "string", "description": "模型名称" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "SSE流式响应" } }
+      }
+    },
+    "/api/RAG/RAG_query_sync": {
+      "post": {
+        "tags": ["RAG 服务接口"],
+        "summary": "RAG同步查询（用于测试）",
+        "operationId": "ragQuerySync",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["query"],
+                "properties": {
+                  "query": { "type": "string", "description": "用户查询" },
+                  "kb_ids": { "type": "array", "items": { "type": "string" }, "description": "知识库ID列表" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "同步查询结果" } }
+      }
+    },
+    "/api/RAG/ingest": {
+      "post": {
+        "tags": ["RAG 服务接口"],
+        "summary": "文档向量化（SSE流式）",
+        "operationId": "ragIngest",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["kb_id", "file_paths"],
+                "properties": {
+                  "kb_id": { "type": "string", "description": "知识库ID" },
+                  "file_paths": { "type": "array", "items": { "type": "string" }, "description": "文件路径列表" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "SSE流式向量化进度" } }
+      }
+    },
+    "/api/vectorize/ingest": {
+      "post": {
+        "tags": ["增量向量化"],
+        "summary": "增量向量化单个文档（异步，立即返回task_id）",
+        "operationId": "vectorizeIngest",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["kb_id", "file_path"],
+                "properties": {
+                  "kb_id": { "type": "string", "minLength": 1, "description": "知识库ID" },
+                  "file_path": { "type": "string", "minLength": 1, "description": "文件绝对路径" },
+                  "doc_key": { "type": "string", "description": "文档唯一标识（默认使用文件相对路径）" },
+                  "force": { "type": "boolean", "default": false, "description": "是否强制重新向量化" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "任务已提交",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "task_id": { "type": "string" },
+                    "status": { "type": "string", "enum": ["pending"] },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vectorize/batch": {
+      "post": {
+        "tags": ["增量向量化"],
+        "summary": "批量增量向量化（异步，立即返回task_id列表）",
+        "operationId": "vectorizeBatch",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["kb_id", "file_paths"],
+                "properties": {
+                  "kb_id": { "type": "string", "minLength": 1, "description": "知识库ID" },
+                  "file_paths": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 100, "description": "文件路径列表" },
+                  "force": { "type": "boolean", "default": false, "description": "是否强制重新向量化" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "批量任务已提交" } }
+      }
+    },
+    "/api/vectorize/status/{task_id}": {
+      "get": {
+        "tags": ["增量向量化"],
+        "summary": "查询向量化任务状态",
+        "operationId": "vectorizeStatus",
+        "parameters": [
+          { "name": "task_id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "任务ID" }
+        ],
+        "responses": { "200": { "description": "任务状态信息" }, "404": { "description": "任务不存在" } }
+      }
+    },
+    "/api/vectorize/queue": {
+      "get": {
+        "tags": ["增量向量化"],
+        "summary": "查看队列状态",
+        "operationId": "vectorizeQueue",
+        "responses": { "200": { "description": "队列状态" } }
+      }
+    },
+    "/api/vectorize/remove": {
+      "delete": {
+        "tags": ["增量向量化"],
+        "summary": "从向量库移除文档",
+        "operationId": "vectorizeRemove",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["kb_id", "doc_key"],
+                "properties": {
+                  "kb_id": { "type": "string", "minLength": 1, "description": "知识库ID" },
+                  "doc_key": { "type": "string", "minLength": 1, "description": "文档唯一标识" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "移除成功" }, "500": { "description": "向量删除失败" } }
+      }
+    },
+    "/api/vectorize/stats/{kb_id}": {
+      "get": {
+        "tags": ["增量向量化"],
+        "summary": "向量库统计信息",
+        "operationId": "vectorizeStats",
+        "parameters": [
+          { "name": "kb_id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "知识库ID" }
+        ],
+        "responses": { "200": { "description": "统计信息" } }
+      }
+    },
+    "/api/docs/split-preview": {
+      "post": {
+        "tags": ["语义分块-预览与向量化"],
+        "summary": "预览语义分块效果（不存储）",
+        "operationId": "splitPreview",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["text"],
+                "properties": {
+                  "text": { "type": "string", "minLength": 1, "maxLength": 1000000, "description": "待分块文本" },
+                  "chunk_size": { "type": "integer", "minimum": 50, "maximum": 10000, "default": 500, "description": "目标块大小（字符数）" },
+                  "chunk_overlap": { "type": "integer", "minimum": 0, "maximum": 500, "default": 50, "description": "块间重叠字符数" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "分块预览结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total_chunks": { "type": "integer" },
+                    "total_chars": { "type": "integer" },
+                    "avg_chunk_size": { "type": "number" },
+                    "chunks": { "type": "array", "items": { "type": "object" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rerank": {
+      "post": {
+        "tags": ["RAG-cross-encoder重排"],
+        "summary": "对候选文档重排序",
+        "operationId": "rerankDocuments",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["query", "candidates"],
+                "properties": {
+                  "query": { "type": "string", "minLength": 1, "description": "用户查询" },
+                  "candidates": { "type": "array", "items": { "type": "object" }, "minItems": 1, "maxItems": 50, "description": "候选文档列表" },
+                  "top_k": { "type": "integer", "minimum": 1, "maximum": 20, "default": 5, "description": "重排后返回条数" },
+                  "model_name": { "type": "string", "default": "cross-encoder/ms-marco-MiniLM-L-6-v2", "description": "cross-encoder模型名称" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "重排序结果" } }
+      }
+    },
+    "/api/conversation/context-window": {
+      "get": {
+        "tags": ["RAG-对话记忆持久化"],
+        "summary": "获取上下文窗口消息列表",
+        "operationId": "getContextWindow",
+        "parameters": [
+          { "name": "conv_id", "in": "query", "required": true, "schema": { "type": "string" }, "description": "会话ID" },
+          { "name": "max_tokens", "in": "query", "schema": { "type": "integer", "minimum": 256, "maximum": 8192, "default": 4096 }, "description": "上下文窗口token上限" }
+        ],
+        "responses": { "200": { "description": "上下文窗口消息" } }
+      }
+    },
+    "/api/conversation/save": {
+      "post": {
+        "tags": ["RAG-对话记忆持久化"],
+        "summary": "保存对话消息",
+        "operationId": "saveConversation",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["conv_id", "role", "content"],
+                "properties": {
+                  "conv_id": { "type": "string", "minLength": 1, "description": "会话ID" },
+                  "role": { "type": "string", "enum": ["user", "assistant", "system"], "description": "消息角色" },
+                  "content": { "type": "string", "minLength": 1, "description": "消息内容" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "保存成功" } }
+      }
+    },
+    "/api/visualize/{log_id}": {
+      "get": {
+        "tags": ["RAG-检索可视化与纠错"],
+        "summary": "返回可视化所需的相似度数据",
+        "operationId": "visualizeRetrieval",
+        "parameters": [
+          { "name": "log_id", "in": "path", "required": true, "schema": { "type": "integer" }, "description": "检索日志ID" }
+        ],
+        "responses": { "200": { "description": "可视化数据" }, "404": { "description": "检索日志不存在" } }
+      }
+    },
+    "/api/visualize/correct": {
+      "post": {
+        "tags": ["RAG-检索可视化与纠错"],
+        "summary": "提交人工纠错",
+        "operationId": "submitCorrection",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["log_id", "corrections"],
+                "properties": {
+                  "log_id": { "type": "integer", "description": "检索日志ID" },
+                  "corrections": { "type": "array", "items": { "type": "object" }, "description": "纠错列表" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "纠错已保存" } }
+      }
+    },
+    "/api/tags/add": {
+      "post": {
+        "tags": ["知识库-标签与归档"],
+        "summary": "为文档添加标签",
+        "operationId": "addTag",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["doc_id", "tag_name"],
+                "properties": {
+                  "doc_id": { "type": "string", "minLength": 1, "description": "文档ID" },
+                  "tag_name": { "type": "string", "minLength": 1, "maxLength": 50, "description": "标签名称" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "标签添加成功" } }
+      }
+    },
+    "/api/tags/list/{doc_id}": {
+      "get": {
+        "tags": ["知识库-标签与归档"],
+        "summary": "获取文档标签列表",
+        "operationId": "listTags",
+        "parameters": [
+          { "name": "doc_id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "文档ID" }
+        ],
+        "responses": { "200": { "description": "标签列表" } }
+      }
+    },
+    "/api/tags/archive": {
+      "post": {
+        "tags": ["知识库-标签与归档"],
+        "summary": "批量归档文档",
+        "operationId": "archiveDocs",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["doc_ids"],
+                "properties": {
+                  "doc_ids": { "type": "array", "items": { "type": "string" }, "minItems": 1, "description": "文档ID列表" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "归档成功" } }
+      }
+    },
+    "/api/comments/add": {
+      "post": {
+        "tags": ["知识库-文档评论区"],
+        "summary": "添加文档评论",
+        "operationId": "addComment",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["doc_id", "content"],
+                "properties": {
+                  "doc_id": { "type": "string", "minLength": 1, "description": "文档ID" },
+                  "content": { "type": "string", "minLength": 1, "maxLength": 5000, "description": "评论内容" },
+                  "ai_summary": { "type": "boolean", "default": false, "description": "是否生成AI摘要" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "评论添加成功" } }
+      }
+    },
+    "/api/comments/list/{doc_id}": {
+      "get": {
+        "tags": ["知识库-文档评论区"],
+        "summary": "获取文档评论列表",
+        "operationId": "listComments",
+        "parameters": [
+          { "name": "doc_id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "文档ID" }
+        ],
+        "responses": { "200": { "description": "评论列表" } }
+      }
+    },
+    "/api/backup/create": {
+      "post": {
+        "tags": ["知识库备份-Markdown/ZIP"],
+        "summary": "创建知识库备份（异步执行）",
+        "operationId": "createBackup",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "kb_id": { "type": "string", "description": "知识库ID，空=全量备份" },
+                  "kb_name": { "type": "string", "default": "全量", "maxLength": 100, "description": "知识库名称" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "备份任务已启动",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "backup_id": { "type": "string" },
+                    "status": { "type": "string", "enum": ["running"] },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/backup/list": {
+      "get": {
+        "tags": ["知识库备份-Markdown/ZIP"],
+        "summary": "获取备份历史列表",
+        "operationId": "listBackups",
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }, "description": "返回条数上限" }
+        ],
+        "responses": { "200": { "description": "备份列表" } }
+      }
+    },
+    "/api/backup/{bak_id}": {
+      "get": {
+        "tags": ["知识库备份-Markdown/ZIP"],
+        "summary": "下载备份ZIP包",
+        "operationId": "downloadBackup",
+        "parameters": [
+          { "name": "bak_id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "备份ID" }
+        ],
+        "responses": { "200": { "description": "ZIP文件流" }, "404": { "description": "备份不存在" } }
+      },
+      "delete": {
+        "tags": ["知识库备份-Markdown/ZIP"],
+        "summary": "删除备份记录及ZIP文件",
+        "operationId": "deleteBackup",
+        "parameters": [
+          { "name": "bak_id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "备份ID" }
+        ],
+        "responses": { "200": { "description": "删除成功" }, "404": { "description": "备份不存在" } }
+      }
+    },
+    "/api/feedback/submit": {
+      "post": {
+        "tags": ["用户反馈"],
+        "summary": "提交用户反馈",
+        "operationId": "submitFeedback",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["type", "title", "content"],
+                "properties": {
+                  "type": { "type": "string", "enum": ["bug", "feature", "ui", "other"], "description": "反馈类型" },
+                  "title": { "type": "string", "minLength": 1, "maxLength": 200, "description": "反馈标题" },
+                  "content": { "type": "string", "minLength": 1, "maxLength": 10000, "description": "反馈详细描述" },
+                  "email": { "type": "string", "maxLength": 200, "description": "用户联系邮箱" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "反馈已提交" }, "502": { "description": "SMTP错误" } }
+      }
+    },
+    "/api/search/fulltext": {
+      "get": {
+        "tags": ["全文检索-FTS5跨库搜索"],
+        "summary": "FTS5全文检索",
+        "operationId": "fulltextSearch",
+        "parameters": [
+          { "name": "q", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 }, "description": "搜索关键词" },
+          { "name": "kb_ids", "in": "query", "schema": { "type": "string" }, "description": "知识库ID列表（逗号分隔）" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }, "description": "返回条数上限" }
+        ],
+        "responses": { "200": { "description": "搜索结果" } }
+      }
+    },
+    "/api/billing/plans": {
+      "get": {
+        "tags": ["商业化-定价/订阅/工单系统"],
+        "summary": "获取定价计划列表",
+        "operationId": "listPlans",
+        "responses": { "200": { "description": "定价计划列表" } }
+      }
+    },
+    "/api/billing/subscribe": {
+      "post": {
+        "tags": ["商业化-定价/订阅/工单系统"],
+        "summary": "订阅定价计划",
+        "operationId": "subscribePlan",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["plan_id", "user_id"],
+                "properties": {
+                  "plan_id": { "type": "string", "description": "定价计划ID" },
+                  "user_id": { "type": "string", "description": "用户ID" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "订阅成功" } }
+      }
+    },
+    "/api/tickets/submit": {
+      "post": {
+        "tags": ["商业化-定价/订阅/工单系统"],
+        "summary": "提交工单",
+        "operationId": "submitTicket",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "content"],
+                "properties": {
+                  "title": { "type": "string", "minLength": 1, "maxLength": 200, "description": "工单标题" },
+                  "content": { "type": "string", "minLength": 1, "maxLength": 10000, "description": "工单内容" },
+                  "priority": { "type": "string", "enum": ["low", "medium", "high"], "default": "medium", "description": "优先级" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "工单已提交" } }
+      }
+    },
+    "/api/register": {
+      "post": {
+        "tags": ["用户登录和注册接口"],
+        "summary": "用户注册",
+        "operationId": "register",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "description": "邮箱" },
+                  "password": { "type": "string", "minLength": 6, "description": "密码" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "注册成功" }, "503": { "description": "数据库不可用" } }
+      }
+    },
+    "/api/login": {
+      "post": {
+        "tags": ["用户登录和注册接口"],
+        "summary": "用户登录",
+        "operationId": "login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "description": "邮箱" },
+                  "password": { "type": "string", "description": "密码" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "登录成功" } }
+      }
+    },
+    "/api/kg/generate": {
+      "post": {
+        "tags": ["知识图谱接口"],
+        "summary": "生成知识图谱",
+        "operationId": "generateKnowledgeGraph",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["kb_id"],
+                "properties": {
+                  "kb_id": { "type": "string", "description": "知识库ID" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "知识图谱数据" } }
+      }
+    },
+    "/api/audit/logs": {
+      "get": {
+        "tags": ["审计日志接口"],
+        "summary": "查询审计日志",
+        "operationId": "listAuditLogs",
+        "parameters": [
+          { "name": "action", "in": "query", "schema": { "type": "string" }, "description": "操作类型筛选" },
+          { "name": "user_id", "in": "query", "schema": { "type": "string" }, "description": "用户ID筛选" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 }, "description": "返回条数" }
+        ],
+        "responses": { "200": { "description": "审计日志列表" } }
+      }
+    },
+    "/api/apikeys": {
+      "get": {
+        "tags": ["开放API-Key管理"],
+        "summary": "查询API Key列表",
+        "operationId": "listApiKeys",
+        "responses": { "200": { "description": "API Key列表" } }
+      },
+      "post": {
+        "tags": ["开放API-Key管理"],
+        "summary": "创建API Key",
+        "operationId": "createApiKey",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string", "description": "Key名称" },
+                  "expires_days": { "type": "integer", "description": "有效期（天）" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "创建成功" } }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "tags": ["系统监控-Prometheus指标"],
+        "summary": "Prometheus指标采集端点",
+        "operationId": "prometheusMetrics",
+        "responses": { "200": { "description": "Prometheus文本格式指标" } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

@@ -52,7 +52,6 @@
                     {{ m }}
                   </option>
                 </select>
-                <button class="btn-pull" @click="pullModel(provider)">拉取模型</button>
               </div>
             </div>
           </template>

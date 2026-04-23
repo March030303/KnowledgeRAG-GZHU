@@ -384,9 +384,26 @@ async def read_users_me(token: str = Depends(oauth2_scheme)):
         user = cursor.fetchone()
 
         if user:
+            user_role = "admin"
+            try:
+                import sqlite3
+                rbac_db = sqlite3.connect("rbac.db")
+                rbac_cursor = rbac_db.cursor()
+                rbac_cursor.execute(
+                    "SELECT r.name FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = ? ORDER BY r.id LIMIT 1",
+                    (str(user[0]),),
+                )
+                role_row = rbac_cursor.fetchone()
+                if role_row:
+                    user_role = role_row[0]
+                rbac_cursor.close()
+                rbac_db.close()
+            except Exception:
+                pass
             return {
                 "status": "success",
                 "user": {"id": user[0], "email": user[1], "created_at": user[2]},
+                "data": {"role": user_role, "email": user[1]},
             }
         else:
             raise HTTPException(status_code=404, detail="用户不存在")

@@ -236,7 +236,7 @@ export default function SettingsScreen() {
             </View>
             {/* 飞书 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>🤖 飞书机器人</Text>
+              <Text style={styles.sectionTitle}>飞书机器人</Text>
               <Text style={styles.fieldLabel}>App ID</Text>
               <TextInput
                 style={styles.textInput}

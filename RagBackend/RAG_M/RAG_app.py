@@ -19,6 +19,14 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+# Obsidian 无限记忆集成
+try:
+    from integrations.obsidian_memory import _load_memory_config, _load_config as _load_obsidian_config
+    _OBSIDIAN_MEMORY_AVAILABLE = True
+except ImportError:
+    _OBSIDIAN_MEMORY_AVAILABLE = False
+    logging.warning("Obsidian 无限记忆模块加载失败")
+
 logger = logging.getLogger(__name__)
 
 import contextlib
@@ -156,6 +164,31 @@ def _load_vectorstore_and_docs(docs_dir: str):
             )
     except Exception as e:
         logger.warning(f"[RAG_app] 提取 docstore 失败（{e}），混合检索降级为纯向量检索")
+
+    # 集成 Obsidian 无限记忆
+    if _OBSIDIAN_MEMORY_AVAILABLE:
+        try:
+            memory_config = _load_memory_config()
+            obsidian_config = _load_obsidian_config().get("obsidian")
+            
+            if memory_config.get("enable_memory", True) and obsidian_config:
+                # 加载 Obsidian 笔记中的文档
+                obsidian_dir = os.path.join(
+                    os.path.dirname(os.path.dirname(__file__)),
+                    "local-KLB-files",
+                    obsidian_config.get("kb_id", "_obsidian_import"),
+                    "obsidian"
+                )
+                
+                if os.path.exists(obsidian_dir):
+                    # 这里可以添加代码来加载 Obsidian 文档
+                    # 暂时只记录日志
+                    obsidian_files = list(Path(obsidian_dir).rglob("*.md"))
+                    logger.info(
+                        f"[RAG_app] 发现 {len(obsidian_files)} 个 Obsidian 笔记文件"
+                    )
+        except Exception as e:
+            logger.warning(f"[RAG_app] 集成 Obsidian 无限记忆失败: {e}")
 
     return vectorstore, documents, vector_store_manager
 
@@ -634,7 +667,7 @@ async def agent_query(query_body: AgentQueryRequest):
 
     async def generate():
         try:
-            yield "data: 🤖 启动 ReAct Agent 模式...\n\n"
+            yield "data: ⚡ 启动 ReAct Agent 模式...\n\n"
 
             if query_body.docs_dir:
                 docs_dir = query_body.docs_dir

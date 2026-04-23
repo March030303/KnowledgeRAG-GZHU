@@ -18,6 +18,7 @@ PyJWT==2.10.1
 PyMySQL==1.1.1
 PyPDF2==3.0.1
 pytesseract==0.3.13
+magic-pdf[full]>=0.10.0
 python-dotenv==1.1.1
 python-docx==1.1.2
 Requests==2.32.4
@@ -28,4 +29,7 @@ python-multipart==0.0.6
 sentence-transformers>=5.1.0
 # Redis async client (Redis Stream task queue + status persistence)
 redis[hiredis]>=5.0.0
+# Local speech recognition (Whisper ASR)
+openai-whisper>=20231117
+ffmpeg-python>=0.2.0
 

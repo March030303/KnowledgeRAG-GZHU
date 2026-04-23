@@ -28,27 +28,18 @@
 import { ref, computed, onMounted } from 'vue'
 import { MessagePlugin } from 'tdesign-vue-next'
 
-//import ollama_model_pages from './Ollama_Pages/ollama_model_pages.vue'
 import OllamaModelList from './OllamaModelList.vue'
-import OllamaModelDownload from './OllamaModelDownload.vue'
 import OllamaSettings from './OllamaSettings.vue'
 
-//import CanvasPoint from '@/components/canvas-point-unit/CanvasPoint.vue'
-
-// 当前活动标签
 const activeTab = ref('models')
 
-// 标签配置
 const tabs = [
     { key: 'models', label: '模型列表' },
-    { key: 'download', label: '下载模型' },
     { key: 'settings', label: '设置' }
 ]
 
-// 组件映射
 const componentMap = {
     models: OllamaModelList,
-    download: OllamaModelDownload,
     settings: OllamaSettings
 }
 

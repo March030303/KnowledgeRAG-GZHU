@@ -2,7 +2,7 @@
   <div class="arch-page">
     <div class="arch-header">
       <h1>🏗️ 系统架构</h1>
-      <p class="arch-subtitle">KnowledgeRAG-GZHU 微服务架构全景图</p>
+      <p class="arch-subtitle">ASF-RAG 微服务架构全景图</p>
       <div class="arch-tabs">
         <button
           v-for="tab in tabs"
@@ -395,6 +395,8 @@ const techStack = [
 <style scoped>
 .arch-page {
   min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
   background: var(--bg-page, #f8fafc);
   padding: 0;
 }

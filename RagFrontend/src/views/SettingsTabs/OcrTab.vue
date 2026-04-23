@@ -10,10 +10,11 @@
       <div class="form-row">
         <label>OCR 引擎</label>
         <select v-model="config.engine" class="form-select">
-          <option value="tesseract">Tesseract（本地，免费）</option>
-          <option value="paddleocr">PaddleOCR（本地，精度高）</option>
-          <option value="baidu">百度云 OCR（高精度，收费）</option>
-          <option value="aliyun">阿里云 OCR（高精度，收费）</option>
+          <option value="mineru">MinerU（深度学习版面分析，推荐）</option>
+              <option value="paddleocr">PaddleOCR（本地，精度高）</option>
+              <option value="tesseract">Tesseract（本地，免费）</option>
+              <option value="baidu">百度云 OCR（高精度，收费）</option>
+              <option value="aliyun">阿里云 OCR（高精度，收费）</option>
         </select>
       </div>
       <div class="form-row">
@@ -131,32 +132,20 @@ const saving = ref(false)
 const testLoading = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const testResult = ref<any>(null)
-const history = ref<any[]>([
-  {
-    id: 1,
-    filename: 'scan_report.pdf',
-    type: 'pdf',
-    char_count: 1842,
-    status: 'success',
-    created_at: Date.now() / 1000 - 3600
-  },
-  {
-    id: 2,
-    filename: 'invoice_2024.jpg',
-    type: 'image',
-    char_count: 326,
-    status: 'success',
-    created_at: Date.now() / 1000 - 7200
-  },
-  {
-    id: 3,
-    filename: 'blurry_page.png',
-    type: 'image',
-    char_count: 0,
-    status: 'failed',
-    created_at: Date.now() / 1000 - 10800
+const history = ref<any[]>([])
+
+async function fetchOcrHistory() {
+  try {
+    const res = await axios.get('/api/ocr/history')
+    if (res.data && Array.isArray(res.data.records)) {
+      history.value = res.data.records
+    }
+  } catch {
+    history.value = []
   }
-])
+}
+
+onMounted(() => { fetchOcrHistory() })
 
 const config = reactive({
   engine: 'paddleocr',

@@ -105,6 +105,18 @@ _PROMPTS = {
 {outline}
 
 扩写结果：""",
+    "template": """你是专业的中文文档模板生成助手。请根据用户描述的场景和需求，生成一份可直接使用的文档模板。
+
+模板类型：{template_type}
+场景描述：{scenario}
+
+要求：
+- 生成结构完整的文档模板，包含占位符（如 {{项目名称}}、{{日期}} 等）
+- 提供填写说明和示例内容
+- 格式规范，可直接复制使用
+- 如有行业标准格式，请遵循标准
+
+请输出完整模板（Markdown格式）：""",
 }
 
 
@@ -292,6 +304,12 @@ class ExpandRequest(BaseModel):
     model: Optional[str] = None
 
 
+class TemplateRequest(BaseModel):
+    template_type: str = "项目方案"
+    scenario: str = ""
+    model: Optional[str] = None
+
+
 # - -
 @router.post("/outline")
 async def gen_outline(req: OutlineRequest):
@@ -357,6 +375,20 @@ async def expand(req: ExpandRequest):
     )
 
 
+@router.post("/template")
+async def generate_template(req: TemplateRequest):
+    """流式文档模板生成（SSE）"""
+    model = req.model or _get_default_model()
+    prompt = _PROMPTS["template"].format(
+        template_type=req.template_type, scenario=req.scenario[:2000]
+    )
+    return StreamingResponse(
+        _stream_via_model_router(model, prompt),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
+    )
+
+
 @router.get("/templates")
 async def get_templates():
     """获取所有支持的创作类型说明"""
@@ -391,6 +423,12 @@ async def get_templates():
                 "name": "内容扩写",
                 "desc": "从大纲/要点扩展为完整文档",
                 "icon": "📄",
+            },
+            {
+                "id": "template",
+                "name": "模板生成",
+                "desc": "根据场景生成可复用的文档模板",
+                "icon": "📑",
             },
         ]
     }

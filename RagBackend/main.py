@@ -211,18 +211,79 @@ try:
 except ImportError as _e:
     logger.warning(f"Whisper 模块导入失败（openai-whisper 未安装？）: {_e}")
     _whisper_available = False
-# User feedback
-from feedback.feedback_router import router as feedback_router
-
 # Office ecosystem integration (Obsidian + Feishu)
 try:
     from integrations.feishu_bot import router as feishu_router
     from integrations.obsidian_sync import router as obsidian_router
+    from integrations.obsidian_memory import router as obsidian_memory_router
 
     _integrations_available = True
 except ImportError as _e:
     logger.warning(f"集成模块导入失败: {_e}")
     _integrations_available = False
+
+# UI Resources integration (Galaxy + Art Design Pro)
+try:
+    from integrations.ui_resources import router as ui_resources_router
+
+    _ui_resources_available = True
+except ImportError as _e:
+    logger.warning(f"UI资源集成模块导入失败: {_e}")
+    _ui_resources_available = False
+
+# Darwin Evolution Engine integration
+try:
+    from integrations.darwin_engine import router as darwin_router
+
+    _darwin_available = True
+except ImportError as _e:
+    logger.warning(f"达尔文进化引擎模块导入失败: {_e}")
+    _darwin_available = False
+
+# OpenMythos integration
+try:
+    from integrations.openmythos_engine import router as openmythos_router
+
+    _openmythos_available = True
+except ImportError as _e:
+    logger.warning(f"OpenMythos模块导入失败: {_e}")
+    _openmythos_available = False
+
+# Mano-P integration
+try:
+    from integrations.manop_engine import router as manop_router
+
+    _manop_available = True
+except ImportError as _e:
+    logger.warning(f"Mano-P模块导入失败: {_e}")
+    _manop_available = False
+
+# Apifox integration
+try:
+    from integrations.apifox_engine import router as apifox_router
+
+    _apifox_available = True
+except ImportError as _e:
+    logger.warning(f"Apifox模块导入失败: {_e}")
+    _apifox_available = False
+
+# Hermes Agent integration
+try:
+    from integrations.hermes_engine import router as hermes_router
+
+    _hermes_available = True
+except ImportError as _e:
+    logger.warning(f"Hermes Agent模块导入失败: {_e}")
+    _hermes_available = False
+
+# Task Orchestrator integration
+try:
+    from integrations.task_orchestrator import router as orchestrator_router
+
+    _orchestrator_available = True
+except ImportError as _e:
+    logger.warning(f"任务编排引擎模块导入失败: {_e}")
+    _orchestrator_available = False
 
 app.include_router(
     knowledge_CURD, tags=["知识库CURD接口"]
@@ -265,12 +326,26 @@ app.include_router(apikey_router, tags=["开放API-Key管理"])
 app.include_router(datasource_router, tags=["多数据源接入"])
 app.include_router(incremental_vectorize_router, tags=["增量向量化"])
 app.include_router(web_search_router, tags=["Agent联网搜索"])
-app.include_router(feedback_router, tags=["用户反馈"])
 if _whisper_available:
     app.include_router(whisper_router, tags=["多模态-语音识别(Whisper)"])
 if _integrations_available:
     app.include_router(obsidian_router, tags=["办公联动-Obsidian同步"])
+    app.include_router(obsidian_memory_router, tags=["办公联动-Obsidian无限记忆"])
     app.include_router(feishu_router, tags=["办公联动-飞书机器人"])
+if _ui_resources_available:
+    app.include_router(ui_resources_router, tags=["UI资源-Galaxy/ArtDesignPro"])
+if _darwin_available:
+    app.include_router(darwin_router, tags=["达尔文进化引擎-Skill优化"])
+if _openmythos_available:
+    app.include_router(openmythos_router, tags=["OpenMythos-RDT模型引擎"])
+if _manop_available:
+    app.include_router(manop_router, tags=["Mano-P-GUI智能体引擎"])
+if _apifox_available:
+    app.include_router(apifox_router, tags=["Apifox-API文档引擎"])
+if _hermes_available:
+    app.include_router(hermes_router, tags=["Hermes-Agent技能引擎"])
+if _orchestrator_available:
+    app.include_router(orchestrator_router, tags=["任务智能编排引擎"])
 
 # - 8 upgraded module router registrations -
 # Knowledge base management upgrade
@@ -403,13 +478,61 @@ try:
 except Exception as _e:
     logger.warning(f"文档创作模块加载失败: {_e}")
 
+# URL import for knowledge base
+try:
+    from document_processing.url_import import router as url_import_router
+
+    app.include_router(url_import_router, tags=["知识库-URL导入"])
+    logger.info("URL导入模块已加载")
+except Exception as _e:
+    logger.warning(f"URL导入模块加载失败: {_e}")
+
 # Prometheus
 try:
     from monitoring.metrics import instrument_app
     from monitoring.metrics import router as metrics_router
+    from monitoring.metrics import STATS as _stats
 
     instrument_app(app)
     app.include_router(metrics_router, tags=["系统监控-Prometheus指标"])
+
+    @app.get("/api/stats/usage")
+    async def get_usage_stats():
+        """使用统计接口 - 供前端 Settings 使用统计面板调用"""
+        import os
+        kb_dir = "local-KLB-files"
+        kb_count = 0
+        doc_count = 0
+        if os.path.exists(kb_dir):
+            for d in os.listdir(kb_dir):
+                dp = os.path.join(kb_dir, d)
+                if os.path.isdir(dp):
+                    kb_count += 1
+                    doc_count += len([f for f in os.listdir(dp) if os.path.isfile(os.path.join(dp, f))])
+        return {
+            "total_queries": sum(_stats.request_count.values()),
+            "total_tokens": sum(_stats.model_calls.values()) * 1500,
+            "kb_count": kb_count,
+            "doc_count": doc_count,
+        }
+
+    @app.get("/api/monitor/metrics")
+    async def get_monitor_metrics():
+        """系统监控接口 - 供前端 Settings 系统监控面板调用"""
+        return {
+            "overview": {
+                "uptime_h": round(_stats.uptime_seconds() / 3600, 2),
+                "total_reqs": sum(_stats.request_count.values()),
+                "total_errors": sum(_stats.error_count.values()),
+                "kb_uploads": _stats.kb_uploads,
+                "models_used": len(_stats.model_calls),
+            },
+            "model_calls": dict(_stats.model_calls),
+            "top_endpoints": sorted(
+                _stats.request_count.items(), key=lambda x: x[1], reverse=True
+            )[:10],
+        }
+
     logger.info("系统监控模块已加载")
 except Exception as _e:
     logger.warning(f"系统监控模块加载失败: {_e}")
@@ -569,7 +692,7 @@ async def app_download_page():
       <div class="feature-desc">创建、上传、管理文档</div>
     </div>
     <div class="feature">
-      <div class="feature-icon">🤖</div>
+      <div class="feature-icon">⚡</div>
       <div class="feature-title">AI 智能问答</div>
       <div class="feature-desc">RAG 精准语义检索</div>
     </div>
@@ -609,7 +732,7 @@ async def app_download_page():
   </a>
 
   <footer>
-    <p>KnowledgeRAG-GZHU · 开源免费 ·
+    <p>ASF-RAG · 开源免费 ·
       <a href="https://github.com/March030303/KnowledgeRAG-GZHU/releases" target="_blank">更新日志</a>
     </p>
     <p style="margin-top:6px">需要帮助？<a href="mailto:support@rag-gzhu.com">联系我们</a></p>

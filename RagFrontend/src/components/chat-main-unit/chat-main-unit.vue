@@ -126,7 +126,7 @@
         >
           <template #suffix="{ renderPresets }">
             <component
-              :is="renderPresets([{ name: 'uploadImage' }, { name: 'uploadAttachment' }])"
+              :is="renderPresets([{ name: 'uploadAttachment' }])"
             />
           </template>
           <template #prefix>
@@ -309,24 +309,59 @@ const fileSelect = async function (files) {
       reader.onerror = e => reject(new Error('文本文件读取失败: ' + e))
     })
   }
+  const getArrayBufferByFileRaw = file => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsArrayBuffer(file)
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = e => reject(new Error('文件读取失败: ' + e))
+    })
+  }
   try {
     if (!files || !files.files || files.files.length === 0) {
       console.warn('没有选择任何文件')
       return
     }
     const fileObj = files.files[0]
-    if (fileObj.type.startsWith('image/')) {
-      console.log('检测到图片文件，正在处理...')
+    const fileName = fileObj.name.toLowerCase()
+    const imageExtensions = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.svg']
+    const textExtensions = ['.txt', '.md', '.csv', '.json', '.xml', '.yaml', '.yml', '.log', '.ini', '.conf']
+    const docExtensions = ['.docx', '.doc', '.pdf', '.xls', '.xlsx']
+    const ext = '.' + fileName.split('.').pop()
+
+    if (fileObj.type.startsWith('image/') || imageExtensions.includes(ext)) {
       const dataUrl = await getFileUrlByFileRaw(fileObj)
       useChatImg.addImage(dataUrl)
-    } else if (fileObj.type === 'text/plain') {
-      console.log('检测到文本文件，正在读取内容...')
+    } else if (fileObj.type === 'text/plain' || textExtensions.includes(ext)) {
       const fileContent = await getTextByFileRaw(fileObj)
       const newText = `--- 从文件 ${fileObj.name} 中读取的内容 ---\n\n${fileContent}`
       inputValue.value = newText
       document.querySelector('#chatSender textarea')?.focus()
+    } else if (docExtensions.includes(ext)) {
+      const formData = new FormData()
+      formData.append('file', fileObj)
+      try {
+        const res = await fetch('/api/documents/parse-file', {
+          method: 'POST',
+          body: formData
+        })
+        if (res.ok) {
+          const data = await res.json()
+          const content = data.text || data.content || data.data?.text || ''
+          if (content) {
+            inputValue.value = `--- 从文件 ${fileObj.name} 中提取的内容 ---\n\n${content}`
+            document.querySelector('#chatSender textarea')?.focus()
+          } else {
+            MessagePlugin.warning(`文件 ${fileObj.name} 未能提取到文本内容`)
+          }
+        } else {
+          MessagePlugin.warning(`文件解析接口暂不可用，请将内容复制粘贴到输入框`)
+        }
+      } catch {
+        MessagePlugin.warning(`文件解析失败，请将内容复制粘贴到输入框`)
+      }
     } else {
-      const message = `暂不支持处理此类型的文件: ${fileObj.name} (${fileObj.type})`
+      const message = `暂不支持处理此类型的文件: ${fileObj.name} (${fileObj.type || ext})`
       console.warn(message)
       MessagePlugin.warning(message)
     }
@@ -371,18 +406,18 @@ const inputEnter = function (messageContent) {
   }
   // 根据当前选中模型动态命名 AI
   const curModelVal = selectedModelValue.value
-  let aiName = 'TDesignAI'
+  let aiName = 'AI'
   if (curModelVal.toLowerCase().includes('deepseek')) {
-    aiName = '🤖 DeepSeek'
+    aiName = 'DeepSeek'
   } else if (
     curModelVal.toLowerCase().includes('gpt') ||
     curModelVal.toLowerCase().includes('openai')
   ) {
-    aiName = '🤖 GPT'
+    aiName = 'GPT'
   } else if (curModelVal.toLowerCase().includes('hunyuan')) {
-    aiName = '🤖 混元'
+    aiName = '混元'
   } else if (curModelVal) {
-    aiName = `🤖 ${curModelVal}`
+    aiName = curModelVal
   }
   // 添加AI占位消息
   const aiMessage = {
@@ -477,7 +512,8 @@ const handleCloudChat = async (messageContent: string, modelId: string, historyL
         messages,
         stream: true,
         temperature: 0.7,
-        max_tokens: 4096
+        max_tokens: 4096,
+        deep_think: isChecked.value
       }),
       signal: controller.signal
     })
@@ -568,8 +604,9 @@ const handleData = async messageContent => {
   try {
     const { response, controller } = await fetchOllamaStream(
       messageContent,
-      localModel, // 使用本地模型名（已去掉 local: 前缀）
-      serverUrl
+      localModel,
+      serverUrl,
+      isChecked.value
     )
     fetchCancel.value = { controller }
     if (!response.ok) {
@@ -755,7 +792,6 @@ const toggleSources = item => {
 }
 </script>
 <style lang="less">
-/* 应用滚动条样式 */
 ::-webkit-scrollbar-thumb {
   background-color: var(--td-scrollbar-color);
 }
@@ -767,12 +803,10 @@ const toggleSources = item => {
 }
 .chat-box {
   position: relative;
-  /* 撑满父容器（chat-main-area）的全部高度 */
   height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* chat-inner 让 t-chat 内部自己处理滚动 */
   .chat-inner {
     flex: 1;
     min-height: 0;
@@ -781,62 +815,74 @@ const toggleSources = item => {
   .bottomBtn {
     position: absolute;
     left: 50%;
-    margin-left: -20px;
+    margin-left: -18px;
     bottom: 210px;
     padding: 0;
     border: 0;
-    width: 40px;
-    height: 40px;
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
-    box-shadow:
-      0px 8px 10px -5px rgba(0, 0, 0, 0.08),
-      0px 16px 24px 2px rgba(0, 0, 0, 0.04),
-      0px 6px 30px 5px rgba(0, 0, 0, 0.05);
+    background: var(--bg-overlay);
+    border: 1px solid var(--border-base);
+    box-shadow: var(--shadow-md);
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+    &:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+      border-color: var(--border-active);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-lg);
+    }
   }
   .to-bottom {
-    width: 40px;
-    height: 40px;
-    /* eslint-disable-next-line no-useless-escape */
-    /* eslint-disable-next-line no-useless-escape */
-    border: 1px solid #dcdcdc;
-    box-sizing: border-box;
-    background: var(--td-bg-color-container);
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
     border-radius: 50%;
-    font-size: 24px;
-    line-height: 40px;
+    font-size: 20px;
+    line-height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
+    color: inherit;
     .t-icon {
-      font-size: 24px;
+      font-size: 20px;
     }
   }
 }
 .model-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  max-width: 180px;
-  padding: 0 10px;
-  height: 32px;
-  border-radius: 999px;
-  background: var(--td-bg-color-secondarycontainer);
-  border: 1px solid var(--td-border-level-1-color);
+  gap: 5px;
+  max-width: 160px;
+  padding: 0 8px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  transition: border-color var(--transition-fast);
+  &:hover {
+    border-color: var(--border-active);
+  }
 }
 .model-badge__dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: #22c55e;
+  background: var(--accent-emerald);
   flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(52, 211, 153, 0.4);
 }
 .model-badge__dot.is-cloud {
-  background: #3b82f6;
+  background: var(--accent-cyan);
+  box-shadow: 0 0 6px rgba(34, 211, 238, 0.4);
 }
 .model-badge__text {
-  font-size: 12px;
-  color: var(--td-text-color-secondary);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -844,59 +890,55 @@ const toggleSources = item => {
 .t-chat-input.position-absolute {
   position: absolute;
   bottom: 10px;
-  /* 距离底部20px */
   left: 0;
   right: 0;
   margin: auto;
-  /* 水平居中 */
   width: 100%;
-  /* 可根据需要调整宽度 */
 }
 .custom-chat-dialog {
-  /* 添加背景颜色 */
-  background-color: #dbeafe59;
-  /* 添加边框圆角 */
-  border-radius: 8px;
-  margin-top: 10px;
-  padding-right: 20px !important;
+  background-color: rgba(124, 106, 255, 0.04);
+  border: 1px solid rgba(124, 106, 255, 0.08);
+  border-radius: var(--radius-md);
+  margin-top: 8px;
+  padding-right: 16px !important;
 }
 .chat-sender {
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 1000;
-  border-top: 1px solid var(--td-border-level-1-color);
-  padding: 16px;
+  border-top: 1px solid var(--border-subtle);
+  padding: 12px 16px;
   box-sizing: border-box;
+  background: var(--bg-surface);
 }
-/* 原有样式保持不变 */
 .chat-box .t-chat {
   padding-bottom: 50px;
 }
 @media (max-width: 768px) {
   .chat-sender {
-    padding: 12px;
+    padding: 10px 12px;
   }
   .chat-box .t-chat {
-    padding-bottom: 100px;
+    padding-bottom: 80px;
   }
 }
 .image-preview-container {
-  padding: 8px 12px;
-  background-color: var(--td-bg-color-secondarycontainer);
-  border-bottom: 1px solid var(--td-border-level-1-color);
-  max-height: 120px;
+  padding: 6px 10px;
+  background-color: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+  max-height: 100px;
   overflow-y: auto;
-  border-radius: 12px;
-  border: 1px solid var(--td-border-level-1-color);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
 }
 .image-wrapper {
   position: relative;
   display: inline-block;
-  border-radius: var(--td-radius-medium);
+  border-radius: var(--radius-sm);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease;
+  box-shadow: var(--shadow-xs);
+  transition: transform 0.2s var(--ease-out);
   &:hover {
     transform: translateY(-2px);
     .remove-image-btn {
@@ -906,98 +948,99 @@ const toggleSources = item => {
 }
 .remove-image-btn {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 3px;
+  right: 3px;
   z-index: 2;
   opacity: 0;
-  background-color: rgba(0, 0, 0, 0.5) !important;
+  background-color: rgba(0, 0, 0, 0.6) !important;
   color: white !important;
-  border: none;
+  border: none !important;
   transition: opacity 0.2s ease-in-out;
 }
 .sender-prefix-controls {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding-left: 12px;
+  gap: 6px;
+  padding-left: 10px;
 }
 .deep-think-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  color: var(--td-text-color-placeholder);
-  padding: 4px 8px;
-  border-radius: var(--td-radius-medium);
-  transition:
-    color 0.2s ease,
-    background-color 0.2s ease;
+  gap: 3px;
+  color: var(--text-tertiary);
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  transition: color 0.15s ease, background-color 0.15s ease;
   &:hover {
-    background-color: var(--td-bg-color-container-hover);
+    background-color: var(--bg-hover);
   }
   &.is-active {
-    color: var(--td-brand-color);
-    font-weight: bold;
+    color: var(--accent-violet);
+    font-weight: 600;
   }
 }
 .chat-sender {
   :deep(.t-textarea__inner) {
     padding-left: 2px;
+    background: var(--bg-elevated) !important;
+    color: var(--text-primary) !important;
   }
 }
-/* 使用这个更精确和健壮的选择器 */
 .t-chat-action.active-good :deep([aria-label='good']),
 .t-chat-action.active-bad :deep([aria-label='bad']) {
-  color: var(--td-brand-color) !important;
-  background-color: var(--td-brand-color-light) !important;
-  border-radius: var(--td-radius-default);
+  color: var(--accent-violet) !important;
+  background-color: var(--accent-violet-subtle) !important;
+  border-radius: var(--radius-sm);
 }
-/* 如果想让踩的颜色不同 */
 .t-chat-action.active-bad :deep([aria-label='bad']) {
-  color: var(--td-error-color) !important;
-  background-color: var(--td-error-color-1) !important;
+  color: var(--accent-rose) !important;
+  background-color: var(--accent-rose-subtle) !important;
 }
-/* 引用溯源样式 */
 .source-citations {
-  margin-top: 8px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  margin-top: 6px;
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-md);
   overflow: hidden;
-  font-size: 12px;
+  font-size: 11.5px;
+  background: var(--bg-elevated);
 }
 .source-citations__header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: #f8fafc;
+  gap: 5px;
+  padding: 5px 10px;
+  background: var(--bg-overlay);
   cursor: pointer;
-  color: #4b5563;
+  color: var(--text-secondary);
   user-select: none;
-  transition: background 0.15s;
+  transition: background 0.12s ease;
   &:hover {
-    background: #f1f5f9;
+    background: var(--bg-hover);
   }
 }
 .source-icon {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
+  color: var(--accent-violet-light);
 }
 .chevron {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   margin-left: auto;
-  transition: transform 0.2s;
+  color: var(--text-quaternary);
+  transition: transform 0.2s var(--ease-out);
   &.rotated {
     transform: rotate(180deg);
   }
 }
 .source-citations__list {
-  border-top: 1px solid #e5e7eb;
-  background: #fafafa;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
 }
 .source-item {
-  padding: 8px 12px;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-subtle);
   &:last-child {
     border-bottom: none;
   }
@@ -1005,16 +1048,16 @@ const toggleSources = item => {
 .source-item__header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
+  gap: 5px;
+  margin-bottom: 3px;
 }
 .source-num {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: #4f7ef8;
+  background: var(--accent-violet);
   color: white;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -1023,26 +1066,28 @@ const toggleSources = item => {
 }
 .source-filename {
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
 }
 .source-score {
-  background: #dcfce7;
-  color: #16a34a;
-  padding: 1px 6px;
-  border-radius: 10px;
+  background: var(--accent-emerald-subtle);
+  color: var(--accent-emerald);
+  padding: 1px 5px;
+  border-radius: var(--radius-full);
   font-weight: 600;
+  font-size: 10px;
   white-space: nowrap;
 }
 .source-item__content {
-  color: #6b7280;
+  color: var(--text-tertiary);
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  font-size: 11px;
 }
 </style>

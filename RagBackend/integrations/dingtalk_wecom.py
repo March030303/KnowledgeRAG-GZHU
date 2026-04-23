@@ -78,7 +78,7 @@ async def dingtalk_test(data: dict):
     req = DingTalkMessage(
         webhook_url=data.get("webhook_url", ""),
         secret=data.get("secret"),
-        content="🤖 RAG-F 钉钉集成测试消息 - 连接成功！",
+        content="⚡ RAG-F 钉钉集成测试消息 - 连接成功！",
         msg_type="markdown",
         title="RAG-F 测试",
     )

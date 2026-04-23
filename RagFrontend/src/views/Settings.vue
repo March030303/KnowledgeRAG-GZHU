@@ -751,11 +751,11 @@
           </div>
         </transition>
       </div>
-      <!-- 外观设置 -->
+      <!-- 外观设置（通过 useTheme hook 跨层级全局样式变更） -->
       <div v-if="activeTab === 'appearance'" class="tab-content">
         <div class="section-header">
           <h2>外观设置</h2>
-          <p class="section-desc">自定义界面主题、颜色和字体，打造专属体验</p>
+          <p class="section-desc">自定义界面主题、颜色和字体，通过 CSS 变量实现跨层级全局样式变更</p>
         </div>
         <div class="appearance-grid">
           <div class="appearance-card">
@@ -812,25 +812,6 @@
               </button>
             </div>
           </div>
-          <!-- 语言设置 -->
-          <div class="appearance-card">
-            <div class="appearance-card__title">🌐 界面语言</div>
-            <div class="lang-options">
-              <button
-                :class="['lang-btn', { 'lang-btn--active': currentLocale === 'zh' }]"
-                @click="switchLocale('zh')"
-              >
-                🇨🇳 中文
-              </button>
-              <button
-                :class="['lang-btn', { 'lang-btn--active': currentLocale === 'en' }]"
-                @click="switchLocale('en')"
-              >
-                🇬🇧 English
-              </button>
-            </div>
-            <p class="mc-hint" style="margin-top: 8px">选择后立即生效，无需刷新页面</p>
-          </div>
         </div>
       </div>
       <!-- 使用统计 -->
@@ -882,7 +863,7 @@
             <div ref="monLatRef" style="width: 100%; height: 260px"></div>
           </div>
           <div class="mon-chart-box">
-            <div class="mon-chart-title">🤖 模型调用分布</div>
+            <div class="mon-chart-title">模型调用分布</div>
             <div ref="monModelRef" style="width: 100%; height: 260px"></div>
           </div>
         </div>
@@ -1007,6 +988,7 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ref, onMounted, reactive, computed, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import axios from 'axios'
 import { MessagePlugin } from 'tdesign-vue-next'
 import {
@@ -1027,6 +1009,7 @@ import EnterpriseToolsTab from './SettingsTabs/EnterpriseToolsTab.vue'
 import MultiModelTab from './SettingsTabs/MultiModelTab.vue'
 import ComplianceTab from './SettingsTabs/ComplianceTab.vue'
 import CommercialTab from './SettingsTabs/CommercialTab.vue'
+const route = useRoute()
 const activeTab = ref('apikeys')
 // Win11 风格分组导航
 const tabGroups: Array<{
@@ -1053,7 +1036,7 @@ const tabGroups: Array<{
     label: 'AI 与模型',
     tabs: [
       { id: 'model-config', label: '模型配置', icon: '⚡', desc: '设置 Ollama 模型与超时' },
-      { id: 'multimodel', label: '多模型', icon: '🤖', desc: '配置多个AI模型' },
+      { id: 'multimodel', label: '多模型', icon: '⚡', desc: '配置多个AI模型' },
       { id: 'rageval', label: 'RAG 评估', icon: '🔬', desc: '效果评估与调优' },
       { id: 'tools', label: '企业工具', icon: '🧰', desc: '11种企业级工具' }
     ]
@@ -1066,12 +1049,9 @@ const tabGroups: Array<{
     ]
   },
   {
-    label: '个性化',
-    tabs: [{ id: 'appearance', label: '外观设置', icon: '🎨', desc: '主题/颜色/字体' }]
-  },
-  {
     label: '系统',
     tabs: [
+      { id: 'appearance', label: '外观设置', icon: '🎨', desc: '主题/颜色/字体' },
       { id: 'stats', label: '使用统计', icon: '📊', desc: '查看使用数据' },
       { id: 'monitor', label: '系统监控', icon: '📡', desc: 'API响应/模型调用' },
       { id: 'tickets', label: '工单管理', icon: '🎫', desc: '问题反馈与跟踪' }
@@ -1250,6 +1230,9 @@ function formatDateTime(ts: number): string {
   return new Date(ts * 1000).toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-')
 }
 onMounted(async () => {
+  if (route.query.tab && typeof route.query.tab === 'string') {
+    activeTab.value = route.query.tab
+  }
   loadPlatformConfigs()
   mcLoadConfig()
   await Promise.all([
@@ -1384,7 +1367,7 @@ const obsidianStatus = ref<any>({ configured: false, synced_files: 0 })
 const obsidianSyncResult = ref<any>(null)
 const obsidianLoading = ref(false)
 const obsidianExclude = ref('templates/,\\.trash/')
-const obsidianForm = reactive({ vault_path: '', kb_id: '' })
+const obsidianForm = reactive({ vault_path: 'D:\\obesdian', kb_id: '' })
 async function fetchObsidianStatus() {
   try {
     const res = await axios.get('/api/integrations/obsidian/status')
@@ -1670,7 +1653,7 @@ const monitorCards = computed(() => {
     { key: 'reqs', icon: '📨', label: '总请求数', value: ov.total_reqs },
     { key: 'errors', icon: '❌', label: '错误请求', value: ov.total_errors },
     { key: 'uploads', icon: '📤', label: '上传文件数', value: ov.kb_uploads },
-    { key: 'models', icon: '🤖', label: '使用模型数', value: ov.models_used }
+    { key: 'models', icon: '⚡', label: '使用模型数', value: ov.models_used }
   ]
 })
 async function fetchMonitor() {

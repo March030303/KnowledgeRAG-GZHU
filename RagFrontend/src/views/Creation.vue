@@ -128,6 +128,34 @@
           />
         </div>
       </div>
+      <!-- 模板生成 -->
+      <div v-if="activeType === 'template'" class="creation-form">
+        <h3>📑 模板生成</h3>
+        <div class="cf-row">
+          <label>模板类型</label>
+          <select v-model="form.templateType" class="cf-select">
+            <option value="项目方案">项目方案</option>
+            <option value="需求文档">需求文档</option>
+            <option value="技术方案">技术方案</option>
+            <option value="会议纪要">会议纪要</option>
+            <option value="周报/月报">周报/月报</option>
+            <option value="API文档">API文档</option>
+            <option value="测试报告">测试报告</option>
+            <option value="用户手册">用户手册</option>
+            <option value="合同模板">合同模板</option>
+            <option value="自定义">自定义</option>
+          </select>
+        </div>
+        <div class="cf-row">
+          <label>场景描述</label>
+          <textarea
+            v-model="form.scenario"
+            rows="4"
+            class="cf-textarea"
+            placeholder="描述你的使用场景和需求，例如：一个面向企业客户的SaaS产品技术方案模板..."
+          ></textarea>
+        </div>
+      </div>
       <!-- 生成按钮 -->
       <div class="cf-actions">
         <button class="cf-btn-gen" @click="generate" :disabled="generating">
@@ -185,7 +213,8 @@ const types = [
   { id: 'summary', name: '摘要生成', desc: '长文本→要点摘要', icon: '📝' },
   { id: 'translate', name: '文本翻译', desc: '中英互译', icon: '🌐' },
   { id: 'polish', name: '格式优化', desc: '润色措辞格式', icon: '✨' },
-  { id: 'expand', name: '内容扩写', desc: '大纲→完整文档', icon: '📄' }
+  { id: 'expand', name: '内容扩写', desc: '大纲→完整文档', icon: '📄' },
+  { id: 'template', name: '模板生成', desc: '场景→文档模板', icon: '📑' }
 ]
 const activeType = ref('outline')
 const generating = ref(false)
@@ -252,7 +281,9 @@ const form = reactive({
   targetLang: '英文',
   style: '正式学术风格',
   outline: '',
-  expandLength: 1500
+  expandLength: 1500,
+  templateType: '项目方案',
+  scenario: ''
 })
 async function generate() {
   generating.value = true
@@ -275,6 +306,10 @@ async function generate() {
     expand: {
       url: '/api/creation/expand',
       body: { outline: form.outline, target_length: form.expandLength, model }
+    },
+    template: {
+      url: '/api/creation/template',
+      body: { template_type: form.templateType, scenario: form.scenario, model }
     }
   }
   const { url, body } = endpointMap[activeType.value]

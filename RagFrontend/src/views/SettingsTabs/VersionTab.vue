@@ -110,50 +110,28 @@ const searchKw = ref('')
 const filterKb = ref('')
 const selectedDoc = ref<any>(null)
 const versions = ref<any[]>([])
-const kbs = ref([
-  { id: 'kb1', name: '产品知识库' },
-  { id: 'kb2', name: '技术文档' },
-  { id: 'kb3', name: '市场资料' }
-])
+const kbs = ref<any[]>([])
+const docs = ref<any[]>([])
 
-const docs = ref([
-  {
-    id: 1,
-    name: 'API 接口规范.md',
-    type: 'md',
-    kb_name: '技术文档',
-    version_count: 8,
-    updated_at: Date.now() / 1000 - 3600,
-    has_snapshot: true
-  },
-  {
-    id: 2,
-    name: '产品路线图 2024.docx',
-    type: 'docx',
-    kb_name: '产品知识库',
-    version_count: 5,
-    updated_at: Date.now() / 1000 - 7200,
-    has_snapshot: false
-  },
-  {
-    id: 3,
-    name: '市场调研报告.pdf',
-    type: 'pdf',
-    kb_name: '市场资料',
-    version_count: 3,
-    updated_at: Date.now() / 1000 - 86400,
-    has_snapshot: true
-  },
-  {
-    id: 4,
-    name: '需求规格说明书.txt',
-    type: 'txt',
-    kb_name: '产品知识库',
-    version_count: 12,
-    updated_at: Date.now() / 1000 - 1800,
-    has_snapshot: false
-  }
-])
+async function fetchKbs() {
+  try {
+    const res = await axios.get('/api/knowledge-base/list')
+    if (Array.isArray(res.data)) {
+      kbs.value = res.data.map((kb: any) => ({ id: kb.id, name: kb.title || kb.name }))
+    }
+  } catch { kbs.value = [] }
+}
+
+async function fetchDocs() {
+  try {
+    const res = await axios.get('/api/documents-list/all')
+    if (Array.isArray(res.data)) {
+      docs.value = res.data
+    }
+  } catch { docs.value = [] }
+}
+
+onMounted(() => { fetchKbs(); fetchDocs() })
 const diffModal = reactive({ show: false, fromVer: 0, oldContent: '', newContent: '' })
 const filteredDocs = computed(() => {
   return docs.value.filter(d => {

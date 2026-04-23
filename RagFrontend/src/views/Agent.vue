@@ -139,6 +139,14 @@
           </div>
           <!-- 输入框 -->
           <div class="input-box">
+            <!-- 附件预览区 -->
+            <div v-if="attachedFiles.length > 0" class="attachment-preview">
+              <div v-for="(f, idx) in attachedFiles" :key="idx" class="attachment-chip">
+                <span class="attachment-chip__icon">{{ getFileIcon(f.name) }}</span>
+                <span class="attachment-chip__name">{{ f.name }}</span>
+                <button class="attachment-chip__remove" @click="removeAttachment(idx)">&times;</button>
+              </div>
+            </div>
             <textarea
               v-model="taskInput"
               class="task-textarea"
@@ -149,6 +157,11 @@
             <!-- 选项栏 -->
             <div class="input-options">
               <div class="input-options__left">
+                <label class="option-item option-item--clickable" @click="triggerFileUpload">
+                  <span class="option-icon">📎</span>
+                  <span class="option-label">附件</span>
+                </label>
+                <input ref="fileInputRef" type="file" multiple accept=".txt,.md,.pdf,.doc,.docx,.xls,.xlsx,.csv,.json,.png,.jpg,.jpeg,.webp,.gif" style="display:none" @change="handleFileSelect" />
                 <label class="option-item">
                   <span class="option-icon">📚</span>
                   <span class="option-label">使用知识库</span>
@@ -343,6 +356,59 @@ const finalOutput = ref('')
 const currentTask = ref<TaskRecord | null>(null)
 const taskHistory = ref<TaskRecord[]>([])
 const knowledgeBases = ref<{ id: string; title: string }[]>([])
+const attachedFiles = ref<{ name: string; content: string; type: string }[]>([])
+const fileInputRef = ref<HTMLInputElement | null>(null)
+
+const getFileIcon = (name: string) => {
+  const ext = name.split('.').pop()?.toLowerCase() || ''
+  if (['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'svg'].includes(ext)) return '🖼️'
+  if (['pdf'].includes(ext)) return '📄'
+  if (['doc', 'docx'].includes(ext)) return '📝'
+  if (['xls', 'xlsx', 'csv'].includes(ext)) return '📊'
+  return '📎'
+}
+
+const triggerFileUpload = () => {
+  fileInputRef.value?.click()
+}
+
+const removeAttachment = (idx: number) => {
+  attachedFiles.value.splice(idx, 1)
+}
+
+const handleFileSelect = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (!target.files) return
+  for (const file of Array.from(target.files)) {
+    try {
+      const ext = file.name.split('.').pop()?.toLowerCase() || ''
+      let content = ''
+      if (['txt', 'md', 'csv', 'json', 'xml', 'yaml', 'yml', 'log'].includes(ext)) {
+        content = await file.text()
+      } else if (['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext)) {
+        content = await new Promise<string>((resolve) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.readAsDataURL(file)
+        })
+      } else {
+        const formData = new FormData()
+        formData.append('file', file)
+        const res = await fetch('/api/documents/parse-file', { method: 'POST', body: formData })
+        if (res.ok) {
+          const data = await res.json()
+          content = data.text || ''
+        }
+      }
+      if (content) {
+        attachedFiles.value.push({ name: file.name, content, type: ext })
+      }
+    } catch (e) {
+      console.warn('文件读取失败:', file.name, e)
+    }
+  }
+  target.value = ''
+}
 // ── 模型选择 ───────────────────────────────────────────
 const availableModels = ref<ModelInfo[]>([])
 function getPersistedModelId() {
@@ -523,6 +589,13 @@ const startTask = async () => {
   const query = taskInput.value
   const model = selectedModel.value
   const modelInfo = selectedModelInfo.value
+  let enrichedQuery = query
+  if (attachedFiles.value.length > 0) {
+    const fileContexts = attachedFiles.value.map(
+      f => `[附件: ${f.name}]\n${f.type === 'png' || f.type === 'jpg' || f.type === 'jpeg' || f.type === 'webp' || f.type === 'gif' ? '[图片，已编码为base64]' : f.content.slice(0, 8000)}`
+    )
+    enrichedQuery = fileContexts.join('\n\n') + '\n\n---\n\n' + query
+  }
   const taskRecord: TaskRecord = {
     id: Date.now().toString(),
     input: query,
@@ -571,6 +644,7 @@ const startTask = async () => {
     }
   } finally {
     isRunning.value = false
+    attachedFiles.value = []
     currentTask.value = { ...taskRecord }
     taskAbortController = null
   }
@@ -578,7 +652,7 @@ const startTask = async () => {
 // ── 通过 /api/agent/task SSE 运行任务（云端+本地统一） ─
 async function runViaAgentTaskAPI(query: string, model: string, taskRecord: TaskRecord) {
   const payload = {
-    query,
+    query: enrichedQuery,
     model,
     kb_id:
       taskOptions.value.useKnowledgeBase && taskOptions.value.selectedKbId
@@ -1427,5 +1501,47 @@ onUnmounted(() => {
 .slide-left-leave-to {
   transform: translateX(-280px);
   opacity: 0;
+}
+.attachment-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px 0;
+}
+.attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: rgba(124, 106, 255, 0.1);
+  border: 1px solid rgba(124, 106, 255, 0.2);
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-secondary, rgba(255,255,255,0.7));
+}
+.attachment-chip__name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.attachment-chip__remove {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+}
+.attachment-chip__remove:hover {
+  color: #ef4444;
+}
+.option-item--clickable {
+  cursor: pointer;
+}
+.option-item--clickable:hover {
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
 }
 </style>

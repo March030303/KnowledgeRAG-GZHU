@@ -98,21 +98,26 @@ export class MockSSEResponse {
 export async function fetchOllamaStream(
   prompt: string,
   model: string = 'llama2',
-  serverUrl: string = 'http://localhost:11434'
+  serverUrl: string = 'http://localhost:11434',
+  deepThink: boolean = false
 ) {
   const controller = new AbortController()
   const signal = controller.signal
   try {
+    const requestBody: Record<string, any> = {
+      model: model,
+      prompt: prompt,
+      stream: true
+    }
+    if (deepThink) {
+      requestBody.think = true
+    }
     const response = await fetch(`${serverUrl}/api/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        model: model,
-        prompt: prompt,
-        stream: true
-      }),
+      body: JSON.stringify(requestBody),
       signal
     })
     return {
