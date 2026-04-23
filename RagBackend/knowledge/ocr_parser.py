@@ -1,19 +1,60 @@
 """
 OCR 解析模块 - 支持扫描件/图片/音视频内容提取
-依赖：pytesseract, paddleocr, pillow, moviepy, pydub, openai-whisper
+依赖：magic-pdf(MinerU), paddleocr, pytesseract, pillow, moviepy, pydub, openai-whisper
 """
 
 import base64
+import json
+import os
+import tempfile
 from pathlib import Path
 
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, File, Form, UploadFile
 
 router = APIRouter(prefix="/api/ocr")
 
 
-# - OCR -
+def extract_text_with_mineru(file_bytes: bytes, filename: str) -> str:
+    """使用 MinerU (magic-pdf) 进行深度学习版面分析和 OCR 提取"""
+    try:
+        from magic_pdf.data.data_reader_writer import FileBasedDataReader, FileBasedDataWriter
+        from magic_pdf.data.dataset import PymuDocDataset
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            input_path = os.path.join(tmp_dir, filename)
+            with open(input_path, "wb") as f:
+                f.write(file_bytes)
+
+            reader = FileBasedDataReader("")
+            pdf_bytes = reader.read(input_path)
+            ds = PymuDocDataset(pdf_bytes)
+
+            if ds.classify() == "ocr":
+                ds.apply_ocr()
+            else:
+                ds.apply()
+
+            content_list = ds.export_content_list()
+            texts = []
+            for item in content_list:
+                if isinstance(item, dict) and item.get("type") == "text":
+                    texts.append(item.get("text", ""))
+                elif isinstance(item, str):
+                    texts.append(item)
+
+            return "\n".join(texts)
+    except ImportError:
+        return ""
+    except Exception as e:
+        return f"[MinerU解析失败: {e}]"
+
+
 def extract_text_from_image(file_bytes: bytes, filename: str) -> str:
-    """使用 PaddleOCR（优先）或 pytesseract 提取图片文字"""
+    """使用 MinerU（优先）→ PaddleOCR → pytesseract 三级降级提取图片文字"""
+    mineru_result = extract_text_with_mineru(file_bytes, filename)
+    if mineru_result and not mineru_result.startswith("[MinerU"):
+        return mineru_result
+
     try:
         import io
 
@@ -45,14 +86,17 @@ def extract_text_from_image(file_bytes: bytes, filename: str) -> str:
     except ImportError:
         pass
 
-    return f"[OCR不可用] 文件 {filename} 需要安装 paddleocr 或 pytesseract"
+    return f"[OCR不可用] 文件 {filename} 需要安装 magic-pdf(MinerU), paddleocr 或 pytesseract"
 
 
-def extract_text_from_pdf_scan(file_bytes: bytes) -> str:
-    """对扫描版PDF逐页OCR"""
+def extract_text_from_pdf_scan(file_bytes: bytes, filename: str = "scan.pdf") -> str:
+    """对扫描版PDF逐页OCR（优先使用MinerU）"""
+    mineru_result = extract_text_with_mineru(file_bytes, filename)
+    if mineru_result and not mineru_result.startswith("[MinerU"):
+        return mineru_result
+
     try:
-
-        import fitz  # PyMuPDF
+        import fitz
 
         doc = fitz.open(stream=file_bytes, filetype="pdf")
         all_text = []
@@ -62,7 +106,6 @@ def extract_text_from_pdf_scan(file_bytes: bytes) -> str:
             if text.strip():
                 all_text.append(text)
             else:
-                # OCR
                 pix = page.get_pixmap(dpi=200)
                 img_bytes = pix.tobytes("png")
                 ocr_text = extract_text_from_image(img_bytes, f"page_{page_num+1}.png")
