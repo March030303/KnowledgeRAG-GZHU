@@ -751,88 +751,6 @@
           </div>
         </transition>
       </div>
-      <!-- 外观设置 -->
-      <div v-if="activeTab === 'appearance'" class="tab-content">
-        <div class="section-header">
-          <h2>外观设置</h2>
-          <p class="section-desc">自定义界面主题、颜色和字体，打造专属体验</p>
-        </div>
-        <div class="appearance-grid">
-          <div class="appearance-card">
-            <div class="appearance-card__title">🌗 主题模式</div>
-            <div class="theme-options">
-              <button
-                v-for="t in themeOptions"
-                :key="t.id"
-                :class="['theme-btn', { 'theme-btn--active': appearance.theme === t.id }]"
-                @click="setTheme(t.id)"
-              >
-                <span class="theme-preview" :style="{ background: t.preview }"></span>
-                {{ t.label }}
-              </button>
-            </div>
-          </div>
-          <div class="appearance-card">
-            <div class="appearance-card__title">🎨 主题色</div>
-            <div class="color-options">
-              <button
-                v-for="c in colorOptions"
-                :key="c.id"
-                :class="['color-btn', { 'color-btn--active': appearance.color === c.id }]"
-                :style="{ background: c.value }"
-                @click="setColor(c.id, c.value)"
-                :title="c.label"
-              ></button>
-            </div>
-          </div>
-          <div class="appearance-card">
-            <div class="appearance-card__title">🔡 字体大小</div>
-            <div class="font-size-options">
-              <button
-                v-for="f in fontSizeOptions"
-                :key="f.id"
-                :class="['font-btn', { 'font-btn--active': appearance.fontSize === f.id }]"
-                @click="setFontSize(f.id, f.value)"
-              >
-                {{ f.label }}
-              </button>
-            </div>
-          </div>
-          <div class="appearance-card">
-            <div class="appearance-card__title">📐 布局紧凑度</div>
-            <div class="layout-options">
-              <button
-                v-for="l in layoutOptions"
-                :key="l.id"
-                :class="['layout-btn', { 'layout-btn--active': appearance.layout === l.id }]"
-                @click="handleLayoutChange(l.id)"
-              >
-                <span>{{ l.icon }}</span
-                >{{ l.label }}
-              </button>
-            </div>
-          </div>
-          <!-- 语言设置 -->
-          <div class="appearance-card">
-            <div class="appearance-card__title">🌐 界面语言</div>
-            <div class="lang-options">
-              <button
-                :class="['lang-btn', { 'lang-btn--active': currentLocale === 'zh' }]"
-                @click="switchLocale('zh')"
-              >
-                🇨🇳 中文
-              </button>
-              <button
-                :class="['lang-btn', { 'lang-btn--active': currentLocale === 'en' }]"
-                @click="switchLocale('en')"
-              >
-                🇬🇧 English
-              </button>
-            </div>
-            <p class="mc-hint" style="margin-top: 8px">选择后立即生效，无需刷新页面</p>
-          </div>
-        </div>
-      </div>
       <!-- 使用统计 -->
       <div v-if="activeTab === 'stats'" class="tab-content">
         <div class="section-header">
@@ -1066,10 +984,6 @@ const tabGroups: Array<{
       { id: 'integrations', label: '办公联动', icon: '🔗', desc: '飞书/钉钉/企微等' },
       { id: 'audit', label: '审计日志', icon: '📋', desc: '用户操作审计' }
     ]
-  },
-  {
-    label: '个性化',
-    tabs: [{ id: 'appearance', label: '外观设置', icon: '🎨', desc: '主题/颜色/字体' }]
   },
   {
     label: '系统',

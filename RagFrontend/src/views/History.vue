@@ -87,6 +87,15 @@
               <div class="history-card__body">
                 <div class="history-card__title">{{ item.title }}</div>
                 <div class="history-card__preview">{{ item.preview }}</div>
+                <div v-if="searchKeyword && getMatchedRounds(item).length > 0" class="history-card__matches">
+                  <div v-for="(round, idx) in getMatchedRounds(item).slice(0, 3)" :key="idx" class="match-round">
+                    <span class="match-round__role">{{ round.role === 'user' ? '👤' : '🤖' }}</span>
+                    <span class="match-round__content">{{ truncateText(round.content, 80) }}</span>
+                  </div>
+                  <div v-if="getMatchedRounds(item).length > 3" class="match-more">
+                    还有 {{ getMatchedRounds(item).length - 3 }} 条匹配...
+                  </div>
+                </div>
                 <div class="history-card__meta">
                   <span class="type-tag" :data-type="item.type">{{ typeLabel(item.type) }}</span>
                   <span class="time-tag">{{ item.timeStr }}</span>
@@ -220,7 +229,21 @@ const searchKeyword = ref('')
 const activeTab = ref<HistoryType | 'all'>('all')
 const selectedItem = ref<HistoryItem | null>(null)
 const allItems = ref<HistoryItem[]>([])
-// 置顶 IDs（持久化到 localStorage）
+
+const truncateText = (text: string, maxLen: number) => {
+  if (!text) return ''
+  return text.length > maxLen ? text.slice(0, maxLen) + '...' : text
+}
+
+const getMatchedRounds = (item: HistoryItem) => {
+  if (!searchKeyword.value.trim() || !item.messages || !Array.isArray(item.messages)) return []
+  const kw = searchKeyword.value.toLowerCase()
+  return item.messages.filter(
+    m =>
+      (m.content && m.content.toLowerCase().includes(kw)) ||
+      (m.reasoning && m.reasoning.toLowerCase().includes(kw))
+  )
+}
 const PINNED_KEY = 'history_pinned_ids'
 const pinnedIds = ref<Set<string>>(new Set(JSON.parse(localStorage.getItem(PINNED_KEY) || '[]')))
 function togglePin(id: string) {
@@ -258,12 +281,19 @@ const filteredItems = computed(() => {
       : allItems.value.filter(i => i.type === activeTab.value)
   if (searchKeyword.value.trim()) {
     const kw = searchKeyword.value.toLowerCase()
-    items = items.filter(
-      i => i.title.toLowerCase().includes(kw) || i.preview.toLowerCase().includes(kw)
-    )
+    items = items.filter(i => {
+      if (i.title.toLowerCase().includes(kw) || i.preview.toLowerCase().includes(kw)) return true
+      if (i.messages && Array.isArray(i.messages)) {
+        return i.messages.some(
+          m =>
+            (m.content && m.content.toLowerCase().includes(kw)) ||
+            (m.reasoning && m.reasoning.toLowerCase().includes(kw))
+        )
+      }
+      return false
+    })
   }
   return items.sort((a, b) => {
-    // 置顶的优先显示
     const aPinned = pinnedIds.value.has(a.id) ? 1 : 0
     const bPinned = pinnedIds.value.has(b.id) ? 1 : 0
     if (bPinned !== aPinned) return bPinned - aPinned
@@ -741,5 +771,34 @@ onMounted(loadAll)
   white-space: pre-wrap;
   word-break: break-word;
   font-family: inherit;
+}
+.history-card__matches {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: rgba(124, 106, 255, 0.06);
+  border-radius: 6px;
+  border: 1px solid rgba(124, 106, 255, 0.15);
+}
+.match-round {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 3px 0;
+  font-size: 12px;
+  color: var(--text-secondary, rgba(255,255,255,0.7));
+}
+.match-round__role {
+  flex-shrink: 0;
+  font-size: 13px;
+}
+.match-round__content {
+  line-height: 1.4;
+  word-break: break-all;
+}
+.match-more {
+  font-size: 11px;
+  color: var(--text-tertiary, rgba(255,255,255,0.5));
+  padding-top: 4px;
+  text-align: center;
 }
 </style>
