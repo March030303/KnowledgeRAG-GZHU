@@ -564,3 +564,232 @@ async def deactivate_question(q_id: int):
     with _get_db() as conn:
         conn.execute("UPDATE eval_questions SET active=0 WHERE id=?", (q_id,))
     return {"message": "Question deactivated"}
+
+
+class OfflineEvalRequest(BaseModel):
+    model: str
+    kb_id: str
+    question_ids: Optional[List[int]] = None
+    metrics: Optional[List[str]] = None
+
+
+class TestsetGenerateRequest(BaseModel):
+    kb_id: str
+    num_questions: int = 10
+    difficulty: str = "medium"
+
+
+@router.post("/offline-run")
+async def offline_eval(req: OfflineEvalRequest, bg: BackgroundTasks):
+    """离线评测：对指定知识库运行完整RAG评测，包含faithfulness/relevance/context_precision指标"""
+    run_id = str(uuid.uuid4())[:8]
+    metrics = req.metrics or ["accuracy", "faithfulness", "relevance", "context_precision", "source_accuracy"]
+    bg.add_task(_run_offline_eval, run_id, req.model, req.kb_id, req.question_ids, metrics)
+    return {"run_id": run_id, "status": "running", "metrics": metrics}
+
+
+def _run_offline_eval(run_id: str, model: str, kb_id: str, question_ids: Optional[List[int]], metrics: List[str]):
+    """后台执行离线评测"""
+    import json
+
+    with _get_db() as conn:
+        if question_ids:
+            rows = conn.execute(
+                "SELECT * FROM eval_questions WHERE id IN ({}) AND active=1".format(
+                    ",".join("?" * len(question_ids))
+                ),
+                question_ids,
+            ).fetchall()
+        else:
+            rows = conn.execute("SELECT * FROM eval_questions WHERE active=1").fetchall()
+
+    results = []
+    for q in rows:
+        try:
+            answer, sources, latency = _query_rag(model, kb_id, q["question"])
+            scores = {}
+            if "accuracy" in metrics:
+                scores["accuracy"] = _keyword_score(answer, q["expected"], q["keywords"])
+            if "faithfulness" in metrics:
+                scores["faithfulness"] = _compute_faithfulness(answer, sources)
+            if "relevance" in metrics:
+                scores["relevance"] = _compute_relevance(q["question"], answer)
+            if "context_precision" in metrics:
+                scores["context_precision"] = _compute_context_precision(q["question"], sources)
+            if "source_accuracy" in metrics:
+                scores["source_accuracy"] = _source_accuracy(answer)
+            results.append({"question_id": q["id"], "scores": scores, "latency": latency})
+        except Exception as e:
+            results.append({"question_id": q["id"], "scores": {}, "error": str(e)})
+
+    avg_scores = {}
+    for m in metrics:
+        vals = [r["scores"].get(m, 0) for r in results if m in r.get("scores", {})]
+        avg_scores[m] = round(sum(vals) / len(vals), 3) if vals else 0
+
+    with _get_db() as conn:
+        conn.execute(
+            "INSERT INTO eval_runs (id, model_name, run_at, status, accuracy, source_acc, overall) VALUES (?,?,?,?,?,?,?)",
+            (run_id, model, datetime.now().isoformat(), "completed",
+             avg_scores.get("accuracy", 0), avg_scores.get("source_accuracy", 0),
+             sum(avg_scores.values()) / len(avg_scores) if avg_scores else 0),
+        )
+        for r in results:
+            conn.execute(
+                "INSERT INTO eval_details (run_id, question_id, score, latency) VALUES (?,?,?,?)",
+                (run_id, r["question_id"], json.dumps(r.get("scores", {})), r.get("latency", 0)),
+            )
+
+
+def _query_rag(model: str, kb_id: str, question: str) -> tuple:
+    """调用RAG查询并返回(answer, sources, latency)"""
+    import sys
+    import time
+
+    _backend_root = str(Path(__file__).resolve().parent.parent)
+    if _backend_root not in sys.path:
+        sys.path.insert(0, _backend_root)
+
+    start = time.time()
+    try:
+        from RAG_M.RAG_app import _load_vectorstore_and_docs
+        from document_processing.retrieval_strategy import RetrievalStrategyExecutor, RetrievalConfig
+
+        docs_dir = f"local-KLB-files/{kb_id}"
+        vectorstore, documents, _ = _load_vectorstore_and_docs(docs_dir)
+        executor = RetrievalStrategyExecutor(vectorstore=vectorstore, documents=documents)
+        config = RetrievalConfig(strategy="rrf")
+        results = executor.retrieve(question, config=config)
+
+        sources = []
+        context_parts = []
+        for r in results[:5]:
+            doc = r.get("document", r)
+            src = doc.metadata.get("source", "") if hasattr(doc, "metadata") else ""
+            content = doc.page_content if hasattr(doc, "page_content") else str(doc)
+            sources.append(src)
+            context_parts.append(content)
+
+        context = "\n\n".join(context_parts)
+        answer = _generate_answer(model, question, context)
+        latency = time.time() - start
+        return answer, sources, latency
+    except Exception as e:
+        return f"查询失败: {e}", [], time.time() - start
+
+
+def _generate_answer(model: str, question: str, context: str) -> str:
+    """使用模型生成回答"""
+    try:
+        import httpx
+
+        real_model, provider = _get_provider(model) if "_" in dir() else (model, "ollama")
+        prompt = f"基于以下上下文回答问题。如果上下文中没有相关信息，请说明。\n\n上下文：{context}\n\n问题：{question}\n\n回答："
+
+        if provider == "ollama":
+            resp = httpx.post("http://localhost:11434/api/generate",
+                json={"model": model, "prompt": prompt, "stream": False}, timeout=60)
+            return resp.json().get("response", "")
+        else:
+            return f"[需要配置{provider}的API密钥]"
+    except Exception as e:
+        return f"[生成失败: {e}]"
+
+
+def _compute_faithfulness(answer: str, sources: list) -> float:
+    """计算忠实度（答案是否基于上下文，非幻觉）"""
+    if not answer or not sources:
+        return 0.0
+    answer_lower = answer.lower()
+    source_text = " ".join(sources).lower()
+    if not source_text:
+        return 0.5
+    answer_words = set(answer_lower.split())
+    source_words = set(source_text.split())
+    overlap = answer_words & source_words
+    return min(round(len(overlap) / max(len(answer_words), 1), 3), 1.0)
+
+
+def _compute_relevance(question: str, answer: str) -> float:
+    """计算相关性（答案是否与问题相关）"""
+    if not answer:
+        return 0.0
+    q_words = set(question.lower().split())
+    a_words = set(answer.lower().split())
+    overlap = q_words & a_words
+    return min(round(len(overlap) / max(len(q_words), 1), 3), 1.0)
+
+
+def _compute_context_precision(question: str, sources: list) -> float:
+    """计算上下文精确度（检索到的内容是否与问题相关）"""
+    if not sources:
+        return 0.0
+    q_words = set(question.lower().split())
+    relevant = 0
+    for src in sources:
+        src_words = set(str(src).lower().split())
+        if q_words & src_words:
+            relevant += 1
+    return round(relevant / len(sources), 3)
+
+
+@router.post("/generate-testset")
+async def generate_testset(req: TestsetGenerateRequest):
+    """基于知识库内容自动生成测试题集"""
+    import os
+
+    kb_dir = f"local-KLB-files/{req.kb_id}"
+    if not os.path.exists(kb_dir):
+        raise HTTPException(status_code=404, detail=f"知识库目录不存在: {kb_dir}")
+
+    documents_text = []
+    for fname in os.listdir(kb_dir):
+        fpath = os.path.join(kb_dir, fname)
+        if os.path.isfile(fpath) and not fname.startswith("."):
+            try:
+                with open(fpath, "r", encoding="utf-8", errors="replace") as f:
+                    content = f.read()[:3000]
+                    if content.strip():
+                        documents_text.append({"filename": fname, "content": content})
+            except Exception:
+                continue
+
+    if not documents_text:
+        raise HTTPException(status_code=400, detail="知识库中没有可用的文本文档")
+
+    prompt = f"""基于以下知识库文档内容，生成{req.num_questions}个评测测试题。
+难度级别：{req.difficulty}
+要求：
+- 每个问题必须有明确的正确答案
+- 问题类型包括：事实检索、摘要理解、逻辑推理、技术细节
+- 输出JSON数组格式：[{{"question": "...", "expected": "...", "category": "retrieval|summary|reasoning|technical", "keywords": "关键词1,关键词2"}}]
+
+文档内容：
+"""
+    for doc in documents_text[:5]:
+        prompt += f"\n--- {doc['filename']} ---\n{doc['content'][:1000]}\n"
+
+    try:
+        import httpx
+
+        model = os.environ.get("DEFAULT_MODEL", "deepseek-chat")
+        resp = httpx.post("http://localhost:11434/api/generate",
+            json={"model": model, "prompt": prompt, "stream": False}, timeout=120)
+
+        import json
+
+        response_text = resp.json().get("response", "[]")
+        json_match = response_text[response_text.find("["):response_text.rfind("]") + 1]
+        questions = json.loads(json_match)
+
+        with _get_db() as conn:
+            for q in questions:
+                conn.execute(
+                    "INSERT INTO eval_questions (question, expected, category, keywords) VALUES (?,?,?,?)",
+                    (q.get("question", ""), q.get("expected", ""),
+                     q.get("category", "retrieval"), q.get("keywords", "")),
+                )
+
+        return {"generated": len(questions), "questions": questions}
+    except Exception as e:
+        return {"generated": 0, "error": str(e), "message": "测试集生成需要Ollama服务运行中"}
