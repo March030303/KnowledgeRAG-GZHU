@@ -222,7 +222,7 @@ const currentDisplayImage = computed(() => imageMap[currentImageKey.value] || im
 const featureTags = [
   { icon: '🧠', label: 'RAG 检索增强' },
   { icon: '📚', label: '知识库管理' },
-  { icon: '🤖', label: 'Agent 推理' },
+  { icon: '⚡', label: 'Agent 推理' },
   { icon: '🔒', label: '端到端加密' },
   { icon: '🌐', label: '多模型支持' }
 ]

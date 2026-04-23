@@ -2,9 +2,9 @@ import asyncio
 import json
 import os
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -518,3 +518,88 @@ async def get_documents(KLB_id):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取文档列表失败: {str(e)}")
+
+
+@router.post("/api/documents/parse-file")
+async def parse_file_for_chat(file: UploadFile = File(...)):
+    """
+    解析上传文件并提取文本内容（用于聊天界面文件上传）
+    支持: txt, md, csv, json, pdf, docx, doc, xls, xlsx
+    """
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="文件名不能为空")
+
+    filename = file.filename.lower()
+    content_bytes = await file.read()
+
+    if len(content_bytes) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="文件大小不能超过20MB")
+
+    try:
+        text = ""
+
+        if filename.endswith(('.txt', '.md', '.csv', '.json', '.xml', '.yaml', '.yml', '.log', '.ini', '.conf')):
+            encoding = 'utf-8'
+            try:
+                text = content_bytes.decode(encoding)
+            except UnicodeDecodeError:
+                text = content_bytes.decode('gbk', errors='replace')
+
+        elif filename.endswith('.pdf'):
+            try:
+                import io
+                from PyPDF2 import PdfReader
+                reader = PdfReader(io.BytesIO(content_bytes))
+                pages = []
+                for page in reader.pages:
+                    page_text = page.extract_text()
+                    if page_text:
+                        pages.append(page_text)
+                text = "\n\n".join(pages)
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"PDF解析失败: {str(e)}")
+
+        elif filename.endswith('.docx'):
+            try:
+                import io
+                import docx2txt
+                text = docx2txt.process(io.BytesIO(content_bytes)) or ""
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"DOCX解析失败: {str(e)}")
+
+        elif filename.endswith('.doc'):
+            try:
+                import io
+                import docx2txt
+                text = docx2txt.process(io.BytesIO(content_bytes)) or ""
+            except Exception:
+                try:
+                    text = content_bytes.decode('utf-8', errors='replace')
+                except Exception:
+                    raise HTTPException(status_code=500, detail="DOC格式解析失败，建议转换为DOCX")
+
+        elif filename.endswith(('.xls', '.xlsx')):
+            try:
+                import io
+                import pandas as pd
+                df = pd.read_excel(io.BytesIO(content_bytes), engine='openpyxl' if filename.endswith('.xlsx') else 'xlrd')
+                text = df.to_string(index=False)
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Excel解析失败: {str(e)}")
+
+        else:
+            raise HTTPException(status_code=400, detail=f"不支持的文件格式: {filename}")
+
+        if not text.strip():
+            return {"text": "", "message": "文件内容为空或无法提取文本"}
+
+        max_chars = 50000
+        if len(text) > max_chars:
+            text = text[:max_chars] + f"\n\n... [文件过长，已截取前{max_chars}字符]"
+
+        return {"text": text, "filename": file.filename, "char_count": len(text)}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"文件解析失败: {str(e)}")

@@ -125,7 +125,7 @@ async def _handle_question(
         else:
             answer = _simple_llm_answer(question)
 
-        await _reply_text(receive_id, receive_id_type, f"🤖 {answer}")
+        await _reply_text(receive_id, receive_id_type, f"⚡ {answer}")
 
     except Exception as e:
         logger.error(f"[Feishu] 问答处理失败: {e}", exc_info=True)

@@ -882,7 +882,7 @@
             <div ref="monLatRef" style="width: 100%; height: 260px"></div>
           </div>
           <div class="mon-chart-box">
-            <div class="mon-chart-title">🤖 模型调用分布</div>
+            <div class="mon-chart-title">模型调用分布</div>
             <div ref="monModelRef" style="width: 100%; height: 260px"></div>
           </div>
         </div>
@@ -1007,6 +1007,7 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ref, onMounted, reactive, computed, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import axios from 'axios'
 import { MessagePlugin } from 'tdesign-vue-next'
 import {
@@ -1027,6 +1028,7 @@ import EnterpriseToolsTab from './SettingsTabs/EnterpriseToolsTab.vue'
 import MultiModelTab from './SettingsTabs/MultiModelTab.vue'
 import ComplianceTab from './SettingsTabs/ComplianceTab.vue'
 import CommercialTab from './SettingsTabs/CommercialTab.vue'
+const route = useRoute()
 const activeTab = ref('apikeys')
 // Win11 风格分组导航
 const tabGroups: Array<{
@@ -1053,7 +1055,7 @@ const tabGroups: Array<{
     label: 'AI 与模型',
     tabs: [
       { id: 'model-config', label: '模型配置', icon: '⚡', desc: '设置 Ollama 模型与超时' },
-      { id: 'multimodel', label: '多模型', icon: '🤖', desc: '配置多个AI模型' },
+      { id: 'multimodel', label: '多模型', icon: '⚡', desc: '配置多个AI模型' },
       { id: 'rageval', label: 'RAG 评估', icon: '🔬', desc: '效果评估与调优' },
       { id: 'tools', label: '企业工具', icon: '🧰', desc: '11种企业级工具' }
     ]
@@ -1250,6 +1252,9 @@ function formatDateTime(ts: number): string {
   return new Date(ts * 1000).toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-')
 }
 onMounted(async () => {
+  if (route.query.tab && typeof route.query.tab === 'string') {
+    activeTab.value = route.query.tab
+  }
   loadPlatformConfigs()
   mcLoadConfig()
   await Promise.all([
@@ -1670,7 +1675,7 @@ const monitorCards = computed(() => {
     { key: 'reqs', icon: '📨', label: '总请求数', value: ov.total_reqs },
     { key: 'errors', icon: '❌', label: '错误请求', value: ov.total_errors },
     { key: 'uploads', icon: '📤', label: '上传文件数', value: ov.kb_uploads },
-    { key: 'models', icon: '🤖', label: '使用模型数', value: ov.models_used }
+    { key: 'models', icon: '⚡', label: '使用模型数', value: ov.models_used }
   ]
 })
 async function fetchMonitor() {

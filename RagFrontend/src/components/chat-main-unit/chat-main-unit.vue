@@ -126,7 +126,7 @@
         >
           <template #suffix="{ renderPresets }">
             <component
-              :is="renderPresets([{ name: 'uploadImage' }, { name: 'uploadAttachment' }])"
+              :is="renderPresets([{ name: 'uploadAttachment' }])"
             />
           </template>
           <template #prefix>
@@ -309,24 +309,59 @@ const fileSelect = async function (files) {
       reader.onerror = e => reject(new Error('文本文件读取失败: ' + e))
     })
   }
+  const getArrayBufferByFileRaw = file => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsArrayBuffer(file)
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = e => reject(new Error('文件读取失败: ' + e))
+    })
+  }
   try {
     if (!files || !files.files || files.files.length === 0) {
       console.warn('没有选择任何文件')
       return
     }
     const fileObj = files.files[0]
-    if (fileObj.type.startsWith('image/')) {
-      console.log('检测到图片文件，正在处理...')
+    const fileName = fileObj.name.toLowerCase()
+    const imageExtensions = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.svg']
+    const textExtensions = ['.txt', '.md', '.csv', '.json', '.xml', '.yaml', '.yml', '.log', '.ini', '.conf']
+    const docExtensions = ['.docx', '.doc', '.pdf', '.xls', '.xlsx']
+    const ext = '.' + fileName.split('.').pop()
+
+    if (fileObj.type.startsWith('image/') || imageExtensions.includes(ext)) {
       const dataUrl = await getFileUrlByFileRaw(fileObj)
       useChatImg.addImage(dataUrl)
-    } else if (fileObj.type === 'text/plain') {
-      console.log('检测到文本文件，正在读取内容...')
+    } else if (fileObj.type === 'text/plain' || textExtensions.includes(ext)) {
       const fileContent = await getTextByFileRaw(fileObj)
       const newText = `--- 从文件 ${fileObj.name} 中读取的内容 ---\n\n${fileContent}`
       inputValue.value = newText
       document.querySelector('#chatSender textarea')?.focus()
+    } else if (docExtensions.includes(ext)) {
+      const formData = new FormData()
+      formData.append('file', fileObj)
+      try {
+        const res = await fetch('/api/documents/parse-file', {
+          method: 'POST',
+          body: formData
+        })
+        if (res.ok) {
+          const data = await res.json()
+          const content = data.text || data.content || data.data?.text || ''
+          if (content) {
+            inputValue.value = `--- 从文件 ${fileObj.name} 中提取的内容 ---\n\n${content}`
+            document.querySelector('#chatSender textarea')?.focus()
+          } else {
+            MessagePlugin.warning(`文件 ${fileObj.name} 未能提取到文本内容`)
+          }
+        } else {
+          MessagePlugin.warning(`文件解析接口暂不可用，请将内容复制粘贴到输入框`)
+        }
+      } catch {
+        MessagePlugin.warning(`文件解析失败，请将内容复制粘贴到输入框`)
+      }
     } else {
-      const message = `暂不支持处理此类型的文件: ${fileObj.name} (${fileObj.type})`
+      const message = `暂不支持处理此类型的文件: ${fileObj.name} (${fileObj.type || ext})`
       console.warn(message)
       MessagePlugin.warning(message)
     }
@@ -371,18 +406,18 @@ const inputEnter = function (messageContent) {
   }
   // 根据当前选中模型动态命名 AI
   const curModelVal = selectedModelValue.value
-  let aiName = 'TDesignAI'
+  let aiName = 'AI'
   if (curModelVal.toLowerCase().includes('deepseek')) {
-    aiName = '🤖 DeepSeek'
+    aiName = 'DeepSeek'
   } else if (
     curModelVal.toLowerCase().includes('gpt') ||
     curModelVal.toLowerCase().includes('openai')
   ) {
-    aiName = '🤖 GPT'
+    aiName = 'GPT'
   } else if (curModelVal.toLowerCase().includes('hunyuan')) {
-    aiName = '🤖 混元'
+    aiName = '混元'
   } else if (curModelVal) {
-    aiName = `🤖 ${curModelVal}`
+    aiName = curModelVal
   }
   // 添加AI占位消息
   const aiMessage = {
@@ -477,7 +512,8 @@ const handleCloudChat = async (messageContent: string, modelId: string, historyL
         messages,
         stream: true,
         temperature: 0.7,
-        max_tokens: 4096
+        max_tokens: 4096,
+        deep_think: isChecked.value
       }),
       signal: controller.signal
     })
@@ -568,8 +604,9 @@ const handleData = async messageContent => {
   try {
     const { response, controller } = await fetchOllamaStream(
       messageContent,
-      localModel, // 使用本地模型名（已去掉 local: 前缀）
-      serverUrl
+      localModel,
+      serverUrl,
+      isChecked.value
     )
     fetchCancel.value = { controller }
     if (!response.ok) {

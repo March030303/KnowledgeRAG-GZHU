@@ -482,6 +482,15 @@ try:
 except Exception as _e:
     logger.warning(f"文档创作模块加载失败: {_e}")
 
+# URL import for knowledge base
+try:
+    from document_processing.url_import import router as url_import_router
+
+    app.include_router(url_import_router, tags=["知识库-URL导入"])
+    logger.info("URL导入模块已加载")
+except Exception as _e:
+    logger.warning(f"URL导入模块加载失败: {_e}")
+
 # Prometheus
 try:
     from monitoring.metrics import instrument_app
@@ -648,7 +657,7 @@ async def app_download_page():
       <div class="feature-desc">创建、上传、管理文档</div>
     </div>
     <div class="feature">
-      <div class="feature-icon">🤖</div>
+      <div class="feature-icon">⚡</div>
       <div class="feature-title">AI 智能问答</div>
       <div class="feature-desc">RAG 精准语义检索</div>
     </div>
@@ -688,7 +697,7 @@ async def app_download_page():
   </a>
 
   <footer>
-    <p>KnowledgeRAG-GZHU · 开源免费 ·
+    <p>ASF-RAG · 开源免费 ·
       <a href="https://github.com/March030303/KnowledgeRAG-GZHU/releases" target="_blank">更新日志</a>
     </p>
     <p style="margin-top:6px">需要帮助？<a href="mailto:support@rag-gzhu.com">联系我们</a></p>

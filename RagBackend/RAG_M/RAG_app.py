@@ -667,7 +667,7 @@ async def agent_query(query_body: AgentQueryRequest):
 
     async def generate():
         try:
-            yield "data: 🤖 启动 ReAct Agent 模式...\n\n"
+            yield "data: ⚡ 启动 ReAct Agent 模式...\n\n"
 
             if query_body.docs_dir:
                 docs_dir = query_body.docs_dir

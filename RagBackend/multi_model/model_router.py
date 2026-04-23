@@ -86,6 +86,7 @@ class ChatCompletionRequest(BaseModel):
     temperature: float = 0.7
     max_tokens: int = 2048
     kb_id: Optional[str] = None
+    deep_think: bool = False
 
 
 class ModelListResponse(BaseModel):
@@ -230,18 +231,20 @@ def _build_model_list() -> list:
 
 # - provider -
 async def _stream_ollama(
-    model: str, messages: list, temperature: float, max_tokens: int
+    model: str, messages: list, temperature: float, max_tokens: int, deep_think: bool = False
 ) -> AsyncGenerator[str, None]:
     """调用本地 Ollama 流式接口"""
     import aiohttp
 
     ollama_url = _get_base_url("ollama", "OLLAMA_BASE_URL", "http://localhost:11434")
-    payload = {
+    payload: dict = {
         "model": model,
         "messages": messages,
         "stream": True,
         "options": {"temperature": temperature, "num_predict": max_tokens},
     }
+    if deep_think:
+        payload["think"] = True
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(
@@ -454,7 +457,7 @@ async def model_chat(req: ChatCompletionRequest):
     async def generate():
         if provider == "ollama":
             async for chunk in _stream_ollama(
-                req.model, req.messages, req.temperature, req.max_tokens
+                req.model, req.messages, req.temperature, req.max_tokens, req.deep_think
             ):
                 yield chunk
         elif provider == "deepseek":

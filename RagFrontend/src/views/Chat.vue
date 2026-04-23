@@ -48,7 +48,7 @@
       </div>
 
       <div class="sidebar-footer">
-        <div class="model-indicator" @click="router.push('/settings')">
+        <div class="model-indicator" @click="router.push('/settings?tab=model-config')">
           <span class="model-dot"></span>
           <span class="model-name">{{ currentOllamaModel }}</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="model-arrow"><path d="m9 18 6-6-6-6"/></svg>

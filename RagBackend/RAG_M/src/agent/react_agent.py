@@ -321,7 +321,7 @@ class ReActRAGAgent:
           data: <text>          — 回答文本片段
           data: COMPLETE        — 结束标志
         """
-        yield "data: 🤖 ReAct Agent 开始推理...\n\n"
+        yield "data: ⚡ ReAct Agent 开始推理...\n\n"
         yield f"data: 📝 问题: {question}\n\n"
 
         try:
