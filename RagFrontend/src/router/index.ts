@@ -1,9 +1,27 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import KnowledgeBase from '../views/KnowledgePages/KnowledgeBase.vue'
 import NotFound from '../components/ERS-Pages/404.vue'
-//import { get, post } from '@/utils/ASFaxios'
+
 interface UserResponse {
   status: string
+  data?: {
+    role?: string
+    email?: string
+  }
+}
+
+const ROLE_ROUTE_MAP: Record<string, string[]> = {
+  guest: ['/knowledge', '/chat', '/history'],
+  viewer: ['/knowledge', '/chat', '/history', '/agent'],
+  editor: ['/knowledge', '/chat', '/history', '/agent', '/creation'],
+  admin: ['*'],
+  super_admin: ['*']
+}
+
+function canAccessRoute(role: string, path: string): boolean {
+  const allowed = ROLE_ROUTE_MAP[role] || ROLE_ROUTE_MAP.guest
+  if (allowed.includes('*')) return true
+  return allowed.some(r => path.startsWith(r))
 }
 
 const routes: Array<RouteRecordRaw> = [
@@ -148,7 +166,6 @@ export function markJustAuthenticated() {
 }
 
 router.beforeEach((to, from, next) => {
-  // Public routes: always pass through
   if (publicRoutes.includes(to.path)) {
     return next()
   }
@@ -158,14 +175,11 @@ router.beforeEach((to, from, next) => {
     return next(`/LogonOrRegister?redirect=${encodeURIComponent(to.fullPath)}`)
   }
 
-  // If we just logged in / registered, trust the JWT for this navigation
-  // (it was issued seconds ago, no need to verify remotely)
   if (_justAuthenticated) {
     _justAuthenticated = false
     return next()
   }
 
-  // Remote JWT validation
   fetch('/api/users/me', {
     method: 'GET',
     headers: { Authorization: `Bearer ${jwt}` }
@@ -173,16 +187,27 @@ router.beforeEach((to, from, next) => {
     .then(response => response.json())
     .then((res: UserResponse) => {
       if (res.status === 'success') {
-        next()
+        const userRole = res.data?.role || localStorage.getItem('user_role') || 'viewer'
+        if (res.data?.role) {
+          localStorage.setItem('user_role', res.data.role)
+        }
+        if (!canAccessRoute(userRole, to.path)) {
+          next('/knowledge')
+        } else {
+          next()
+        }
       } else {
         localStorage.removeItem('jwt')
         next(`/LogonOrRegister?redirect=${encodeURIComponent(to.fullPath)}`)
       }
     })
     .catch(() => {
-      // Network error: do NOT delete JWT, just let through.
-      // User might be on a slow connection; killing the session is too aggressive.
-      next()
+      const userRole = localStorage.getItem('user_role') || 'viewer'
+      if (!canAccessRoute(userRole, to.path)) {
+        next('/knowledge')
+      } else {
+        next()
+      }
     })
 })
 

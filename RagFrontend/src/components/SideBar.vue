@@ -69,7 +69,7 @@
           <p v-if="!isCollapsed" class="sidebar__nav-label">主要功能</p>
         </transition>
         <ul class="sidebar__nav-list">
-          <li v-for="item in mainNavItems" :key="item.path">
+          <li v-for="item in mainNavItems" :key="item.path" v-show="canShowNav(item.path)">
             <t-tooltip
               :content="isCollapsed ? item.label : ''"
               placement="right"
@@ -99,7 +99,7 @@
           <p v-if="!isCollapsed" class="sidebar__nav-label">工具</p>
         </transition>
         <ul class="sidebar__nav-list">
-          <li v-for="item in toolNavItems" :key="item.path">
+          <li v-for="item in toolNavItems" :key="item.path" v-show="canShowNav(item.path)">
             <t-tooltip
               :content="isCollapsed ? item.label : ''"
               placement="right"
@@ -352,6 +352,23 @@ interface NavItem {
   label: string
   icon: string
   badge?: string
+  roles?: string[]
+}
+
+const userRole = computed(() => localStorage.getItem('user_role') || 'viewer')
+
+const ROLE_ACCESS: Record<string, string[]> = {
+  guest: ['/knowledge', '/chat', '/history'],
+  viewer: ['/knowledge', '/chat', '/history', '/agent', '/square'],
+  editor: ['/knowledge', '/chat', '/history', '/agent', '/creation', '/square'],
+  admin: ['*'],
+  super_admin: ['*']
+}
+
+function canShowNav(path: string): boolean {
+  const allowed = ROLE_ACCESS[userRole.value] || ROLE_ACCESS.viewer
+  if (allowed.includes('*')) return true
+  return allowed.some(r => path.startsWith(r))
 }
 
 // 主导航项
