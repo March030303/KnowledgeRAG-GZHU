@@ -751,6 +751,69 @@
           </div>
         </transition>
       </div>
+      <!-- 外观设置（通过 useTheme hook 跨层级全局样式变更） -->
+      <div v-if="activeTab === 'appearance'" class="tab-content">
+        <div class="section-header">
+          <h2>外观设置</h2>
+          <p class="section-desc">自定义界面主题、颜色和字体，通过 CSS 变量实现跨层级全局样式变更</p>
+        </div>
+        <div class="appearance-grid">
+          <div class="appearance-card">
+            <div class="appearance-card__title">🌗 主题模式</div>
+            <div class="theme-options">
+              <button
+                v-for="t in themeOptions"
+                :key="t.id"
+                :class="['theme-btn', { 'theme-btn--active': appearance.theme === t.id }]"
+                @click="setTheme(t.id)"
+              >
+                <span class="theme-preview" :style="{ background: t.preview }"></span>
+                {{ t.label }}
+              </button>
+            </div>
+          </div>
+          <div class="appearance-card">
+            <div class="appearance-card__title">🎨 主题色</div>
+            <div class="color-options">
+              <button
+                v-for="c in colorOptions"
+                :key="c.id"
+                :class="['color-btn', { 'color-btn--active': appearance.color === c.id }]"
+                :style="{ background: c.value }"
+                @click="setColor(c.id, c.value)"
+                :title="c.label"
+              ></button>
+            </div>
+          </div>
+          <div class="appearance-card">
+            <div class="appearance-card__title">🔡 字体大小</div>
+            <div class="font-size-options">
+              <button
+                v-for="f in fontSizeOptions"
+                :key="f.id"
+                :class="['font-btn', { 'font-btn--active': appearance.fontSize === f.id }]"
+                @click="setFontSize(f.id, f.value)"
+              >
+                {{ f.label }}
+              </button>
+            </div>
+          </div>
+          <div class="appearance-card">
+            <div class="appearance-card__title">📐 布局紧凑度</div>
+            <div class="layout-options">
+              <button
+                v-for="l in layoutOptions"
+                :key="l.id"
+                :class="['layout-btn', { 'layout-btn--active': appearance.layout === l.id }]"
+                @click="handleLayoutChange(l.id)"
+              >
+                <span>{{ l.icon }}</span
+                >{{ l.label }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
       <!-- 使用统计 -->
       <div v-if="activeTab === 'stats'" class="tab-content">
         <div class="section-header">
@@ -988,6 +1051,7 @@ const tabGroups: Array<{
   {
     label: '系统',
     tabs: [
+      { id: 'appearance', label: '外观设置', icon: '🎨', desc: '主题/颜色/字体' },
       { id: 'stats', label: '使用统计', icon: '📊', desc: '查看使用数据' },
       { id: 'monitor', label: '系统监控', icon: '📡', desc: 'API响应/模型调用' },
       { id: 'tickets', label: '工单管理', icon: '🎫', desc: '问题反馈与跟踪' }

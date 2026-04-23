@@ -206,6 +206,24 @@
         </button>
       </t-tooltip>
 
+      <!-- 工单反馈 -->
+      <t-tooltip
+        :content="isCollapsed ? '工单反馈' : ''"
+        placement="right"
+        :show-arrow="false"
+      >
+        <button class="nav-item nav-item--ticket" @click="router.push('/settings?tab=tickets')" title="工单反馈">
+          <span class="nav-item__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+            </svg>
+          </span>
+          <transition name="fade-text">
+            <span v-if="!isCollapsed" class="nav-item__label">工单反馈</span>
+          </transition>
+        </button>
+      </t-tooltip>
+
       <!-- 用户信息 -->
       <t-dropdown :min-column-width="160" trigger="click" placement="right-bottom">
         <div :class="['user-info', { 'user-info--collapsed': isCollapsed }]">
@@ -704,6 +722,13 @@ const toolNavItems: NavItem[] = [
 .nav-item--download:hover {
   background: var(--accent-emerald-subtle) !important;
   color: var(--accent-emerald) !important;
+}
+.nav-item--ticket .nav-item__icon {
+  color: var(--accent-amber, #f59e0b);
+}
+.nav-item--ticket:hover {
+  background: rgba(245, 158, 11, 0.1) !important;
+  color: var(--accent-amber, #f59e0b) !important;
 }
 
 .nav-item__badge {

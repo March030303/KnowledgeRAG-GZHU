@@ -491,9 +491,48 @@ except Exception as _e:
 try:
     from monitoring.metrics import instrument_app
     from monitoring.metrics import router as metrics_router
+    from monitoring.metrics import STATS as _stats
 
     instrument_app(app)
     app.include_router(metrics_router, tags=["系统监控-Prometheus指标"])
+
+    @app.get("/api/stats/usage")
+    async def get_usage_stats():
+        """使用统计接口 - 供前端 Settings 使用统计面板调用"""
+        import os
+        kb_dir = "local-KLB-files"
+        kb_count = 0
+        doc_count = 0
+        if os.path.exists(kb_dir):
+            for d in os.listdir(kb_dir):
+                dp = os.path.join(kb_dir, d)
+                if os.path.isdir(dp):
+                    kb_count += 1
+                    doc_count += len([f for f in os.listdir(dp) if os.path.isfile(os.path.join(dp, f))])
+        return {
+            "total_queries": sum(_stats.request_count.values()),
+            "total_tokens": sum(_stats.model_calls.values()) * 1500,
+            "kb_count": kb_count,
+            "doc_count": doc_count,
+        }
+
+    @app.get("/api/monitor/metrics")
+    async def get_monitor_metrics():
+        """系统监控接口 - 供前端 Settings 系统监控面板调用"""
+        return {
+            "overview": {
+                "uptime_h": round(_stats.uptime_seconds() / 3600, 2),
+                "total_reqs": sum(_stats.request_count.values()),
+                "total_errors": sum(_stats.error_count.values()),
+                "kb_uploads": _stats.kb_uploads,
+                "models_used": len(_stats.model_calls),
+            },
+            "model_calls": dict(_stats.model_calls),
+            "top_endpoints": sorted(
+                _stats.request_count.items(), key=lambda x: x[1], reverse=True
+            )[:10],
+        }
+
     logger.info("系统监控模块已加载")
 except Exception as _e:
     logger.warning(f"系统监控模块加载失败: {_e}")
