@@ -19,7 +19,7 @@
     </div>
     <div v-else class="doc-list">
       <div v-if="filteredDocs.length === 0" class="empty-state">
-        <div class="empty-icon">📚</div>
+        <div class="empty-icon"></div>
         <p>暂无版本记录</p>
       </div>
       <div
@@ -38,7 +38,7 @@
           </div>
         </div>
         <div class="doc-tags">
-          <span v-if="doc.has_snapshot" class="tag tag--snap">📸 快照</span>
+          <span v-if="doc.has_snapshot" class="tag tag--snap"> 快照</span>
           <span class="version-count">v{{ doc.version_count }}</span>
         </div>
       </div>
@@ -46,8 +46,8 @@
     <!-- 版本时间线 -->
     <div v-if="selectedDoc" class="version-panel">
       <div class="version-panel-header">
-        <span>📋 {{ selectedDoc.name }} 版本历史</span>
-        <button class="btn-snapshot" @click="createSnapshot">📸 创建快照</button>
+        <span> {{ selectedDoc.name }} 版本历史</span>
+        <button class="btn-snapshot" @click="createSnapshot">创建快照</button>
       </div>
       <div class="timeline">
         <div v-for="(ver, idx) in versions" :key="ver.id" class="timeline-item">
@@ -119,7 +119,9 @@ async function fetchKbs() {
     if (Array.isArray(res.data)) {
       kbs.value = res.data.map((kb: any) => ({ id: kb.id, name: kb.title || kb.name }))
     }
-  } catch { kbs.value = [] }
+  } catch {
+    kbs.value = []
+  }
 }
 
 async function fetchDocs() {
@@ -128,10 +130,15 @@ async function fetchDocs() {
     if (Array.isArray(res.data)) {
       docs.value = res.data
     }
-  } catch { docs.value = [] }
+  } catch {
+    docs.value = []
+  }
 }
 
-onMounted(() => { fetchKbs(); fetchDocs() })
+onMounted(() => {
+  fetchKbs()
+  fetchDocs()
+})
 const diffModal = reactive({ show: false, fromVer: 0, oldContent: '', newContent: '' })
 const filteredDocs = computed(() => {
   return docs.value.filter(d => {
@@ -141,8 +148,8 @@ const filteredDocs = computed(() => {
   })
 })
 function getDocIcon(type: string) {
-  const m: Record<string, string> = { md: '📝', docx: '📄', pdf: '📋', txt: '📃' }
-  return m[type] || '📄'
+  const m: Record<string, string> = { md: '', docx: '', pdf: '', txt: '' }
+  return m[type] || ''
 }
 async function fetchDocVersions() {
   loading.value = true

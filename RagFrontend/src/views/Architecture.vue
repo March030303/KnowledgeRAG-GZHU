@@ -1,8 +1,8 @@
 <template>
   <div class="arch-page">
     <div class="arch-header">
-      <h1>🏗️ 系统架构</h1>
-      <p class="arch-subtitle">ASF-RAG 微服务架构全景图</p>
+      <h1>系统架构</h1>
+      <p class="arch-subtitle">微服务架构全景图</p>
       <div class="arch-tabs">
         <button
           v-for="tab in tabs"
@@ -20,15 +20,15 @@
       <div class="arch-diagram">
         <!-- 用户层 -->
         <div class="arch-layer arch-layer--user">
-          <div class="layer-title">🧑‍💻 客户端层</div>
+          <div class="layer-title">客户端层</div>
           <div class="layer-nodes">
             <div class="arch-node arch-node--frontend">
-              <div class="node-icon">🌐</div>
+              <div class="node-icon"></div>
               <div class="node-name">Web 前端</div>
               <div class="node-tech">Vue 3 + TDesign</div>
             </div>
             <div class="arch-node arch-node--mobile">
-              <div class="node-icon">📱</div>
+              <div class="node-icon"></div>
               <div class="node-name">移动端</div>
               <div class="node-tech">React Native + Expo</div>
             </div>
@@ -38,15 +38,15 @@
         <!-- 网关层 -->
         <div class="arch-arrow">↕ HTTP / SSE / WebSocket</div>
         <div class="arch-layer arch-layer--gateway">
-          <div class="layer-title">🔀 API 网关层</div>
+          <div class="layer-title">API 网关层</div>
           <div class="layer-nodes">
             <div class="arch-node arch-node--gateway">
-              <div class="node-icon">⚡</div>
+              <div class="node-icon"></div>
               <div class="node-name">FastAPI 主服务</div>
               <div class="node-tech">Port 8000 · CORS · JWT Auth</div>
             </div>
             <div class="arch-node arch-node--gateway">
-              <div class="node-icon">📋</div>
+              <div class="node-icon"></div>
               <div class="node-name">审计中间件</div>
               <div class="node-tech">AuditMiddleware · 操作日志</div>
             </div>
@@ -56,45 +56,45 @@
         <!-- 服务层 -->
         <div class="arch-arrow">↕</div>
         <div class="arch-layer arch-layer--service">
-          <div class="layer-title">🧩 业务服务层</div>
+          <div class="layer-title">业务服务层</div>
           <div class="layer-nodes service-grid">
             <div class="arch-node arch-node--service">
-              <div class="node-icon">📚</div>
+              <div class="node-icon"></div>
               <div class="node-name">知识库管理</div>
               <div class="node-tech">CRUD · 版本管理 · 标签 · 权限(RBAC)</div>
             </div>
             <div class="arch-node arch-node--service">
-              <div class="node-icon">🔍</div>
+              <div class="node-icon"></div>
               <div class="node-name">RAG 服务</div>
               <div class="node-tech">向量检索 · 重排序 · 评估面板</div>
             </div>
             <div class="arch-node arch-node--service">
-              <div class="node-icon">🤖</div>
+              <div class="node-icon"></div>
               <div class="node-name">Agent 服务</div>
               <div class="node-tech">ReAct Agent · 联网搜索 · 工具链</div>
             </div>
             <div class="arch-node arch-node--service">
-              <div class="node-icon">💬</div>
+              <div class="node-icon"></div>
               <div class="node-name">对话管理</div>
               <div class="node-tech">会话历史 · 多轮对话 · 对话记忆</div>
             </div>
             <div class="arch-node arch-node--service">
-              <div class="node-icon">📄</div>
+              <div class="node-icon"></div>
               <div class="node-name">文档处理</div>
               <div class="node-tech">分块上传 · OCR · 向量化 · PDF解析</div>
             </div>
             <div class="arch-node arch-node--service">
-              <div class="node-icon">🔗</div>
+              <div class="node-icon"></div>
               <div class="node-name">办公联动</div>
               <div class="node-tech">飞书 · 钉钉 · 企微 · Obsidian · GitHub</div>
             </div>
             <div class="arch-node arch-node--service">
-              <div class="node-icon">👤</div>
+              <div class="node-icon"></div>
               <div class="node-name">用户管理</div>
               <div class="node-tech">注册/登录 · JWT · QQ OAuth · 密码重置</div>
             </div>
             <div class="arch-node arch-node--service">
-              <div class="node-icon">✍️</div>
+              <div class="node-icon"></div>
               <div class="node-name">文档创作</div>
               <div class="node-tech">大纲/摘要/翻译/润色/扩写 · SSE流式</div>
             </div>
@@ -104,20 +104,20 @@
         <!-- 模型层 -->
         <div class="arch-arrow">↕</div>
         <div class="arch-layer arch-layer--ai">
-          <div class="layer-title">🧠 AI 模型层</div>
+          <div class="layer-title">模型层</div>
           <div class="layer-nodes">
             <div class="arch-node arch-node--ai">
-              <div class="node-icon">🦙</div>
+              <div class="node-icon"></div>
               <div class="node-name">Ollama 本地模型</div>
               <div class="node-tech">本地任意 Ollama 模型 · Port 11434/11435</div>
             </div>
             <div class="arch-node arch-node--ai">
-              <div class="node-icon">☁️</div>
+              <div class="node-icon"></div>
               <div class="node-name">云端模型（可配置）</div>
               <div class="node-tech">阿里百炼 / DeepSeek / OpenAI 兼容接口</div>
             </div>
             <div class="arch-node arch-node--ai">
-              <div class="node-icon">🔢</div>
+              <div class="node-icon"></div>
               <div class="node-name">Embedding 模型</div>
               <div class="node-tech">sentence-transformers/all-MiniLM-L6-v2</div>
             </div>
@@ -127,25 +127,25 @@
         <!-- 存储层 -->
         <div class="arch-arrow">↕</div>
         <div class="arch-layer arch-layer--storage">
-          <div class="layer-title">🗄️ 存储层</div>
+          <div class="layer-title">存储层</div>
           <div class="layer-nodes">
             <div class="arch-node arch-node--storage">
-              <div class="node-icon">🐬</div>
+              <div class="node-icon"></div>
               <div class="node-name">MySQL</div>
               <div class="node-tech">用户数据 · 会话记录</div>
             </div>
             <div class="arch-node arch-node--storage">
-              <div class="node-icon">🗃️</div>
+              <div class="node-icon"></div>
               <div class="node-name">SQLite</div>
               <div class="node-tech">审计日志 · API Key · 数据源配置</div>
             </div>
             <div class="arch-node arch-node--storage">
-              <div class="node-icon">🔵</div>
+              <div class="node-icon"></div>
               <div class="node-name">FAISS 向量库</div>
               <div class="node-tech">本地持久化向量索引</div>
             </div>
             <div class="arch-node arch-node--storage">
-              <div class="node-icon">📁</div>
+              <div class="node-icon"></div>
               <div class="node-name">本地文件系统</div>
               <div class="node-tech">local-KLB-files/ · 分块上传缓存</div>
             </div>
@@ -157,7 +157,7 @@
     <!-- 数据流视图 -->
     <div v-if="activeTab === 'dataflow'" class="arch-content">
       <div class="flow-diagram">
-        <h3 class="flow-title">📥 RAG 问答数据流</h3>
+        <h3 class="flow-title">RAG 问答数据流</h3>
         <div class="flow-steps">
           <div v-for="(step, i) in ragFlow" :key="i" class="flow-step">
             <div class="flow-step-num">{{ i + 1 }}</div>
@@ -169,7 +169,7 @@
           </div>
         </div>
 
-        <h3 class="flow-title mt-8">📤 文件上传向量化流程</h3>
+        <h3 class="flow-title mt-8">文件上传向量化流程</h3>
         <div class="flow-steps">
           <div v-for="(step, i) in uploadFlow" :key="i" class="flow-step">
             <div class="flow-step-num">{{ i + 1 }}</div>
@@ -202,7 +202,7 @@
     <div v-if="activeTab === 'deploy'" class="arch-content">
       <div class="deploy-grid">
         <div class="deploy-card">
-          <h3>🖥️ 本地开发部署</h3>
+          <h3>本地开发部署</h3>
           <div class="code-block">
             <pre>
 # 方法一：一键启动脚本
@@ -216,7 +216,7 @@ uvicorn main:app --port 8000
 
 # 3. 启动前端
 cd RagFrontend
-npm run dev  # → http://localhost:5173
+npm run dev # → http://localhost:5173
 
 # 4. 启动 Ollama（另开终端）
 ollama serve
@@ -225,7 +225,7 @@ ollama run 你的模型名</pre
           </div>
         </div>
         <div class="deploy-card">
-          <h3>🐳 Docker 容器化部署</h3>
+          <h3>Docker 容器化部署</h3>
           <div class="code-block">
             <pre>
 # 完整部署（含 MySQL + Redis + Ollama）
@@ -242,7 +242,7 @@ docker compose -f docker-compose.lite.yml up -d
           </div>
         </div>
         <div class="deploy-card">
-          <h3>📦 服务端口一览</h3>
+          <h3>服务端口一览</h3>
           <table class="port-table">
             <thead>
               <tr>
@@ -300,10 +300,10 @@ import { ref } from 'vue'
 
 const activeTab = ref('overview')
 const tabs = [
-  { id: 'overview', label: '🗺️ 全局架构' },
-  { id: 'dataflow', label: '🔄 数据流' },
-  { id: 'stack', label: '📦 技术栈' },
-  { id: 'deploy', label: '🚀 部署方案' }
+  { id: 'overview', label: ' 全局架构' },
+  { id: 'dataflow', label: ' 数据流' },
+  { id: 'stack', label: ' 技术栈' },
+  { id: 'deploy', label: ' 部署方案' }
 ]
 
 const ragFlow = [
@@ -330,7 +330,7 @@ const uploadFlow = [
 
 const techStack = [
   {
-    emoji: '🌐',
+    emoji: '',
     category: '前端',
     items: [
       { name: 'Vue 3 + TypeScript', desc: 'Composition API，响应式' },
@@ -344,7 +344,7 @@ const techStack = [
     ]
   },
   {
-    emoji: '⚙️',
+    emoji: '',
     category: '后端',
     items: [
       { name: 'FastAPI', desc: '高性能异步 Python Web 框架' },
@@ -358,8 +358,8 @@ const techStack = [
     ]
   },
   {
-    emoji: '🧠',
-    category: 'AI 模型',
+    emoji: '',
+    category: '推理模型',
     items: [
       { name: 'Ollama', desc: '本地 LLM 推理运行时' },
       { name: '本地模型（任意）', desc: '通过用户配置动态发现与切换' },
@@ -369,7 +369,7 @@ const techStack = [
     ]
   },
   {
-    emoji: '🗄️',
+    emoji: '',
     category: '数据存储',
     items: [
       { name: 'MySQL 8.0', desc: '用户账户，会话，知识库元数据' },
@@ -380,7 +380,7 @@ const techStack = [
     ]
   },
   {
-    emoji: '🐳',
+    emoji: '',
     category: '运维部署',
     items: [
       { name: 'Docker + Docker Compose', desc: '容器化一键部署' },
@@ -394,11 +394,12 @@ const techStack = [
 
 <style scoped>
 .arch-page {
-  min-height: 100vh;
   height: 100vh;
-  overflow-y: auto;
   background: var(--bg-page, #f8fafc);
   padding: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .arch-header {
@@ -450,6 +451,8 @@ const techStack = [
   padding: 24px 32px;
   max-width: 1200px;
   margin: 0 auto;
+  flex: 1;
+  overflow-y: auto;
 }
 
 /* 架构图 */

@@ -83,7 +83,7 @@
                   <span class="model-item__name">{{ m.name }}</span>
                   <span class="model-item__desc">{{ m.description }}</span>
                   <span v-if="!m.available" class="model-item__key-hint">
-                    🔑 需要配置 {{ m.requires_key }}
+                    需要配置 {{ m.requires_key }}
                   </span>
                 </div>
                 <span v-if="modelValue === m.id" class="model-item__check">✓</span>

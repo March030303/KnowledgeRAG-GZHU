@@ -9,14 +9,22 @@
     <!-- 操作区 -->
     <div class="eval-toolbar">
       <div class="eval-model-input">
-        <label>评测模型（多个用逗号分隔）</label>
-        <input v-model="evalModels" placeholder="如：当前模型, llama3:8b" class="eval-input" />
+        <label>评测模型（单选）</label>
+        <select v-model="evalModels" class="eval-select">
+          <optgroup label="本地模型">
+            <option v-for="m in localModels" :key="m" :value="m">{{ m }}</option>
+          </optgroup>
+          <optgroup label="云端模型">
+            <option v-for="m in cloudModels" :key="m" :value="m">{{ m }}</option>
+          </optgroup>
+        </select>
+        <span v-if="modelLoading" class="eval-hint">检测中...</span>
       </div>
       <button class="eval-btn-run" @click="runEval" :disabled="running">
-        {{ running ? '⏳ 评测中...' : '▶ 开始评测' }}
+        {{ running ? ' 评测中...' : ' 开始评测' }}
       </button>
       <button class="eval-btn-refresh" @click="fetchLatest" :disabled="loadingChart">
-        {{ loadingChart ? '加载中...' : '🔄 刷新图表' }}
+        {{ loadingChart ? '加载中...' : ' 刷新图表' }}
       </button>
     </div>
     <!-- 进度提示 -->
@@ -39,23 +47,23 @@
     <div v-if="chartData" class="eval-charts-row">
       <!-- 雷达图：多模型三维度对比 -->
       <div class="eval-chart-box">
-        <div class="eval-chart-title">🎯 多模型三维对比（雷达图）</div>
+        <div class="eval-chart-title">多模型三维对比（雷达图）</div>
         <div ref="radarRef" style="width: 100%; height: 280px"></div>
       </div>
       <!-- 分类准确率柱状图 -->
       <div class="eval-chart-box">
-        <div class="eval-chart-title">📊 分类准确率（最新一次）</div>
+        <div class="eval-chart-title">分类准确率（最新一次）</div>
         <div ref="catBarRef" style="width: 100%; height: 280px"></div>
       </div>
       <!-- 延迟分布直方图 -->
       <div class="eval-chart-box">
-        <div class="eval-chart-title">⚡ 响应时间分布</div>
+        <div class="eval-chart-title">响应时间分布</div>
         <div ref="latencyRef" style="width: 100%; height: 280px"></div>
       </div>
     </div>
     <!-- 历史评测列表 -->
     <div class="eval-history-card">
-      <div class="eval-history-title">📋 历史评测记录</div>
+      <div class="eval-history-title">历史评测记录</div>
       <div v-if="!historyList.length" class="eval-empty">
         暂无评测记录，点击「开始评测」触发首次评测
       </div>
@@ -94,7 +102,7 @@
                   r.status === 'done' ? 'eval-status--ok' : 'eval-status--run'
                 ]"
               >
-                {{ r.status === 'done' ? '✓ 完成' : '⏳ 运行中' }}
+                {{ r.status === 'done' ? ' 完成' : ' 运行中' }}
               </span>
             </td>
           </tr>
@@ -103,7 +111,7 @@
     </div>
     <!-- 题库预览 -->
     <div class="eval-qs-card">
-      <div class="eval-history-title">📝 内置测试题库（20条）</div>
+      <div class="eval-history-title">内置测试题库（20条）</div>
       <div class="eval-qs-cats">
         <span v-for="(qs, cat) in questionsByCategory" :key="cat" class="eval-cat-chip">
           {{ catLabel(cat) }} {{ qs.length }}题
@@ -129,11 +137,55 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import axios from 'axios'
+import { MessagePlugin } from 'tdesign-vue-next'
 import { useEvalStore } from '@/store'
 const evalStore = useEvalStore()
 // ── 本地 UI 状态（非持久化） ─────────────────────────────────
-const evalModels = ref(localStorage.getItem('selected_model') || 'deepseek-chat')
+const evalModels = ref(localStorage.getItem('selected_model') || '')
 const loadingChart = ref(false)
+const modelLoading = ref(false)
+const localModels = ref<string[]>([])
+const cloudModels = ref<string[]>([])
+
+// 自动检测可用模型
+async function detectModels() {
+  modelLoading.value = true
+  try {
+    // 检测本地Ollama模型
+    const ollamaSettings = localStorage.getItem('ollamaSettings')
+    const ollamaUrl = ollamaSettings
+      ? JSON.parse(ollamaSettings).serverUrl
+      : 'http://localhost:11434'
+    try {
+      const res = await fetch(`${ollamaUrl}/api/tags`)
+      const data = await res.json()
+      localModels.value = (data.models || []).map((m: any) => m.name)
+    } catch {
+      localModels.value = []
+    }
+    // 检测云端模型配置
+    try {
+      const res = await fetch('/api/models/providers')
+      if (res.ok) {
+        const data = await res.json()
+        cloudModels.value = (data.providers || [])
+          .filter((p: any) => p.enabled && p.type !== 'local')
+          .flatMap((p: any) => p.available_models || [p.config?.model].filter(Boolean))
+      }
+    } catch {
+      // 降级：从localStorage读取已保存的模型
+      const saved = localStorage.getItem('selected_model')
+      if (saved) cloudModels.value = [saved]
+    }
+    // 默认选择第一个可用模型
+    if (!evalModels.value) {
+      if (localModels.value.length > 0) evalModels.value = localModels.value[0]
+      else if (cloudModels.value.length > 0) evalModels.value = cloudModels.value[0]
+    }
+  } finally {
+    modelLoading.value = false
+  }
+}
 const questionsByCategory = ref<Record<string, any[]>>({})
 const showAllQs = ref(false)
 // ECharts DOM refs
@@ -154,34 +206,34 @@ const overviewCards = computed(() => {
   return [
     {
       key: 'acc',
-      icon: '🎯',
+      icon: '',
       label: '准确率',
       value: pct(r.accuracy),
       color: scoreColor(r.accuracy)
     },
     {
       key: 'lat',
-      icon: '⚡',
+      icon: '',
       label: '平均响应',
       value: `${r.avg_latency?.toFixed(0)}ms`,
       color: r.avg_latency < 2000 ? '#22c55e' : '#f59e0b'
     },
     {
       key: 'src',
-      icon: '📎',
+      icon: '',
       label: '溯源准确率',
       value: pct(r.source_acc),
       color: scoreColor(r.source_acc)
     },
     {
       key: 'overall',
-      icon: '🏆',
+      icon: '',
       label: '综合评分',
       value: pct(r.overall),
       color: scoreColor(r.overall)
     },
-    { key: 'qs', icon: '📝', label: '测试题数', value: `${r.total_q}题`, color: '#6366f1' },
-    { key: 'pass', icon: '✅', label: '通过题数', value: `${r.passed_q}题`, color: '#22c55e' }
+    { key: 'qs', icon: '', label: '测试题数', value: `${r.total_q}题`, color: '#6366f1' },
+    { key: 'pass', icon: '', label: '通过题数', value: `${r.passed_q}题`, color: '#22c55e' }
   ]
 })
 // ── 工具函数 ──────────────────────────────────────────────────
@@ -191,19 +243,20 @@ const scoreClass = (v: number) =>
   v >= 0.7 ? 'score--good' : v >= 0.4 ? 'score--mid' : 'score--bad'
 const catLabel = (cat: string) =>
   ({
-    retrieval: '🔍 检索',
-    summary: '📝 摘要',
-    reasoning: '🧠 推理',
-    technical: '⚙️ 技术',
-    general: '💬 通用'
+    retrieval: ' 检索',
+    summary: ' 摘要',
+    reasoning: ' 推理',
+    technical: ' 技术',
+    general: ' 通用'
   })[cat] || cat
 // ── API ───────────────────────────────────────────────────────
 async function runEval() {
-  const models = evalModels.value
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean)
-  await evalStore.startEval(models)
+  const model = evalModels.value.trim()
+  if (!model) {
+    MessagePlugin.warning('请先选择评测模型')
+    return
+  }
+  await evalStore.startEval([model])
   // 评测完成后重新渲染图表
   await nextTick()
   renderCharts()
@@ -307,7 +360,7 @@ function ensureECharts(): Promise<void> {
 }
 onMounted(async () => {
   await ensureECharts()
-  await Promise.all([fetchLatest(), fetchQuestions()])
+  await Promise.all([detectModels(), fetchLatest(), fetchQuestions()])
   // 如果 store 中已有数据（从其他页面带回来的），立即渲染图表
   if (chartData.value) {
     await nextTick()
@@ -354,6 +407,24 @@ watch(chartData, async val => {
 }
 .eval-input:focus {
   border-color: #6366f1;
+}
+.eval-select {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+  background: var(--td-bg-color-container, #fff);
+  color: var(--td-text-color-primary, #111);
+  min-width: 200px;
+}
+.eval-select:focus {
+  border-color: #6366f1;
+}
+.eval-hint {
+  font-size: 11px;
+  color: #9ca3af;
 }
 .eval-btn-run {
   padding: 8px 22px;

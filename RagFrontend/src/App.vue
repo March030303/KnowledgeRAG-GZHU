@@ -47,9 +47,9 @@
       <div v-if="quickCreateVisible" class="qc-overlay" @click.self="quickCreateVisible = false">
         <div class="qc-card">
           <div class="qc-header">
-            <span class="qc-icon">📚</span>
+            <span class="qc-icon"></span>
             <h3>新建知识库</h3>
-            <button class="qc-close" @click="quickCreateVisible = false">✕</button>
+            <button class="qc-close" @click="quickCreateVisible = false"></button>
           </div>
           <input
             v-model="quickCreateName"
@@ -133,7 +133,7 @@ async function doQuickCreate() {
     await axios.post('/api/create-knowledgebase/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
-    MessagePlugin.success(`知识库「${name}」创建成功 🎉`)
+    MessagePlugin.success(`知识库「${name}」创建成功 `)
     quickCreateVisible.value = false
     // 若当前在知识库页面，刷新列表
     if (route.path === '/knowledge') {
@@ -206,21 +206,22 @@ body {
   height: 100vh;
   width: 100vw;
 }
+/* 登录页全屏 */
 .app-fullpage {
   height: 100vh;
   width: 100vw;
-  background-color: var(--bg-base);
+  background-color: var(--app-bg, #f9fafb);
 }
+/* ── 全局快速新建知识库弹窗 ── */
 .qc-overlay {
   position: fixed;
   inset: 0;
   z-index: 9000;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: qc-fade-in 0.12s ease;
+  animation: qc-fade-in 0.15s ease;
 }
 @keyframes qc-fade-in {
   from {
@@ -231,17 +232,16 @@ body {
   }
 }
 .qc-card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-base);
-  border-radius: var(--radius-xl);
-  padding: 24px;
-  width: 400px;
-  box-shadow: var(--shadow-lg);
-  animation: qc-slide-up 0.2s var(--ease-spring);
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px;
+  width: 420px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22);
+  animation: qc-slide-up 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 @keyframes qc-slide-up {
   from {
-    transform: translateY(16px);
+    transform: translateY(20px);
     opacity: 0;
   }
   to {
@@ -252,156 +252,146 @@ body {
 .qc-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 .qc-icon {
-  font-size: 20px;
+  font-size: 22px;
 }
 .qc-header h3 {
   flex: 1;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 17px;
+  font-weight: 700;
   margin: 0;
-  color: var(--text-primary);
+  color: #111827;
 }
 .qc-close {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 16px;
-  color: var(--text-quaternary);
-  width: 26px;
-  height: 26px;
-  border-radius: var(--radius-sm);
+  font-size: 18px;
+  color: #9ca3af;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--transition-fast);
 }
 .qc-close:hover {
-  background: var(--bg-hover);
-  color: var(--text-secondary);
+  background: #f3f4f6;
+  color: #374151;
 }
 .qc-input {
   width: 100%;
-  padding: 9px 12px;
-  border: 1px solid var(--border-base);
-  border-radius: var(--radius-md);
-  font-size: 13.5px;
+  padding: 11px 14px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 15px;
   outline: none;
   box-sizing: border-box;
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: border-color 0.15s;
 }
 .qc-input:focus {
-  border-color: var(--border-brand);
-  box-shadow: 0 0 0 2px var(--accent-violet-subtle);
-}
-.qc-input::placeholder {
-  color: var(--text-quaternary);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
 }
 .qc-footer {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   justify-content: flex-end;
-  margin-top: 16px;
+  margin-top: 18px;
 }
 .qc-btn-cancel {
-  padding: 7px 16px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-base);
-  background: transparent;
-  color: var(--text-secondary);
+  padding: 9px 20px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #374151;
   cursor: pointer;
-  font-size: 13px;
-  transition: all var(--transition-fast);
+  font-size: 14px;
 }
 .qc-btn-cancel:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
+  background: #f9fafb;
 }
 .qc-btn-confirm {
-  padding: 7px 18px;
-  border-radius: var(--radius-sm);
+  padding: 9px 22px;
+  border-radius: 8px;
   border: none;
-  background: var(--gradient-brand);
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
   color: #fff;
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all var(--transition-fast);
-  box-shadow: var(--shadow-glow);
+  font-size: 14px;
+  font-weight: 600;
+  transition: opacity 0.15s;
 }
 .qc-btn-confirm:hover:not(:disabled) {
-  filter: brightness(1.12);
-  box-shadow: var(--shadow-glow-strong);
-  transform: translateY(-1px);
+  opacity: 0.88;
 }
 .qc-btn-confirm:disabled {
-  opacity: 0.35;
+  opacity: 0.45;
   cursor: not-allowed;
 }
+/* 主布局：左侧导航 + 右侧内容 */
 .app-layout {
   display: flex;
   height: 100vh;
   width: 100vw;
-  background-color: var(--bg-base);
+  background-color: var(--app-bg, #f9fafb);
   overflow: hidden;
 }
+/* 右侧主内容区 */
 .app-main {
   flex: 1;
   height: 100vh;
-  overflow: hidden;
+  overflow-y: auto;
   min-width: 0;
 }
+/* 页面过渡动效 */
 .page-enter-active {
   transition:
-    opacity 0.18s ease,
-    transform 0.18s var(--ease-out);
+    opacity 0.22s ease,
+    transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .page-leave-active {
   transition:
-    opacity 0.14s ease,
-    transform 0.14s ease;
+    opacity 0.18s ease,
+    transform 0.18s ease;
 }
 .page-enter-from {
   opacity: 0;
-  transform: translateY(6px);
+  transform: translateY(10px);
 }
 .page-leave-to {
   opacity: 0;
-  transform: translateY(-4px);
+  transform: translateY(-6px);
 }
+/* ── 全局评测进度浮层 ── */
 .eval-toast-bar {
   position: fixed;
-  bottom: 20px;
+  bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: var(--bg-overlay);
-  border: 1px solid var(--border-base);
-  color: var(--text-primary);
-  padding: 8px 16px;
-  border-radius: var(--radius-full);
-  font-size: 12px;
+  gap: 10px;
+  background: #1e1e2e;
+  color: #e2e8f0;
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-size: 13px;
   z-index: 9999;
   cursor: pointer;
-  box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(16px);
-  animation: toastIn 0.25s var(--ease-spring);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .eval-toast-bar:hover {
-  background: var(--bg-hover);
-  border-color: var(--border-active);
+  background: #2d2d45;
 }
 @keyframes toastIn {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(12px);
+    transform: translateX(-50%) translateY(16px);
   }
   to {
     opacity: 1;
@@ -409,12 +399,12 @@ body {
   }
 }
 .eval-toast-spinner {
-  width: 12px;
-  height: 12px;
-  border: 1.5px solid var(--border-base);
-  border-top-color: var(--accent-violet-light);
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #818cf8;
   border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+  animation: spin 0.8s linear infinite;
   flex-shrink: 0;
 }
 @keyframes spin {
@@ -425,27 +415,13 @@ body {
 .eval-toast-text {
   flex: 1;
   white-space: nowrap;
-  max-width: 240px;
+  max-width: 260px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .eval-toast-link {
-  color: var(--accent-violet-light);
-  font-weight: 550;
+  color: #818cf8;
+  font-weight: 600;
   flex-shrink: 0;
-}
-.page-loading-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--gradient-brand);
-  z-index: 10000;
-  animation: loadingBar 0.8s ease-out forwards;
-}
-@keyframes loadingBar {
-  from { width: 0; }
-  to { width: 100%; }
 }
 </style>

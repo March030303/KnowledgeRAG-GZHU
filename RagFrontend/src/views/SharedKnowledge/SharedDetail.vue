@@ -43,17 +43,17 @@
           <h1 class="kb-title">{{ kb.name }}</h1>
           <p class="kb-desc">{{ kb.description }}</p>
           <div class="kb-meta-row">
-            <span class="meta-chip">📄 {{ kb.docCount || 0 }} 文档</span>
-            <span class="meta-chip">👁 {{ formatNum(kb.viewCount || 0) }} 浏览</span>
+            <span class="meta-chip"> {{ kb.docCount || 0 }} 文档</span>
+            <span class="meta-chip"> {{ formatNum(kb.viewCount || 0) }} 浏览</span>
             <span class="meta-chip">⭐ {{ formatNum(kb.starCount || 0) }} 订阅</span>
-            <span class="meta-chip">🔀 {{ formatNum(kb.forkCount || 0) }} Fork</span>
+            <span class="meta-chip"> {{ formatNum(kb.forkCount || 0) }} Fork</span>
             <span :class="['visibility-badge', kb.visibility]">
               {{
                 kb.visibility === 'public'
-                  ? '🌐 公开'
+                  ? ' 公开'
                   : kb.visibility === 'shared'
-                    ? '🔗 链接可见'
-                    : '🔒 私有'
+                    ? ' 链接可见'
+                    : ' 私有'
               }}
             </span>
           </div>
@@ -99,15 +99,13 @@
               <span :class="['doc-status', doc.status]">{{
                 doc.status === 'ready' ? '✓ 已解析' : '⏳ 解析中'
               }}</span>
-              <button class="icon-btn" @click="previewDoc(doc)" title="预览">👁</button>
+              <button class="icon-btn" @click="previewDoc(doc)" title="预览"></button>
               <button
                 v-if="myRole !== 'viewer'"
                 class="icon-btn"
                 @click="deleteDoc(doc)"
                 title="删除"
-              >
-                🗑
-              </button>
+              ></button>
             </div>
           </div>
           <div v-if="filteredDocs.length === 0" class="empty-docs">暂无文档</div>
@@ -116,7 +114,7 @@
       <!-- 协作 Tab -->
       <div v-if="activeTab === 'collab'" class="tab-panel">
         <div class="collab-section">
-          <h3 class="section-title">👥 协作者管理</h3>
+          <h3 class="section-title">协作者管理</h3>
           <div class="member-list">
             <div v-for="m in members" :key="m.id" class="member-row">
               <div class="member-avatar" :style="{ background: m.color }">{{ m.name[0] }}</div>
@@ -147,19 +145,19 @@
           </div>
           <!-- GitHub式编辑说明 -->
           <div class="collab-mode-section">
-            <h3 class="section-title">✏️ 编辑模式</h3>
+            <h3 class="section-title">编辑模式</h3>
             <div class="mode-cards">
               <div
                 :class="['mode-card', { active: editMode === 'github' }]"
                 @click="editMode = 'github'"
               >
-                <div class="mode-icon">🐙</div>
+                <div class="mode-icon"></div>
                 <div class="mode-name">GitHub 式协作</div>
                 <div class="mode-desc">提交 PR → 审核 → 合并，保留完整版本历史</div>
                 <div v-if="editMode === 'github'" class="mode-active-badge">当前模式</div>
               </div>
               <div :class="['mode-card', { active: editMode === 'wps' }]" @click="editMode = 'wps'">
-                <div class="mode-icon">📝</div>
+                <div class="mode-icon"></div>
                 <div class="mode-name">金山文档协作</div>
                 <div class="mode-desc">实时多人同步编辑，适合文档类知识</div>
                 <div v-if="editMode === 'wps'" class="mode-active-badge">当前模式</div>
@@ -168,7 +166,7 @@
                 :class="['mode-card', { active: editMode === 'direct' }]"
                 @click="editMode = 'direct'"
               >
-                <div class="mode-icon">⚡</div>
+                <div class="mode-icon"></div>
                 <div class="mode-name">直接编辑</div>
                 <div class="mode-desc">所有共同作者可直接修改，适合小团队</div>
                 <div v-if="editMode === 'direct'" class="mode-active-badge">当前模式</div>
@@ -200,7 +198,7 @@
             <!-- 金山文档入口 -->
             <div v-if="editMode === 'wps'" class="wps-section">
               <div class="wps-card">
-                <div class="wps-icon">📝</div>
+                <div class="wps-icon"></div>
                 <div>
                   <div class="wps-title">金山文档在线协作</div>
                   <div class="wps-desc">选择一个文档文件，开启多人实时共同编辑</div>
@@ -214,8 +212,8 @@
                   class="wps-file-item"
                   @click="openWpsFile(doc)"
                 >
-                  <span>📄 {{ doc.name }}</span>
-                  <span class="wps-online">👥 {{ Math.floor(Math.random() * 3) + 1 }} 人在线</span>
+                  <span> {{ doc.name }}</span>
+                  <span class="wps-online"> {{ Math.floor(Math.random() * 3) + 1 }} 人在线</span>
                 </div>
                 <div
                   v-if="!docs.some(d => d.type === 'docx' || d.type === 'doc')"
@@ -286,7 +284,7 @@
               </div>
               <p class="comment-text">{{ c.text }}</p>
               <div class="comment-actions">
-                <button class="btn-text" @click="likeComment(c)">👍 {{ c.likes }}</button>
+                <button class="btn-text" @click="likeComment(c)">{{ c.likes }}</button>
                 <button class="btn-text" @click="replyComment(c)">回复</button>
                 <button class="btn-text" @click="askAI(c)" v-if="!c.isAI">AI 解答</button>
               </div>
@@ -383,10 +381,10 @@ const showInviteModal = ref(false)
 const showUploadModal = ref(false)
 const showPrModal = ref(false)
 const tabs = [
-  { id: 'docs', label: '文档', icon: '📄' },
-  { id: 'collab', label: '协作', icon: '👥' },
-  { id: 'versions', label: '版本历史', icon: '🕐' },
-  { id: 'comments', label: '评论区', icon: '💬' }
+  { id: 'docs', label: '文档', icon: '' },
+  { id: 'collab', label: '协作', icon: '' },
+  { id: 'versions', label: '版本历史', icon: '' },
+  { id: 'comments', label: '评论区', icon: '' }
 ]
 const activeTab = ref('docs')
 const editMode = ref<'github' | 'wps' | 'direct'>('github')
@@ -434,7 +432,7 @@ const filteredDocs = computed(() =>
   docs.value.filter(d => d.name.toLowerCase().includes(docSearch.value.toLowerCase()))
 )
 function getDocIcon(type: string) {
-  return { pdf: '📕', docx: '📘', doc: '📘', xlsx: '📗', md: '📝', txt: '📄' }[type] || '📄'
+  return { pdf: '', docx: '', doc: '', xlsx: '', md: '', txt: '' }[type] || ''
 }
 function previewDoc(doc: any) {
   MessagePlugin.info(`预览：${doc.name}`)

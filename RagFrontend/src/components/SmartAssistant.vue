@@ -169,9 +169,7 @@
           </div>
           <p class="sa-disclaimer">
             {{
-              aiEnabled
-                ? `🤖 AI 已激活 · ${currentModelLabel}`
-                : '💡 规则引导 · 问任何问题可激活 AI'
+              aiEnabled ? ` AI 已激活 · ${currentModelLabel}` : ' 规则引导 · 问任何问题可激活 AI'
             }}
           </p>
         </div>
@@ -201,12 +199,12 @@ interface Message {
 }
 const messages = ref<Message[]>([])
 const shortcuts = [
-  { icon: '📚', text: '如何创建知识库？' },
-  { icon: '💬', text: '如何开始AI对话？' },
-  { icon: '🔍', text: '如何搜索文件？' },
+  { icon: '', text: '如何创建知识库？' },
+  { icon: '', text: '如何开始AI对话？' },
+  { icon: '', text: '如何搜索文件？' },
   { icon: '⚙️', text: '如何配置模型？' },
-  { icon: '📁', text: '如何上传文档？' },
-  { icon: '🤖', text: '任务模式怎么用？' }
+  { icon: '', text: '如何上传文档？' },
+  { icon: '', text: '任务模式怎么用？' }
 ]
 // 知识库：功能路径和操作指南
 const knowledgeBase: Array<{
@@ -217,7 +215,7 @@ const knowledgeBase: Array<{
   {
     keywords: ['知识库', '创建', '新建', '建立'],
     answer:
-      '创建知识库很简单：<br>① 点击左侧导航 <b>知识库</b><br>② 点击右上角 <b>+ 新建知识库</b> 按钮<br>③ 填写名称和描述后确认<br>创建完成后即可上传文档并开始问答 🎉',
+      '创建知识库很简单：<br>① 点击左侧导航 <b>知识库</b><br>② 点击右上角 <b>+ 新建知识库</b> 按钮<br>③ 填写名称和描述后确认<br>创建完成后即可上传文档并开始问答 ',
     actions: [{ label: '去知识库', route: '/knowledge' }]
   },
   {
@@ -232,7 +230,7 @@ const knowledgeBase: Array<{
   {
     keywords: ['对话', '聊天', '问答', 'ai', '开始', '提问'],
     answer:
-      'AI 对话使用方式：<br>① 点击左侧 <b>AI 对话</b> 进入聊天界面<br>② 在底部输入框输入问题，回车发送<br>③ 可在左下角 <b>开启 RAG 模式</b> 选择知识库<br>④ 开启 RAG 后，AI 会基于你的文档回答 📖',
+      'AI 对话使用方式：<br>① 点击左侧 <b>AI 对话</b> 进入聊天界面<br>② 在底部输入框输入问题，回车发送<br>③ 可在左下角 <b>开启 RAG 模式</b> 选择知识库<br>④ 开启 RAG 后，AI 会基于你的文档回答 ',
     actions: [{ label: '去对话', route: '/chat' }]
   },
   {
@@ -244,7 +242,7 @@ const knowledgeBase: Array<{
   {
     keywords: ['模型', '配置', '切换', 'ollama', '设置模型'],
     answer:
-      '模型配置路径：<br>① 点击左侧 <b>系统设置</b>（齿轮图标）<br>② 选择 <b>⚡ 模型配置</b> Tab<br>③ 支持切换 Ollama 本地模型 / 阿里云百炼 / DeepSeek 等<br>④ 保存后会自动同步为当前默认模型，聊天页与任务模式都会读取该配置',
+      '模型配置路径：<br>① 点击左侧 <b>系统设置</b>（齿轮图标）<br>② 选择 <b> 模型配置</b> Tab<br>③ 支持切换 Ollama 本地模型 / 阿里云百炼 / DeepSeek 等<br>④ 保存后会自动同步为当前默认模型，聊天页与任务模式都会读取该配置',
     actions: [{ label: '去设置', route: '/settings' }]
   },
   {
@@ -285,13 +283,13 @@ const knowledgeBase: Array<{
   {
     keywords: ['语音', '录音', '说话', '口述'],
     answer:
-      '语音输入功能：<br>① 在 AI 对话页面，点击输入框右侧的 🎤 麦克风按钮<br>② 点击后开始录音，再次点击停止<br>③ 系统自动转为文字填入输入框<br>④ 支持 Whisper 本地识别（需后端配置）',
+      '语音输入功能：<br>① 在 AI 对话页面，点击输入框右侧的 麦克风按钮<br>② 点击后开始录音，再次点击停止<br>③ 系统自动转为文字填入输入框<br>④ 支持 Whisper 本地识别（需后端配置）',
     actions: [{ label: '去对话', route: '/chat' }]
   },
   {
     keywords: ['置顶', 'pin', '收藏', '固定'],
     answer:
-      '置顶功能使用方式：<br>① 在知识库 / 文件管理 / 历史记录列表中<br>② 鼠标悬停到条目上，点击出现的 <b>📌 置顶</b> 按钮<br>③ 置顶的内容会固定显示在列表顶部<br>④ 再次点击即可取消置顶'
+      '置顶功能使用方式：<br>① 在知识库 / 文件管理 / 历史记录列表中<br>② 鼠标悬停到条目上，点击出现的 <b> 置顶</b> 按钮<br>③ 置顶的内容会固定显示在列表顶部<br>④ 再次点击即可取消置顶'
   },
   {
     keywords: ['ocr', '图片识别', '扫描', '截图', '识别文字'],
@@ -438,7 +436,7 @@ async function sendMessage() {
       messages.value.push({
         role: 'assistant',
         content:
-          '我暂时无法回答这个问题 🤔<br>你可以尝试：<br>• "如何创建知识库"<br>• "如何开始AI对话"<br>• "如何配置模型"<br>• "怎么上传文档"<br><br>或者在 <b>系统设置 → 模型配置</b> 中检查模型是否已配置（本地 Ollama 或云端 API Key）'
+          '我暂时无法回答这个问题 <br>你可以尝试：<br>• "如何创建知识库"<br>• "如何开始AI对话"<br>• "如何配置模型"<br>• "怎么上传文档"<br><br>或者在 <b>系统设置 → 模型配置</b> 中检查模型是否已配置（本地 Ollama 或云端 API Key）'
       })
     }
   }
@@ -473,7 +471,7 @@ watch(isOpen, async opened => {
     messages.value.push({
       role: 'assistant',
       content:
-        '👋 你好！我是 <b>RAG-F 智能助理</b>，专为这个 AI 知识库系统设计。<br><br>我可以帮你：<br>• 解答系统功能使用问题<br>• 指导上传文档、创建知识库<br>• 配置 AI 模型（本地 Ollama / 云端 API）<br>• 排查常见报错问题<br><br>直接输入你的问题或点击下方快捷卡片开始 🚀',
+        ' 你好！我是 <b>RAG-F 智能助理</b>，专为这个 AI 知识库系统设计。<br><br>我可以帮你：<br>• 解答系统功能使用问题<br>• 指导上传文档、创建知识库<br>• 配置 AI 模型（本地 Ollama / 云端 API）<br>• 排查常见报错问题<br><br>直接输入你的问题或点击下方快捷卡片开始 ',
       actions: [
         { label: '去知识库', route: '/knowledge' },
         { label: '配置模型', route: '/settings' }

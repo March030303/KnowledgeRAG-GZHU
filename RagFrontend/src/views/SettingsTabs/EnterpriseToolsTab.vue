@@ -97,7 +97,7 @@
     <!-- 工具调用日志 -->
     <div class="card" style="margin-top: 16px">
       <div class="card-header">
-        <span class="card-title">📊 工具调用日志</span>
+        <span class="card-title"> 工具调用日志</span>
         <button class="btn-sm" @click="refreshLogs">刷新</button>
       </div>
       <div class="tool-logs">
@@ -108,7 +108,7 @@
           >
           <span class="log-input">{{ log.input.slice(0, 40) }}...</span>
           <span :class="['log-status', log.ok ? 'status--ok' : 'status--err']">
-            {{ log.ok ? '✓ 成功' : '✗ 失败' }}
+            {{ log.ok ? '✓ 成功' : ' 失败' }}
           </span>
           <span class="log-dur">{{ log.duration_ms }}ms</span>
         </div>
@@ -125,7 +125,7 @@ import axios from 'axios'
 const tools = ref([
   {
     id: 'data_analysis',
-    icon: '📊',
+    icon: '',
     name: '数据分析',
     enabled: true,
     desc: '分析 CSV/Excel 数据，生成统计摘要和洞察报告',
@@ -134,7 +134,7 @@ const tools = ref([
   },
   {
     id: 'chart',
-    icon: '📈',
+    icon: '',
     name: '图表生成',
     enabled: true,
     desc: '根据数据自动生成折线图、柱状图、饼图等可视化图表',
@@ -143,7 +143,7 @@ const tools = ref([
   },
   {
     id: 'email',
-    icon: '📧',
+    icon: '',
     name: '邮件发送',
     enabled: false,
     desc: '通过 SMTP 发送通知邮件、报告摘要或提醒',
@@ -152,7 +152,7 @@ const tools = ref([
   },
   {
     id: 'translate',
-    icon: '🌐',
+    icon: '',
     name: '智能翻译',
     enabled: true,
     desc: '自动检测语言，支持中英日韩等多语种翻译',
@@ -161,7 +161,7 @@ const tools = ref([
   },
   {
     id: 'pdf_export',
-    icon: '📋',
+    icon: '',
     name: 'PDF 导出',
     enabled: true,
     desc: '将对话结果、知识摘要导出为格式化 PDF',
@@ -170,7 +170,7 @@ const tools = ref([
   },
   {
     id: 'web_search',
-    icon: '🔍',
+    icon: '',
     name: '联网搜索',
     enabled: true,
     desc: 'DuckDuckGo 无 Key 联网搜索，补充实时信息',
@@ -179,7 +179,7 @@ const tools = ref([
   },
   {
     id: 'code_exec',
-    icon: '💻',
+    icon: '',
     name: '代码执行',
     enabled: false,
     desc: '在沙箱中执行 Python 代码，适合数值计算和数据处理',
@@ -188,7 +188,7 @@ const tools = ref([
   },
   {
     id: 'calendar',
-    icon: '📅',
+    icon: '',
     name: '日历提醒',
     enabled: false,
     desc: '创建日程提醒，集成飞书/钉钉日历',

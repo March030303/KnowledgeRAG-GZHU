@@ -15,7 +15,7 @@
           </div>
           <div>
             <h1>任务模式 <span class="badge-beta">Beta</span></h1>
-            <p class="agent-header__subtitle">输入自然语言任务，AI 自动拆解步骤并执行</p>
+            <p class="agent-header__subtitle">输入自然语言任务，自动拆解步骤并执行</p>
           </div>
         </div>
         <!-- 历史任务入口 -->
@@ -37,9 +37,9 @@
         </button>
         <!-- 模型选择器（支持本地+云端） -->
         <div class="agent-model-selector">
-          <span class="model-selector-label">🤖 执行模型</span>
+          <span class="model-selector-label">执行模型</span>
           <select v-model="selectedModel" class="model-select-dropdown" @change="onModelChange">
-            <optgroup label="🖥️ 本地模型">
+            <optgroup label="本地模型">
               <option
                 v-for="m in availableModels.filter(m => m.provider === 'ollama')"
                 :key="m.id"
@@ -49,7 +49,7 @@
                 {{ m.name }}{{ !m.available ? ' (不可用)' : '' }}
               </option>
             </optgroup>
-            <optgroup label="☁️ 云端模型">
+            <optgroup label="云端模型">
               <option
                 v-for="m in availableModels.filter(m => m.provider !== 'ollama')"
                 :key="m.id"
@@ -75,11 +75,11 @@
             {{
               selectedModelInfo?.provider === 'ollama'
                 ? ollamaStatus === 'online'
-                  ? '🟢 在线'
-                  : '🔴 离线'
+                  ? '在线'
+                  : '离线'
                 : selectedModelInfo?.available
-                  ? '☁️ 就绪'
-                  : '⚠️ 未配置'
+                  ? '就绪'
+                  : '未配置'
             }}
           </span>
         </div>
@@ -139,14 +139,6 @@
           </div>
           <!-- 输入框 -->
           <div class="input-box">
-            <!-- 附件预览区 -->
-            <div v-if="attachedFiles.length > 0" class="attachment-preview">
-              <div v-for="(f, idx) in attachedFiles" :key="idx" class="attachment-chip">
-                <span class="attachment-chip__icon">{{ getFileIcon(f.name) }}</span>
-                <span class="attachment-chip__name">{{ f.name }}</span>
-                <button class="attachment-chip__remove" @click="removeAttachment(idx)">&times;</button>
-              </div>
-            </div>
             <textarea
               v-model="taskInput"
               class="task-textarea"
@@ -157,13 +149,8 @@
             <!-- 选项栏 -->
             <div class="input-options">
               <div class="input-options__left">
-                <label class="option-item option-item--clickable" @click="triggerFileUpload">
-                  <span class="option-icon">📎</span>
-                  <span class="option-label">附件</span>
-                </label>
-                <input ref="fileInputRef" type="file" multiple accept=".txt,.md,.pdf,.doc,.docx,.xls,.xlsx,.csv,.json,.png,.jpg,.jpeg,.webp,.gif" style="display:none" @change="handleFileSelect" />
                 <label class="option-item">
-                  <span class="option-icon">📚</span>
+                  <span class="option-icon"></span>
                   <span class="option-label">使用知识库</span>
                   <t-switch v-model="taskOptions.useKnowledgeBase" size="small" />
                 </label>
@@ -183,7 +170,7 @@
                   </t-select>
                 </label>
                 <label class="option-item">
-                  <span class="option-icon">🌐</span>
+                  <span class="option-icon"></span>
                   <span class="option-label">联网搜索</span>
                   <t-switch v-model="taskOptions.webSearch" size="small" />
                 </label>
@@ -267,7 +254,7 @@
                   <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9" />
                 </svg>
                 <span v-else-if="step.status === 'completed'" class="text-xs">✓</span>
-                <span v-else-if="step.status === 'error'" class="text-xs">✗</span>
+                <span v-else-if="step.status === 'error'" class="text-xs"></span>
                 <span v-else class="text-xs">{{ idx + 1 }}</span>
               </div>
               <div class="step-content">
@@ -287,7 +274,7 @@
           <!-- 最终输出 -->
           <div v-if="finalOutput" class="final-output">
             <div class="final-output__header">
-              <span>📄 任务结果</span>
+              <span> 任务结果</span>
               <div class="output-actions">
                 <button class="action-btn" @click="copyOutput">
                   <svg
@@ -356,59 +343,6 @@ const finalOutput = ref('')
 const currentTask = ref<TaskRecord | null>(null)
 const taskHistory = ref<TaskRecord[]>([])
 const knowledgeBases = ref<{ id: string; title: string }[]>([])
-const attachedFiles = ref<{ name: string; content: string; type: string }[]>([])
-const fileInputRef = ref<HTMLInputElement | null>(null)
-
-const getFileIcon = (name: string) => {
-  const ext = name.split('.').pop()?.toLowerCase() || ''
-  if (['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'svg'].includes(ext)) return '🖼️'
-  if (['pdf'].includes(ext)) return '📄'
-  if (['doc', 'docx'].includes(ext)) return '📝'
-  if (['xls', 'xlsx', 'csv'].includes(ext)) return '📊'
-  return '📎'
-}
-
-const triggerFileUpload = () => {
-  fileInputRef.value?.click()
-}
-
-const removeAttachment = (idx: number) => {
-  attachedFiles.value.splice(idx, 1)
-}
-
-const handleFileSelect = async (event: Event) => {
-  const target = event.target as HTMLInputElement
-  if (!target.files) return
-  for (const file of Array.from(target.files)) {
-    try {
-      const ext = file.name.split('.').pop()?.toLowerCase() || ''
-      let content = ''
-      if (['txt', 'md', 'csv', 'json', 'xml', 'yaml', 'yml', 'log'].includes(ext)) {
-        content = await file.text()
-      } else if (['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext)) {
-        content = await new Promise<string>((resolve) => {
-          const reader = new FileReader()
-          reader.onload = () => resolve(reader.result as string)
-          reader.readAsDataURL(file)
-        })
-      } else {
-        const formData = new FormData()
-        formData.append('file', file)
-        const res = await fetch('/api/documents/parse-file', { method: 'POST', body: formData })
-        if (res.ok) {
-          const data = await res.json()
-          content = data.text || ''
-        }
-      }
-      if (content) {
-        attachedFiles.value.push({ name: file.name, content, type: ext })
-      }
-    } catch (e) {
-      console.warn('文件读取失败:', file.name, e)
-    }
-  }
-  target.value = ''
-}
 // ── 模型选择 ───────────────────────────────────────────
 const availableModels = ref<ModelInfo[]>([])
 function getPersistedModelId() {
@@ -520,25 +454,25 @@ let taskAbortController: AbortController | null = null
 // ── 示例任务 ───────────────────────────────────────────
 const exampleTasks = [
   {
-    icon: '📊',
+    icon: '',
     title: '行业分析报告',
     desc: '生成结构化分析报告',
     prompt: '写一份2026年AI大模型行业分析报告，包含市场规模、主要玩家、技术趋势和未来展望四个部分'
   },
   {
-    icon: '📝',
+    icon: '',
     title: '知识库摘要',
     desc: '提取知识库核心要点',
     prompt: '对当前知识库中的所有文档生成结构化摘要，按主题分类，提炼核心观点'
   },
   {
-    icon: '🔍',
+    icon: '',
     title: '对比分析',
     desc: '多维度对比研究',
     prompt: '对比分析 GPT-4、Claude 3 和 Gemini Pro 的性能差异、适用场景和定价策略'
   },
   {
-    icon: '📋',
+    icon: '',
     title: '会议纪要',
     desc: '整理会议记录',
     prompt: '根据提供的会议记录，生成正式会议纪要，包含议题、讨论内容、决议和待办事项'
@@ -547,11 +481,11 @@ const exampleTasks = [
 // ── 步骤类型标签 ───────────────────────────────────────
 const stepTypeLabel = (type: string) => {
   const labels: Record<string, string> = {
-    search: '🔍 搜索',
-    read: '📖 精读',
-    write: '✍️ 写作',
-    think: '🧠 思考',
-    tool: '🔧 工具'
+    search: ' 搜索',
+    read: ' 精读',
+    write: ' 写作',
+    think: ' 思考',
+    tool: ' 工具'
   }
   return labels[type] || type
 }
@@ -589,13 +523,6 @@ const startTask = async () => {
   const query = taskInput.value
   const model = selectedModel.value
   const modelInfo = selectedModelInfo.value
-  let enrichedQuery = query
-  if (attachedFiles.value.length > 0) {
-    const fileContexts = attachedFiles.value.map(
-      f => `[附件: ${f.name}]\n${f.type === 'png' || f.type === 'jpg' || f.type === 'jpeg' || f.type === 'webp' || f.type === 'gif' ? '[图片，已编码为base64]' : f.content.slice(0, 8000)}`
-    )
-    enrichedQuery = fileContexts.join('\n\n') + '\n\n---\n\n' + query
-  }
   const taskRecord: TaskRecord = {
     id: Date.now().toString(),
     input: query,
@@ -644,7 +571,6 @@ const startTask = async () => {
     }
   } finally {
     isRunning.value = false
-    attachedFiles.value = []
     currentTask.value = { ...taskRecord }
     taskAbortController = null
   }
@@ -652,7 +578,7 @@ const startTask = async () => {
 // ── 通过 /api/agent/task SSE 运行任务（云端+本地统一） ─
 async function runViaAgentTaskAPI(query: string, model: string, taskRecord: TaskRecord) {
   const payload = {
-    query: enrichedQuery,
+    query,
     model,
     kb_id:
       taskOptions.value.useKnowledgeBase && taskOptions.value.selectedKbId
@@ -1501,47 +1427,5 @@ onUnmounted(() => {
 .slide-left-leave-to {
   transform: translateX(-280px);
   opacity: 0;
-}
-.attachment-preview {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 8px 12px 0;
-}
-.attachment-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  background: rgba(124, 106, 255, 0.1);
-  border: 1px solid rgba(124, 106, 255, 0.2);
-  border-radius: 12px;
-  font-size: 12px;
-  color: var(--text-secondary, rgba(255,255,255,0.7));
-}
-.attachment-chip__name {
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.attachment-chip__remove {
-  background: none;
-  border: none;
-  color: rgba(255,255,255,0.4);
-  cursor: pointer;
-  font-size: 14px;
-  line-height: 1;
-  padding: 0 2px;
-}
-.attachment-chip__remove:hover {
-  color: #ef4444;
-}
-.option-item--clickable {
-  cursor: pointer;
-}
-.option-item--clickable:hover {
-  background: rgba(255,255,255,0.05);
-  border-radius: 4px;
 }
 </style>

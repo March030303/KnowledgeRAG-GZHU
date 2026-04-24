@@ -1,350 +1,284 @@
 <template>
-  <header class="head-bar">
-    <!-- 左侧：Logo + 标题 -->
-    <div class="head-bar__left">
-      <div class="head-bar__logo">
-        <div class="logo-icon">
-          <svg viewBox="0 0 24 24" fill="none">
-            <path 
-              d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" 
-              stroke="url(#logoGradient)" 
-              stroke-width="2" 
-              stroke-linecap="round" 
-              stroke-linejoin="round"
-            />
-            <defs>
-              <linearGradient id="logoGradient" x1="2" y1="2" x2="22" y2="22">
-                <stop stop-color="#7c6aff"/>
-                <stop offset="1" stop-color="#a78bfa"/>
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-        <span class="logo-text">KnowledgeRAG</span>
-      </div>
-    </div>
-
-    <!-- 中间：导航菜单 -->
-    <nav class="head-bar__nav">
-      <div 
-        v-for="item in navItems" 
-        :key="item.path"
-        class="nav-item"
-        :class="{ 'nav-item--active': currentPath === item.path }"
-        @click="handleNav(item.path)"
+  <t-header class="shadow-sm bg-white border-b border-gray-200">
+    <t-head-menu theme="light" :value="currentMenuItem" height="80px" class="flex items-center">
+      <template #logo>
+        <h2 class="logo-title font-bold text-blue-600 text-xl flex items-center">
+          <t-icon name="cloud" class="mr-2 text-blue-500" />
+          RAGF-01
+        </h2>
+      </template>
+      <t-menu-item
+        value="item1"
+        @click="navigateTo('/knowledge')"
+        class="mx-1 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+        :class="{
+          'bg-blue-50 text-blue-600': $route.path === '/knowledge',
+          'text-gray-700 hover:bg-gray-100': $route.path !== '/knowledge'
+        }"
       >
-        <component :is="item.icon" class="nav-item__icon" />
-        <span class="nav-item__label">{{ item.label }}</span>
-        <div class="nav-item__indicator"></div>
-      </div>
-    </nav>
-
-    <!-- 右侧：用户信息 + 操作 -->
-    <div class="head-bar__right">
-      <!-- 搜索按钮 -->
-      <button class="icon-btn" title="搜索">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <circle cx="11" cy="11" r="8"/>
-          <path stroke-linecap="round" d="M21 21l-4.35-4.35"/>
-        </svg>
-      </button>
-
-      <!-- 通知 -->
-      <button class="icon-btn" title="通知">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-        </svg>
-        <span class="notification-dot"></span>
-      </button>
-
-      <!-- 用户头像 -->
-      <div class="user-avatar">
-        <div class="avatar-ring"></div>
-        <div class="avatar-inner">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>
-          </svg>
+        <t-icon name="book" class="mr-2" />
+        知识库
+      </t-menu-item>
+      <t-menu-item
+        value="item2"
+        @click="navigateTo('/chat')"
+        class="mx-1 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+        :class="{
+          'bg-blue-50 text-blue-600': $route.path === '/chat',
+          'text-gray-700 hover:bg-gray-100': $route.path !== '/chat'
+        }"
+      >
+        <t-icon name="chat" class="mr-2" />
+        对话
+      </t-menu-item>
+      <t-menu-item
+        value="itemacmd"
+        @click="navigateTo('/acmd_search')"
+        class="mx-1 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+        :class="{
+          'bg-blue-50 text-blue-600': $route.path === '/acmd_search',
+          'text-gray-700 hover:bg-gray-100': $route.path !== '/acmd_search'
+        }"
+      >
+        <t-icon name="mobile-list" class="mr-2" />
+        学术检索
+      </t-menu-item>
+      <t-menu-item
+        value="item3"
+        @click="navigateTo('/service')"
+        class="mx-1 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+        :class="{
+          'bg-blue-50 text-blue-600': $route.path === '/service',
+          'text-gray-700 hover:bg-gray-100': $route.path !== '/service'
+        }"
+      >
+        <t-icon name="server" class="mr-2" />
+        模型管理
+      </t-menu-item>
+      <t-menu-item
+        value="item5"
+        @click="navigateTo('/files')"
+        class="mx-1 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+        :class="{
+          'bg-blue-50 text-blue-600': $route.path === '/files',
+          'text-gray-700 hover:bg-gray-100': $route.path !== '/files'
+        }"
+      >
+        <t-icon name="file" class="mr-2" />
+        文件管理
+      </t-menu-item>
+      <t-menu-item
+        value="item4"
+        @click="navigateTo('/user')"
+        class="mx-1 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+        :class="{
+          'bg-blue-50 text-blue-600': $route.path.startsWith('/user'),
+          'text-gray-700 hover:bg-gray-100': !$route.path.startsWith('/user')
+        }"
+      >
+        <t-icon name="user" class="mr-2" />
+        个人主页
+      </t-menu-item>
+      <t-menu-item
+        value="item6"
+        @click="navigateTo('/DOC')"
+        class="mx-1 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+        :class="{
+          'bg-blue-50 text-blue-600': $route.path === '/DOC',
+          'text-gray-700 hover:bg-gray-100': $route.path !== '/DOC'
+        }"
+      >
+        <t-icon name="mobile-list" class="mr-2" />
+        开发文档
+      </t-menu-item>
+      <div class="w-10"></div>
+      <template #operations>
+        <div class="flex items-center ml-4 space-x-1">
+          <t-tooltip content="GitHub仓库" placement="bottom">
+            <t-button
+              theme="default"
+              shape="square"
+              variant="text"
+              @click="navToGitHub"
+              class="rounded-lg hover:bg-gray-100 transition-colors duration-200 p-2"
+            >
+              <t-icon name="logo-github" class="text-lg text-gray-600" />
+            </t-button>
+          </t-tooltip>
+          <t-tooltip content="帮助文档" placement="bottom">
+            <t-button
+              theme="default"
+              shape="square"
+              variant="text"
+              @click="navToHelper"
+              class="rounded-lg hover:bg-gray-100 transition-colors duration-200 p-2"
+            >
+              <t-icon name="help-circle" class="text-lg text-gray-600" />
+            </t-button>
+          </t-tooltip>
+          <t-tooltip content="返回首页" placement="bottom">
+            <t-button
+              theme="default"
+              shape="square"
+              variant="text"
+              @click="navigateTo('/knowledge')"
+              class="rounded-lg hover:bg-gray-100 transition-colors duration-200 p-2"
+            >
+              <t-icon name="home" class="text-lg text-gray-600" />
+            </t-button>
+          </t-tooltip>
+          <div class="h-6 w-px bg-gray-300 mx-2"></div>
+          <!-- 用户头像和下拉菜单 -->
+          <t-dropdown :min-column-width="130" trigger="click" placement="bottom-right">
+            <t-avatar
+              :image="userAvatar"
+              :hide-on-load-failed="false"
+              size="medium"
+              class="cursor-pointer border-2 border-transparent hover:border-blue-500 transition-all duration-200"
+            />
+            <template #dropdown>
+              <t-dropdown-menu class="rounded-lg shadow-lg">
+                <t-dropdown-item
+                  @click="goToProfile"
+                  class="px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded-md mx-2 mt-2 transition-colors duration-200"
+                >
+                  <t-icon name="user" class="text-blue-500" />
+                  <span class="ml-2">个人中心</span>
+                </t-dropdown-item>
+                <!--- <t-dropdown-item @click="toggleSettingPanel"
+ class="px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded-md mx-2 transition-colors duration-200">
+ <t-icon name="setting" class="text-blue-500" />
+ <span class="ml-2">系统设置</span>
+ </t-dropdown-item>-->
+                <t-dropdown-item
+                  @click="logout"
+                  divided
+                  class="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md mx-2 mb-2 transition-colors duration-200"
+                >
+                  <t-icon name="logout" class="text-red-500" />
+                  <span class="ml-2">退出登录</span>
+                </t-dropdown-item>
+              </t-dropdown-menu>
+            </template>
+          </t-dropdown>
         </div>
-      </div>
+      </template>
+    </t-head-menu>
+  </t-header>
+  <t-drawer
+    v-model:visible="drawerVisible"
+    placement="bottom"
+    :header="'设置面板'"
+    :footer="null"
+    size="400px"
+  >
+    <!-- 在这里挂载你的子组件 -->
+    <your-child-component />
+    <div class="text-center py-8">
+      <t-icon name="info-circle" class="text-5xl text-blue-500 mx-auto mb-4" />
+      <h3 class="text-lg font-medium text-gray-900 mb-2">功能即将上线</h3>
+      <p class="text-gray-500 max-w-md mx-auto">我们正在努力开发中，请耐心等待！</p>
     </div>
-  </header>
+  </t-drawer>
 </template>
-
 <script setup lang="ts">
-import { ref, h } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-
-const router = useRouter()
-const route = useRoute()
-
-const currentPath = ref(route.path)
-
-// 导航项
-const navItems = [
-  {
-    path: '/chat',
-    label: '对话',
-    icon: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8' }, [
-      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' })
-    ])
-  },
-  {
-    path: '/knowledge',
-    label: '知识库',
-    icon: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8' }, [
-      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' })
-    ])
-  },
-  {
-    path: '/square',
-    label: '广场',
-    icon: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8' }, [
-      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z' })
-    ])
-  },
-  {
-    path: '/settings',
-    label: '设置',
-    icon: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8' }, [
-      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z' }),
-      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z' })
-    ])
+//import CanvasPoint from './canvas-point-unit/CanvasPoint.vue';
+import { computed, ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { MessagePlugin } from 'tdesign-vue-next'
+import { useDataUserStore } from '@/store'
+const userStore = useDataUserStore()
+import API_ENDPOINTS from '@/utils/apiConfig'
+// 修改 userAvatar 计算属性，添加加载状态处理
+const userAvatar = computed(() => {
+  // 如果用户数据还未加载，返回默认头像
+  if (!userStore.userData) {
+    console.log('用户头像数据未加载')
+    return 'https://tdesign.gtimg.com/site/avatar.jpg'
   }
-]
-
-const handleNav = (path: string) => {
-  currentPath.value = path
+  const avatar = userStore.userData?.avatar || ''
+  if (avatar && avatar.startsWith('/static/')) {
+    return API_ENDPOINTS.USER.AVATAR(avatar)
+  }
+  return avatar || 'https://tdesign.gtimg.com/site/avatar.jpg'
+})
+const goToProfile = () => {
+  router.push('/user/userInfo')
+}
+const logout = async () => {
+  try {
+    await router.push('/LogonOrRegister')
+    MessagePlugin.success('已登出账号')
+  } catch (error) {
+    console.error('路由跳转失败:', error)
+  }
+}
+// 在组件挂载时立即获取用户数据
+onMounted(async () => {
+  try {
+    // 即使用户数据已存在，也尝试重新获取以确保是最新的
+    await userStore.fetchUserData()
+    handleUserDropdownOpen()
+  } catch (error) {
+    console.error('获取用户数据失败:', error)
+    // 即使获取失败，也使用默认头像，不影响页面显示
+  }
+})
+// 添加一个方法来主动刷新用户数据
+const refreshUserAvatar = async () => {
+  try {
+    await userStore.fetchUserData()
+  } catch (error) {
+    console.error('刷新用户数据失败:', error)
+  }
+}
+// 在用户执行操作时（如打开下拉菜单）刷新用户数据
+const handleUserDropdownOpen = () => {
+  // 可以在这里添加刷新逻辑
+  refreshUserAvatar()
+}
+const route = useRoute()
+const router = useRouter()
+const currentMenuItem = computed(() => {
+  const path = route.path
+  if (path.startsWith('/chat')) {
+    return 'item2'
+  }
+  //匹配特殊路由，因为类型问题把它拿出来了
+  switch (path) {
+    case '/knowledge':
+      return 'item1'
+    case '/service':
+      return 'item3'
+    case '/files':
+      return 'item5'
+    case '/DOC':
+      return 'item6'
+    case '/acmd_search':
+      return 'itemacmd'
+    default:
+      // 处理所有以 /user 开头的路径
+      if (path.startsWith('/user')) {
+        return 'item4'
+      }
+      return ''
+  }
+})
+const navigateTo = (path: string) => {
   router.push(path)
 }
+//import { useSettingStore } from '@/store';
+//const settingStore = useSettingStore();
+const navToGitHub = () => {
+  window.open('https://github.com/Zhongye1')
+}
+const navToHelper = () => {
+  window.open('https://tdesign.tencent.com/vue-next/overview')
+  // 你的帮助页面链接
+}
+// 新增 toggleSettingPanel 方法
+const drawerVisible = ref(false)
+const _toggleSettingPanel = () => {
+  drawerVisible.value = !drawerVisible.value
+}
 </script>
-
-<style scoped>
-/* =====================================================
-   顶部导航栏 — Geist x Linear 风格
-   ===================================================== */
-
-.head-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--header-height);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 var(--space-4);
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border-subtle);
-  z-index: 100;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-/* 左侧 */
-.head-bar__left {
-  display: flex;
-  align-items: center;
-}
-
-.head-bar__logo {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.logo-icon {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.logo-icon svg {
-  width: 100%;
-  height: 100%;
-}
-
-.logo-text {
-  font-size: var(--text-md);
-  font-weight: 600;
-  color: var(--text-primary);
-  letter-spacing: -0.02em;
-}
-
-/* 中间导航 */
-.head-bar__nav {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.nav-item {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.nav-item__icon {
-  width: 16px;
-  height: 16px;
-  color: var(--text-tertiary);
-  transition: color var(--transition-fast);
-}
-
-.nav-item__label {
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--text-secondary);
-  transition: color var(--transition-fast);
-}
-
-.nav-item:hover {
-  background: var(--bg-hover);
-}
-
-.nav-item:hover .nav-item__icon,
-.nav-item:hover .nav-item__label {
-  color: var(--text-primary);
-}
-
-/* 活跃状态 */
-.nav-item--active {
-  background: var(--accent-primary-subtle);
-}
-
-.nav-item--active .nav-item__icon,
-.nav-item--active .nav-item__label {
-  color: var(--text-brand-strong);
-}
-
-/* 活跃指示条 */
-.nav-item__indicator {
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%) scaleX(0);
-  width: 16px;
-  height: 2px;
-  background: var(--accent-primary);
-  border-radius: var(--radius-full);
-  transition: transform var(--transition-spring);
-}
-
-.nav-item--active .nav-item__indicator {
-  transform: translateX(-50%) scaleX(1);
-}
-
-/* 右侧 */
-.head-bar__right {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.icon-btn {
-  position: relative;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.icon-btn:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-.icon-btn:active {
-  transform: scale(0.92);
-}
-
-.icon-btn svg {
-  width: 18px;
-  height: 18px;
-}
-
-.notification-dot {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 6px;
-  height: 6px;
-  background: var(--accent-danger);
-  border-radius: var(--radius-full);
-  border: 1.5px solid var(--bg-surface);
-}
-
-/* 用户头像 */
-.user-avatar {
-  position: relative;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: var(--space-2);
-}
-
-.avatar-ring {
-  position: absolute;
-  inset: -2px;
-  border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--accent-primary), var(--text-brand-strong));
-  opacity: 0;
-  transition: opacity var(--transition-normal);
-}
-
-.user-avatar:hover .avatar-ring {
-  opacity: 1;
-}
-
-.avatar-inner {
-  position: relative;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-full);
-  background: var(--bg-overlay);
-  border: 2px solid var(--bg-surface);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  transition: border-color var(--transition-normal);
-}
-
-.user-avatar:hover .avatar-inner {
-  border-color: var(--accent-primary);
-}
-
-.avatar-inner svg {
-  width: 18px;
-  height: 18px;
-}
-
-/* 响应式 */
-@media (max-width: 768px) {
-  .head-bar__nav {
-    display: none;
-  }
-  
-  .logo-text {
-    display: none;
-  }
-}
-</style>

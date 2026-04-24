@@ -30,7 +30,7 @@
             /></svg
           >生成中…
         </span>
-        <span v-else>🔄 加载全图</span>
+        <span v-else> 加载全图</span>
       </button>
       <!-- 生成图谱（原有逻辑，保留） -->
       <button
@@ -39,7 +39,7 @@
         :disabled="isLoading"
       >
         <span v-if="isLoading && loadingType === 'generate'">生成中…</span>
-        <span v-else>✨ 生成图谱</span>
+        <span v-else> 生成图谱</span>
       </button>
       <!-- 节点搜索 -->
       <div class="flex items-center gap-1">
@@ -53,9 +53,7 @@
           @click="searchNodes"
           class="bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded px-2 py-1 text-sm transition"
           :disabled="isLoading || !searchKeyword.trim()"
-        >
-          🔍
-        </button>
+        ></button>
         <button
           v-if="isSearchMode"
           @click="clearSearch"
@@ -70,7 +68,7 @@
         @click="toggleStats"
         class="bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 py-1.5 px-3 rounded text-sm transition"
       >
-        📊 统计
+        统计
       </button>
       <!-- 图谱统计浮窗 -->
       <div

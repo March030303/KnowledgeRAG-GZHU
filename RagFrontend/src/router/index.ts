@@ -180,12 +180,20 @@ router.beforeEach((to, from, next) => {
     return next()
   }
 
-  fetch('/api/users/me', {
+  fetch('/api/user/GetUserData', {
     method: 'GET',
-    headers: { Authorization: `Bearer ${jwt}` }
+    headers: { Authorization: `Bearer ${jwt}`, Accept: 'application/json' }
   })
-    .then(response => response.json())
-    .then((res: UserResponse) => {
+    .then(async response => {
+      if (response.status === 401) {
+        localStorage.removeItem('jwt')
+        next(`/LogonOrRegister?redirect=${encodeURIComponent(to.fullPath)}`)
+        return null
+      }
+      return response.json()
+    })
+    .then((res: UserResponse | null) => {
+      if (!res) return
       if (res.status === 'success') {
         const userRole = res.data?.role || localStorage.getItem('user_role') || 'viewer'
         if (res.data?.role) {

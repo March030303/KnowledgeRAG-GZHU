@@ -69,7 +69,7 @@
           <p v-if="!isCollapsed" class="sidebar__nav-label">主要功能</p>
         </transition>
         <ul class="sidebar__nav-list">
-          <li v-for="item in mainNavItems" :key="item.path" v-show="canShowNav(item.path)">
+          <li v-for="item in mainNavItems" :key="item.path">
             <t-tooltip
               :content="isCollapsed ? item.label : ''"
               placement="right"
@@ -99,7 +99,7 @@
           <p v-if="!isCollapsed" class="sidebar__nav-label">工具</p>
         </transition>
         <ul class="sidebar__nav-list">
-          <li v-for="item in toolNavItems" :key="item.path" v-show="canShowNav(item.path)">
+          <li v-for="item in visibleToolNavItems" :key="item.path">
             <t-tooltip
               :content="isCollapsed ? item.label : ''"
               placement="right"
@@ -206,20 +206,20 @@
         </button>
       </t-tooltip>
 
-      <!-- 工单反馈 -->
-      <t-tooltip
-        :content="isCollapsed ? '工单反馈' : ''"
-        placement="right"
-        :show-arrow="false"
-      >
-        <button class="nav-item nav-item--ticket" @click="router.push('/settings?tab=tickets')" title="工单反馈">
+      <!-- 工单管理 -->
+      <t-tooltip :content="isCollapsed ? '工单管理' : ''" placement="right" :show-arrow="false">
+        <button class="nav-item" @click="navigateTo('/settings?tab=commercial')" title="工单管理">
           <span class="nav-item__icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+              />
             </svg>
           </span>
           <transition name="fade-text">
-            <span v-if="!isCollapsed" class="nav-item__label">工单反馈</span>
+            <span v-if="!isCollapsed" class="nav-item__label">工单管理</span>
           </transition>
         </button>
       </t-tooltip>
@@ -302,6 +302,12 @@ const route = useRoute()
 const userStore = useDataUserStore()
 const isCollapsed = ref(false)
 
+// 当前用户角色（用于RBAC菜单过滤）
+const userRole = computed(() => {
+  return localStorage.getItem('user_role') || 'viewer'
+})
+const isAdmin = computed(() => ['admin', 'super_admin'].includes(userRole.value))
+
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value
 }
@@ -352,23 +358,7 @@ interface NavItem {
   label: string
   icon: string
   badge?: string
-  roles?: string[]
-}
-
-const userRole = computed(() => localStorage.getItem('user_role') || 'viewer')
-
-const ROLE_ACCESS: Record<string, string[]> = {
-  guest: ['/knowledge', '/chat', '/history'],
-  viewer: ['/knowledge', '/chat', '/history', '/agent', '/square'],
-  editor: ['/knowledge', '/chat', '/history', '/agent', '/creation', '/square'],
-  admin: ['*'],
-  super_admin: ['*']
-}
-
-function canShowNav(path: string): boolean {
-  const allowed = ROLE_ACCESS[userRole.value] || ROLE_ACCESS.viewer
-  if (allowed.includes('*')) return true
-  return allowed.some(r => path.startsWith(r))
+  adminOnly?: boolean
 }
 
 // 主导航项
@@ -389,11 +379,12 @@ const mainNavItems: NavItem[] = [
   },
   {
     path: '/chat',
-    label: 'AI 对话',
+    label: '智能对话',
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
     </svg>`
   },
+
   {
     path: '/agent',
     label: '任务模式',
@@ -446,53 +437,52 @@ const toolNavItems: NavItem[] = [
     label: '系统架构',
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
-    </svg>`
+    </svg>`,
+    adminOnly: true
   }
 ]
+
+// RBAC：根据用户角色过滤工具菜单
+const visibleToolNavItems = computed(() => {
+  return toolNavItems.filter(item => !item.adminOnly || isAdmin.value)
+})
 </script>
 
 <style scoped>
+/* ===== 侧边栏容器 ===== */
 .sidebar {
-  width: 220px;
+  width: 240px;
   height: 100vh;
-  background: var(--bg-surface);
-  border-right: 1px solid var(--border-subtle);
+  background: #ffffff;
+  border-right: 1px solid #f0f0f0;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  transition: width 0.25s var(--ease-out);
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
   position: relative;
   z-index: 100;
 }
-.sidebar::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 1px;
-  background: linear-gradient(180deg, rgba(124, 106, 255, 0.08) 0%, transparent 30%, transparent 70%, rgba(34, 211, 238, 0.05) 100%);
-  pointer-events: none;
-}
 
 .sidebar--collapsed {
-  width: 56px;
+  width: 64px;
 }
 
+/* ===== Logo区域 ===== */
 .sidebar__logo {
   display: flex;
   align-items: center;
-  padding: 12px 10px 10px;
-  border-bottom: 1px solid var(--border-subtle);
-  gap: 8px;
-  min-height: 52px;
+  padding: 16px 12px 14px;
+  border-bottom: 1px solid #f5f5f5;
+  gap: 10px;
+  min-height: 64px;
   position: relative;
 }
 
 .sidebar__logo-icon {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
 }
 
@@ -502,9 +492,9 @@ const toolNavItems: NavItem[] = [
 }
 
 .sidebar__logo-text {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--accent-violet-light), var(--accent-cyan));
+  background: linear-gradient(135deg, #4f7ef8, #8b5cf6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   white-space: nowrap;
@@ -512,107 +502,95 @@ const toolNavItems: NavItem[] = [
 }
 
 .sidebar__collapse-btn {
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-sm);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   border: none;
   background: transparent;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-quaternary);
-  transition: all var(--transition-fast);
+  color: #9ca3af;
+  transition: all 0.2s;
   flex-shrink: 0;
   margin-left: auto;
 }
 
 .sidebar__collapse-btn:hover {
-  background: var(--bg-hover);
-  color: var(--text-secondary);
+  background: #f3f4f6;
+  color: #374151;
 }
 
 .collapse-icon {
-  width: 14px;
-  height: 14px;
-  transition: transform 0.25s var(--ease-out);
+  width: 16px;
+  height: 16px;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .rotate-180 {
   transform: rotate(180deg);
 }
 
+/* 折叠状态下隐藏折叠按钮文字，logo居中 */
 .sidebar--collapsed .sidebar__logo {
   justify-content: center;
-  padding: 12px 6px;
+  padding: 16px 8px;
 }
 .sidebar--collapsed .sidebar__collapse-btn {
   position: absolute;
-  right: 2px;
+  right: 4px;
   top: 50%;
   transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
 }
 
+/* ===== 快速新建 ===== */
 .sidebar__quick-action {
-  padding: 8px 8px 4px;
+  padding: 10px 10px 6px;
 }
 
 .quick-new-btn {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 8px;
-  border-radius: var(--radius-sm);
-  border: 1px dashed rgba(124, 106, 255, 0.2);
-  background: var(--accent-violet-subtle);
-  color: var(--accent-violet-light);
-  font-size: 12px;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1.5px dashed #dbeafe;
+  background: #f0f7ff;
+  color: #4f7ef8;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.2s;
   white-space: nowrap;
   overflow: hidden;
-  position: relative;
-  will-change: transform;
 }
 
 .quick-new-btn:hover {
-  background: rgba(124, 106, 255, 0.12);
-  border-color: rgba(124, 106, 255, 0.35);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(124, 106, 255, 0.12);
-}
-
-.quick-new-btn:active {
-  transform: translateY(0) scale(0.97) !important;
-  box-shadow: none !important;
-  transition-duration: 0.06s !important;
+  background: #dbeafe;
+  border-color: #93c5fd;
 }
 
 .quick-new-icon {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
-  transition: transform 0.25s var(--ease-spring);
-}
-
-.quick-new-btn:hover .quick-new-icon {
-  transform: rotate(90deg) scale(1.1);
 }
 
 .sidebar--collapsed .quick-new-btn {
   justify-content: center;
-  padding: 6px;
+  padding: 8px;
 }
 
+/* ===== 导航区域 ===== */
 .sidebar__nav {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 4px 0;
+  padding: 6px 0;
   scrollbar-width: none;
 }
 .sidebar__nav::-webkit-scrollbar {
@@ -620,17 +598,17 @@ const toolNavItems: NavItem[] = [
 }
 
 .sidebar__nav-section {
-  margin-bottom: 2px;
-  padding: 0 6px;
+  margin-bottom: 4px;
+  padding: 0 8px;
 }
 
 .sidebar__nav-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
-  color: var(--text-quaternary);
+  color: #9ca3af;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 6px 8px 3px;
+  letter-spacing: 0.05em;
+  padding: 8px 8px 4px;
   white-space: nowrap;
   overflow: hidden;
 }
@@ -641,44 +619,52 @@ const toolNavItems: NavItem[] = [
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
 }
 
+/* ===== 导航项 ===== */
 .nav-item {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 8px;
-  border-radius: var(--radius-sm);
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 8px;
   border: none;
   background: transparent;
-  color: var(--text-secondary);
-  font-size: 12.5px;
-  font-weight: 450;
+  color: #4b5563;
+  font-size: 13.5px;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease;
+  /* 精细过渡：只用 transform/background/color，不用 all */
+  transition:
+    background 0.14s ease,
+    color 0.14s ease,
+    transform 0.14s ease,
+    box-shadow 0.14s ease;
   text-align: left;
   white-space: nowrap;
   overflow: hidden;
   position: relative;
+  will-change: transform;
 }
 
 .nav-item:hover:not(.nav-item--active) {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-  transform: translateX(2px);
+  background: rgba(79, 126, 248, 0.07);
+  color: #4f7ef8;
+  transform: translateX(3px);
 }
 
 .nav-item:active {
-  transform: translateX(0) scale(0.97) !important;
-  transition-duration: 0.05s !important;
+  transform: translateX(1px) scale(0.97) !important;
+  transition-duration: 0.06s !important;
 }
 
 .nav-item--active {
-  background: var(--accent-violet-subtle);
-  color: var(--text-brand-strong);
-  font-weight: 550;
+  background: #eff6ff;
+  color: #4f7ef8;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(79, 126, 248, 0.15);
 }
 
 .nav-item--active::before {
@@ -687,11 +673,12 @@ const toolNavItems: NavItem[] = [
   left: 0;
   top: 50%;
   transform: translateY(-50%) scaleY(1);
-  width: 2px;
-  height: 55%;
-  background: var(--accent-violet);
-  border-radius: 0 2px 2px 0;
-  animation: navIndicatorIn 0.25s var(--ease-spring);
+  width: 3px;
+  height: 60%;
+  background: #4f7ef8;
+  border-radius: 0 3px 3px 0;
+  /* 进入时弹出 */
+  animation: navIndicatorIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes navIndicatorIn {
@@ -704,27 +691,27 @@ const toolNavItems: NavItem[] = [
 }
 
 .nav-item__icon {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s var(--ease-spring);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+/* hover 时图标轻微弹跳 */
 .nav-item:hover .nav-item__icon {
-  transform: scale(1.1);
+  transform: scale(1.15);
 }
 
 .nav-item--active .nav-item__icon {
-  transform: scale(1.05);
-  color: var(--accent-violet-light);
+  transform: scale(1.08);
 }
 
 .nav-item__icon svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 
 .nav-item__label {
@@ -734,134 +721,191 @@ const toolNavItems: NavItem[] = [
 }
 
 .nav-item--download .nav-item__icon {
-  color: var(--accent-emerald);
+  color: #22c55e;
 }
 .nav-item--download:hover {
-  background: var(--accent-emerald-subtle) !important;
-  color: var(--accent-emerald) !important;
-}
-.nav-item--ticket .nav-item__icon {
-  color: var(--accent-amber, #f59e0b);
-}
-.nav-item--ticket:hover {
-  background: rgba(245, 158, 11, 0.1) !important;
-  color: var(--accent-amber, #f59e0b) !important;
+  background: #f0fdf4 !important;
+  color: #15803d !important;
 }
 
 .nav-item__badge {
-  background: var(--accent-rose);
+  background: #ef4444;
   color: white;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
-  padding: 1px 4px;
-  border-radius: var(--radius-full);
+  padding: 1px 5px;
+  border-radius: 10px;
   flex-shrink: 0;
-  transition: transform 0.2s var(--ease-spring);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .nav-item:hover .nav-item__badge {
-  transform: scale(1.08);
+  transform: scale(1.1);
 }
 
+/* 折叠状态导航项居中 */
 .sidebar--collapsed .nav-item {
   justify-content: center;
-  padding: 7px;
+  padding: 9px;
 }
 
 .sidebar--collapsed .nav-item:hover {
-  transform: scale(1.06);
+  transform: scale(1.08);
 }
 
+/* ===== 快速新建按钮升级 ===== */
+.quick-new-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1.5px dashed #dbeafe;
+  background: #f0f7ff;
+  color: #4f7ef8;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.18s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  position: relative;
+  will-change: transform;
+}
+
+.quick-new-btn:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 126, 248, 0.2);
+}
+
+.quick-new-btn:active {
+  transform: translateY(0) scale(0.97) !important;
+  box-shadow: none !important;
+  transition-duration: 0.07s !important;
+}
+
+/* 快速新建图标旋转 */
+.quick-new-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.quick-new-btn:hover .quick-new-icon {
+  transform: rotate(90deg) scale(1.15);
+}
+
+.sidebar--collapsed .quick-new-btn {
+  justify-content: center;
+  padding: 8px;
+}
+
+/* ===== 底部区域 ===== */
 .sidebar__footer {
-  padding: 6px 6px 8px;
-  border-top: 1px solid var(--border-subtle);
+  padding: 8px 8px 12px;
+  border-top: 1px solid #f5f5f5;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
 }
 
+/* 快捷搜索提示 */
 .shortcut-hint {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   width: 100%;
-  padding: 6px 8px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-elevated);
-  color: var(--text-quaternary);
-  font-size: 11.5px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #9ca3af;
+  font-size: 12.5px;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease,
+    color 0.15s ease;
 }
 
 .shortcut-hint:hover {
-  background: var(--bg-hover);
-  color: var(--text-tertiary);
-  border-color: var(--border-base);
+  background: #f3f4f6;
+  color: #6b7280;
+  border-color: #d1d5db;
   transform: translateY(-1px);
 }
 
 .shortcut-hint:active {
   transform: translateY(0) scale(0.98) !important;
-  transition-duration: 0.05s !important;
+  transition-duration: 0.07s !important;
 }
 
 .shortcut-icon {
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
 }
 
 kbd {
   margin-left: auto;
-  background: var(--bg-overlay);
-  border-radius: var(--radius-xs);
-  padding: 1px 5px;
-  font-size: 10px;
-  font-family: var(--font-mono);
-  color: var(--text-quaternary);
-  border: 1px solid var(--border-subtle);
+  background: #e5e7eb;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-family: monospace;
+  color: #6b7280;
 }
 
+/* ===== 用户信息 ===== */
 .user-info {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 6px 8px;
-  border-radius: var(--radius-sm);
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.12s ease, transform 0.12s ease;
+  transition:
+    background 0.14s ease,
+    transform 0.14s ease;
   overflow: hidden;
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 .user-info:hover {
-  background: var(--bg-hover);
-  transform: translateX(1px);
+  background: rgba(79, 126, 248, 0.06);
+  transform: translateX(2px);
 }
 
 .user-info:active {
   transform: translateX(0) scale(0.98) !important;
-  transition-duration: 0.05s !important;
+  transition-duration: 0.07s !important;
 }
 
 .user-info--collapsed {
   justify-content: center;
-  padding: 6px;
+  padding: 8px;
 }
 
 .user-info--collapsed:hover {
-  transform: scale(1.05);
+  transform: scale(1.06);
 }
 
 .user-avatar {
   flex-shrink: 0;
-  transition: transform 0.2s var(--ease-spring);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .user-info:hover .user-avatar {
-  transform: scale(1.06);
+  transform: scale(1.08);
 }
 
 .user-meta {
@@ -872,26 +916,26 @@ kbd {
 }
 
 .user-name {
-  font-size: 12px;
-  font-weight: 550;
-  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .user-email {
-  font-size: 10px;
-  color: var(--text-quaternary);
+  font-size: 11px;
+  color: #9ca3af;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .user-chevron {
-  width: 12px;
-  height: 12px;
-  color: var(--text-quaternary);
+  width: 14px;
+  height: 14px;
+  color: #9ca3af;
   flex-shrink: 0;
   transition: transform 0.2s ease;
 }
@@ -900,11 +944,53 @@ kbd {
   transform: rotate(90deg);
 }
 
+/* ===== 折叠按钮 ===== */
+.sidebar__collapse-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.sidebar__collapse-btn:hover {
+  background: #f3f4f6;
+  color: #374151;
+  transform: scale(1.1);
+}
+
+.sidebar__collapse-btn:active {
+  transform: scale(0.92) !important;
+  transition-duration: 0.07s !important;
+}
+
+.collapse-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+/* ===== 文字淡入淡出动画 ===== */
 .fade-text-enter-active,
 .fade-text-leave-active {
   transition:
-    opacity 0.12s ease,
-    max-width 0.2s ease;
+    opacity 0.15s ease,
+    max-width 0.25s ease;
   overflow: hidden;
 }
 
@@ -917,6 +1003,6 @@ kbd {
 .fade-text-enter-to,
 .fade-text-leave-from {
   opacity: 1;
-  max-width: 180px;
+  max-width: 200px;
 }
 </style>

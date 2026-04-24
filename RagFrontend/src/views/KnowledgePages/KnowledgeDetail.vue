@@ -342,7 +342,7 @@
                   : 'text-gray-500 hover:text-gray-700'
               ]"
             >
-              🔗 LangChain
+              LangChain
             </button>
             <button
               @click="ragMode = 'native'"
@@ -353,7 +353,7 @@
                   : 'text-gray-500 hover:text-gray-700'
               ]"
             >
-              ⚡ 原生实现
+              原生实现
             </button>
           </div>
           <button @click="isHelpVisible = !isHelpVisible" class="text-gray-500 hover:text-blue-600">
@@ -380,7 +380,7 @@
           v-if="ragMode === 'langchain'"
           class="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-800"
         >
-          <span class="mt-0.5">🔗</span>
+          <span class="mt-0.5"></span>
           <div>
             <span class="font-semibold">LangChain 实现</span>：使用 LangChain +
             langchain_huggingface + langchain_community（FAISS）进行向量化，通过 LangChain OllamaLLM
@@ -391,7 +391,7 @@
           v-else
           class="flex items-start gap-2 bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-800"
         >
-          <span class="mt-0.5">⚡</span>
+          <span class="mt-0.5"></span>
           <div>
             <span class="font-semibold">原生实现</span>：使用 sentence-transformers + faiss-cpu
             原生接口进行向量化，通过直接调用 Ollama HTTP API（/api/generate）生成回答，<strong
@@ -506,38 +506,38 @@
             isTesting
               ? '处理中...'
               : ragMode === 'langchain'
-                ? '🔗 执行向量化处理（LangChain）'
-                : '⚡ 执行向量化处理（原生）'
+                ? ' 执行向量化处理（LangChain）'
+                : ' 执行向量化处理（原生）'
           }}
         </button>
       </div>
       <!-- 检索参数设置 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <!---
-        <div>
-          <div class="flex items-center">
-            <label class="block text-sm font-medium text-gray-700 mb-2 mr-4">使用知识图谱</label>
-            <button @click="useKnowledgeGraph = !useKnowledgeGraph" :class="[
-              'relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
-              useKnowledgeGraph ? 'bg-blue-600' : 'bg-gray-200'
-            ]" role="switch">
-              <span :class="[
-                'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200',
-                useKnowledgeGraph ? 'translate-x-5' : 'translate-x-0'
-              ]" aria-hidden="true" />
-            </button>
-          </div>
-        </div>-->
+ <div>
+ <div class="flex items-center">
+ <label class="block text-sm font-medium text-gray-700 mb-2 mr-4">使用知识图谱</label>
+ <button @click="useKnowledgeGraph = !useKnowledgeGraph" :class="[
+ 'relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
+ useKnowledgeGraph ? 'bg-blue-600' : 'bg-gray-200'
+ ]" role="switch">
+ <span :class="[
+ 'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200',
+ useKnowledgeGraph ? 'translate-x-5' : 'translate-x-0'
+ ]" aria-hidden="true" />
+ </button>
+ </div>
+ </div>-->
       </div>
       <!-- 跨语言搜索 --><!---
-      <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 mb-2">跨语言搜索</label>
-        <select v-model="selectedLanguage"
-          class="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">
-          <option value="auto">自动检测</option>
-          <option value="zh-CN">简体中文</option>
-        </select>
-      </div>-->
+ <div class="mb-6">
+ <label class="block text-sm font-medium text-gray-700 mb-2">跨语言搜索</label>
+ <select v-model="selectedLanguage"
+ class="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">
+ <option value="auto">自动检测</option>
+ <option value="zh-CN">简体中文</option>
+ </select>
+ </div>-->
       <!-- 测试文本和文件选择 -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div class="lg:col-span-2">
@@ -613,8 +613,8 @@
             isQuerying
               ? '生成中...'
               : ragMode === 'langchain'
-                ? '🔗 执行检索（LangChain）'
-                : '⚡ 执行检索（原生）'
+                ? ' 执行检索（LangChain）'
+                : ' 执行检索（原生）'
           }}
         </button>
       </div>
@@ -999,7 +999,7 @@
                 r.status === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'
               ]"
             >
-              <span>{{ r.status === 'ok' ? '✓' : '✗' }}</span>
+              <span>{{ r.status === 'ok' ? '✓' : '' }}</span>
               <div>
                 <div class="font-medium truncate" style="max-width: 340px">{{ r.url }}</div>
                 <div>{{ r.message }}</div>
@@ -1034,7 +1034,7 @@
         </div>
       </div>
     </div>
-    <!-- 📝 笔记模块 -->
+    <!-- 笔记模块 -->
     <div class="note-section">
       <div class="note-header" @click="noteExpanded = !noteExpanded">
         <div class="note-header-left">
@@ -1234,9 +1234,9 @@ const useKnowledgeGraph = ref(false)
 const selectedLanguage = ref('auto') // 设置默认语言
 /** 
 const rerankModels = ref([
-  { label: 'bge-reranker-base', value: 'bge-base' },
-  { label: 'bge-reranker-large', value: 'bge-large' },
-  { label: '没有 Rerank 模型', value: 'none' }
+ { label: 'bge-reranker-base', value: 'bge-base' },
+ { label: 'bge-reranker-large', value: 'bge-large' },
+ { label: '没有 Rerank 模型', value: 'none' }
 ]);
 */
 // 加载状态
@@ -1316,30 +1316,31 @@ const documents = ref<Document[]>([])
 let intervalId: number | null = null
 const KLB_id = route.params.id as string
 // 获取知识库配置的函数
-// 后端 /api/get-knowledge-item/ 是列表接口（非单条），需请求全部后按 id 匹配
 const fetchKnowledgeBaseConfig = async () => {
   try {
     configLoading.value = true
-    const response = await axios.get<ApiResponse<KnowledgeBaseConfig[]>>(
-      API_ENDPOINTS.KNOWLEDGE.GET_LIST(),
+    const response = await axios.get<ApiResponse<KnowledgeBaseConfig>>(
+      API_ENDPOINTS.KNOWLEDGE.GET_ITEM(KLB_id),
       {
-        headers: { accept: 'application/json' }
+        headers: {
+          accept: 'application/json'
+        }
       }
     )
-    if (response.data.code === 200 && Array.isArray(response.data.data)) {
-      const config = response.data.data.find(
-        (kb: KnowledgeBaseConfig) => kb.id === KLB_id || kb.title === KLB_id || kb.name === KLB_id
-      )
-      if (config) {
-        kbName.value = config.title || config.name || 'Unknown Knowledge Base'
-        kbDescription.value = config.description || '暂无描述'
-        similarityThreshold.value = config.similarity_threshold || 0.7
-        useKnowledgeGraph.value = config.extract_knowledge_graph || false
-        console.log('知识库配置获取成功:', config)
-      } else {
-        console.warn('未找到匹配的知识库, KLB_id:', KLB_id)
-        setDefaultConfig()
-      }
+    if (response.data.code === 200) {
+      const config = response.data.data
+      // 更新基本信息
+      kbName.value = config.title || config.name || 'Unknown Knowledge Base'
+      kbDescription.value = config.description || '暂无描述'
+      // 更新检索测试相关配置
+      similarityThreshold.value = config.similarity_threshold || 0.7
+      // 从知识图谱设置推断其他配置
+      useKnowledgeGraph.value = config.extract_knowledge_graph || false
+      // 注意：接口没有返回以下字段，保持默认值或从其他地方获取
+      // keywordWeight.value = config.keyword_weight || 50;
+      // selectedRerankModel.value = config.rerank_model || 'bge-large';
+      // selectedLanguage.value = config.cross_language || 'auto';
+      console.log('知识库配置获取成功:', config)
     } else {
       console.error('获取配置失败:', response.data.message)
       setDefaultConfig()
@@ -1364,29 +1365,29 @@ const setDefaultConfig = () => {
 // 保存检索配置到后端
 /** 
 const saveRetrievalConfig = async () => {
-  try {
-    const configData = {
-      similarity_threshold: similarityThreshold.value,
-      keyword_weight: keywordWeight.value,
-      rerank_model: selectedRerankModel.value,
-      use_knowledge_graph: useKnowledgeGraph.value,
-      cross_language: selectedLanguage.value
-    };
-    const response = await axios.post(
-      `/api/update-knowledgebase-config/${KLB_id}`,
-      configData,
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-    if (response.data.success) {
-      console.log('检索配置保存成功');
-    }
-  } catch (error) {
-    console.error('保存检索配置失败:', error);
-  }
+ try {
+ const configData = {
+ similarity_threshold: similarityThreshold.value,
+ keyword_weight: keywordWeight.value,
+ rerank_model: selectedRerankModel.value,
+ use_knowledge_graph: useKnowledgeGraph.value,
+ cross_language: selectedLanguage.value
+ };
+ const response = await axios.post(
+ `/api/update-knowledgebase-config/${KLB_id}`,
+ configData,
+ {
+ headers: {
+ 'Content-Type': 'application/json'
+ }
+ }
+ );
+ if (response.data.success) {
+ console.log('检索配置保存成功');
+ }
+ } catch (error) {
+ console.error('保存检索配置失败:', error);
+ }
 };*/
 // 运行搜索测试 - 调用后端接口（根据 ragMode 选择端点）
 const INGEST_TIMEOUT_MS = 600_000 // 向量化最长等待 10 分钟
@@ -1455,23 +1456,23 @@ const runSearchTest = async () => {
 // 添加一个函数来执行实际搜索（如果该函数尚未实现）
 /** 
 const performSearch = async () => {
-  // 如果没有查询文本，则不执行搜索
-  if (testQuery.value.trim() === '') return;
-  try {
-    const response = await axios.post('/api/search-test', {
-      knowledge_base_id: KLB_id,
-      query: testQuery.value,
-      similarity_threshold: similarityThreshold.value,
-      language: selectedLanguage.value,
-    });
-    if (response.data.success) {
-      searchResults.value = response.data.data.results || [];
-    } else {
-      console.error('搜索测试失败:', response.data.message);
-    }
-  } catch (error) {
-    console.error('搜索测试请求失败:', error);
-  }
+ // 如果没有查询文本，则不执行搜索
+ if (testQuery.value.trim() === '') return;
+ try {
+ const response = await axios.post('/api/search-test', {
+ knowledge_base_id: KLB_id,
+ query: testQuery.value,
+ similarity_threshold: similarityThreshold.value,
+ language: selectedLanguage.value,
+ });
+ if (response.data.success) {
+ searchResults.value = response.data.data.results || [];
+ } else {
+ console.error('搜索测试失败:', response.data.message);
+ }
+ } catch (error) {
+ console.error('搜索测试请求失败:', error);
+ }
 };*/
 //RAG查询（根据 ragMode 选择端点）
 const performRagQuery = async () => {
@@ -1724,10 +1725,10 @@ const deleteKnowledgeBase = async () => {
 }
 /** 
 const removeFileFromTest = (id: number) => {
-  const index = selectedFilesForTest.value.findIndex(file => file.id === id);
-  if (index !== -1) {
-    selectedFilesForTest.value.splice(index, 1);
-  }
+ const index = selectedFilesForTest.value.findIndex(file => file.id === id);
+ if (index !== -1) {
+ selectedFilesForTest.value.splice(index, 1);
+ }
 };
 */
 // 将此函数移动到组件顶层作用域（修复重复定义问题）
@@ -1755,7 +1756,7 @@ const mapDocumentFields = (doc: any): Document => {
     chunks: doc.chunks || 0,
     uploadDate: doc.uploadDate || doc.upload_time || new Date().toISOString(),
     slicingMethod: doc.slicingMethod || doc.slicing_method || 'default',
-    enabled: doc.enabled ?? (doc.status !== 'disabled'),
+    enabled: doc.enabled ?? doc.status !== 'disabled',
     file_size: doc.file_size || 0,
     file_hash: doc.file_hash || ''
   }
@@ -1777,7 +1778,9 @@ const fetchDocuments = async () => {
       documents.value = rawData.data.map(mapDocumentFields)
     } else if (rawData && typeof rawData === 'object') {
       // 兼容其他可能的响应格式
-      documents.value = Array.isArray(rawData.documents) ? rawData.documents.map(mapDocumentFields) : []
+      documents.value = Array.isArray(rawData.documents)
+        ? rawData.documents.map(mapDocumentFields)
+        : []
     } else {
       documents.value = []
     }
@@ -1873,7 +1876,7 @@ const formatNoteTime = (ts: number) => {
 }
 const insertMarkdown = (before: string, after: string) => {
   if (!activeNote.value) return
-  activeNote.content += `${before}文本${after}`
+  activeNote.value.content += `${before}文本${after}`
   markNoteUnsaved()
 }
 </script>

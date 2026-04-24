@@ -125,9 +125,7 @@
           @stop="onStop"
         >
           <template #suffix="{ renderPresets }">
-            <component
-              :is="renderPresets([{ name: 'uploadAttachment' }])"
-            />
+            <component :is="renderPresets([{ name: 'uploadAttachment' }])" />
           </template>
           <template #prefix>
             <div class="sender-prefix-controls">
@@ -213,13 +211,13 @@ const isShowToBottom = ref(false)
 // 定义 MessageRecord 类型
 /** 
 const MessageRecord = {
-  avatar: String,
-  name: String,
-  datetime: String,
-  content: String,
-  role: String,
-  reasoning: String,
-  duration: Number,
+ avatar: String,
+ name: String,
+ datetime: String,
+ content: String,
+ role: String,
+ reasoning: String,
+ duration: Number,
 };*/
 // 定义 props
 const props = defineProps({
@@ -285,13 +283,34 @@ const handleChatScroll = function ({ e }) {
 const clearConfirm = function () {
   chatList.value = []
 }
+// 支持的文件扩展名白名单
+const SUPPORTED_EXTENSIONS = new Set([
+  '.docx',
+  '.doc',
+  '.md',
+  '.xls',
+  '.xlsx',
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.webp',
+  '.txt',
+  '.pdf',
+  '.ppt',
+  '.pptx',
+  '.pptm'
+])
+
 // 文件选择处理
 /**
  * 处理文件选择的异步函数
- * - 如果是图片，则生成预览并添加到图片列表。
- * - 如果是文本文件，则读取内容并填充到输入框。
- * - 其他文件类型则提示不支持。
+ * - 图片文件（png/jpg/jpeg/webp）：生成预览并添加到图片列表，同时作为附件标记
+ * - 文本文件（txt/md）：读取内容填充到输入框
+ * - 其他支持文件（docx/doc/xls/xlsx/pdf/ppt/pptx/pptm）：作为附件上传到后端
+ * - 不在白名单的文件类型则提示不支持
  */
+const attachedFiles = ref<File[]>([]) // 附件文件列表
+
 const fileSelect = async function (files) {
   const getFileUrlByFileRaw = file => {
     return new Promise((resolve, reject) => {
@@ -309,13 +328,9 @@ const fileSelect = async function (files) {
       reader.onerror = e => reject(new Error('文本文件读取失败: ' + e))
     })
   }
-  const getArrayBufferByFileRaw = file => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.readAsArrayBuffer(file)
-      reader.onload = () => resolve(reader.result)
-      reader.onerror = e => reject(new Error('文件读取失败: ' + e))
-    })
+  const getExtension = (filename: string) => {
+    const dotIdx = filename.lastIndexOf('.')
+    return dotIdx >= 0 ? filename.slice(dotIdx).toLowerCase() : ''
   }
   try {
     if (!files || !files.files || files.files.length === 0) {
@@ -323,47 +338,34 @@ const fileSelect = async function (files) {
       return
     }
     const fileObj = files.files[0]
-    const fileName = fileObj.name.toLowerCase()
-    const imageExtensions = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.svg']
-    const textExtensions = ['.txt', '.md', '.csv', '.json', '.xml', '.yaml', '.yml', '.log', '.ini', '.conf']
-    const docExtensions = ['.docx', '.doc', '.pdf', '.xls', '.xlsx']
-    const ext = '.' + fileName.split('.').pop()
+    const ext = getExtension(fileObj.name)
 
-    if (fileObj.type.startsWith('image/') || imageExtensions.includes(ext)) {
-      const dataUrl = await getFileUrlByFileRaw(fileObj)
-      useChatImg.addImage(dataUrl)
-    } else if (fileObj.type === 'text/plain' || textExtensions.includes(ext)) {
-      const fileContent = await getTextByFileRaw(fileObj)
-      const newText = `--- 从文件 ${fileObj.name} 中读取的内容 ---\n\n${fileContent}`
-      inputValue.value = newText
-      document.querySelector('#chatSender textarea')?.focus()
-    } else if (docExtensions.includes(ext)) {
-      const formData = new FormData()
-      formData.append('file', fileObj)
-      try {
-        const res = await fetch('/api/documents/parse-file', {
-          method: 'POST',
-          body: formData
-        })
-        if (res.ok) {
-          const data = await res.json()
-          const content = data.text || data.content || data.data?.text || ''
-          if (content) {
-            inputValue.value = `--- 从文件 ${fileObj.name} 中提取的内容 ---\n\n${content}`
-            document.querySelector('#chatSender textarea')?.focus()
-          } else {
-            MessagePlugin.warning(`文件 ${fileObj.name} 未能提取到文本内容`)
-          }
-        } else {
-          MessagePlugin.warning(`文件解析接口暂不可用，请将内容复制粘贴到输入框`)
-        }
-      } catch {
-        MessagePlugin.warning(`文件解析失败，请将内容复制粘贴到输入框`)
-      }
-    } else {
-      const message = `暂不支持处理此类型的文件: ${fileObj.name} (${fileObj.type || ext})`
+    if (!SUPPORTED_EXTENSIONS.has(ext)) {
+      const message = `暂不支持处理此类型的文件: ${fileObj.name}，支持格式：docx/doc/md/xls/xlsx/png/jpg/webp/txt/pdf/ppt/pptx`
       console.warn(message)
       MessagePlugin.warning(message)
+      return
+    }
+
+    if (fileObj.type.startsWith('image/')) {
+      // 图片：生成预览
+      console.log('检测到图片文件，正在处理...')
+      const dataUrl = await getFileUrlByFileRaw(fileObj)
+      useChatImg.addImage(dataUrl)
+      attachedFiles.value.push(fileObj)
+    } else if (fileObj.type === 'text/plain' || ext === '.txt' || ext === '.md') {
+      // 文本/Markdown文件：读取内容填充到输入框
+      console.log('检测到文本文件，正在读取内容...')
+      const fileContent = await getTextByFileRaw(fileObj)
+      const prefix = ext === '.md' ? 'Markdown' : '文本'
+      const newText = `--- 从${prefix}文件 ${fileObj.name} 中读取的内容 ---\n\n${fileContent}`
+      inputValue.value = newText
+      document.querySelector('#chatSender textarea')?.focus()
+    } else {
+      // 其他支持的文件类型：作为附件标记
+      console.log(`检测到附件文件: ${fileObj.name}，将作为附件发送`)
+      attachedFiles.value.push(fileObj)
+      MessagePlugin.success(`已添加附件: ${fileObj.name}`)
     }
   } catch (error) {
     console.error('文件处理失败:', error)
@@ -406,18 +408,18 @@ const inputEnter = function (messageContent) {
   }
   // 根据当前选中模型动态命名 AI
   const curModelVal = selectedModelValue.value
-  let aiName = 'AI'
+  let aiName = 'TDesignAI'
   if (curModelVal.toLowerCase().includes('deepseek')) {
-    aiName = 'DeepSeek'
+    aiName = ' DeepSeek'
   } else if (
     curModelVal.toLowerCase().includes('gpt') ||
     curModelVal.toLowerCase().includes('openai')
   ) {
-    aiName = 'GPT'
+    aiName = ' GPT'
   } else if (curModelVal.toLowerCase().includes('hunyuan')) {
-    aiName = '混元'
+    aiName = ' 混元'
   } else if (curModelVal) {
-    aiName = curModelVal
+    aiName = ` ${curModelVal}`
   }
   // 添加AI占位消息
   const aiMessage = {
@@ -436,7 +438,9 @@ const inputEnter = function (messageContent) {
   //loading.value = true;
   // 清空输入框 - 正确的方式
   inputValue.value = ''
+  // 清空附件和图片预览（图片内容已包含在消息中，不再自动消失）
   useChatImg.clearAllImg()
+  attachedFiles.value = []
   // 如果组件提供了清空方法，也调用一下
   nextTick(() => {
     if (chatSenderRef.value && typeof chatSenderRef.value.clear === 'function') {
@@ -449,40 +453,40 @@ const inputEnter = function (messageContent) {
 // SSE 处理
 /** 
 const fetchSSE = async (fetchFn, options) => {
-  try {
-    const response = await fetchFn();
-    const { success, fail, complete } = options;
-    if (!response.ok) {
-      complete?.(false, response.statusText);
-      fail?.();
-      return;
-    }
-    const reader = response?.body?.getReader();
-    const decoder = new TextDecoder();
-    if (!reader) {
-      complete?.(false, "无法获取数据流");
-      return;
-    }
-    const processText = async ({ done, value }) => {
-      if (done) {
-        complete?.(true);
-        return;
-      }
-      try {
-        const chunk = decoder.decode(value, { stream: true });
-        const buffers = chunk.toString().split(/\r?\n/);
-        const jsonData = JSON.parse(buffers);
-        success(jsonData);
-      } catch (error) {
-        console.error("解析数据出错:", error);
-      }
-      return reader.read().then(processText);
-    };
-    reader.read().then(processText);
-  } catch (error) {
-    console.error("fetchSSE 出错:", error);
-    options.complete?.(false, error.message);
-  }
+ try {
+ const response = await fetchFn();
+ const { success, fail, complete } = options;
+ if (!response.ok) {
+ complete?.(false, response.statusText);
+ fail?.();
+ return;
+ }
+ const reader = response?.body?.getReader();
+ const decoder = new TextDecoder();
+ if (!reader) {
+ complete?.(false, "无法获取数据流");
+ return;
+ }
+ const processText = async ({ done, value }) => {
+ if (done) {
+ complete?.(true);
+ return;
+ }
+ try {
+ const chunk = decoder.decode(value, { stream: true });
+ const buffers = chunk.toString().split(/\r?\n/);
+ const jsonData = JSON.parse(buffers);
+ success(jsonData);
+ } catch (error) {
+ console.error("解析数据出错:", error);
+ }
+ return reader.read().then(processText);
+ };
+ reader.read().then(processText);
+ } catch (error) {
+ console.error("fetchSSE 出错:", error);
+ options.complete?.(false, error.message);
+ }
 };*/
 // 数据处理
 // src/components/chat-main-unit/chat-main-unit.vue
@@ -512,8 +516,7 @@ const handleCloudChat = async (messageContent: string, modelId: string, historyL
         messages,
         stream: true,
         temperature: 0.7,
-        max_tokens: 4096,
-        deep_think: isChecked.value
+        max_tokens: 4096
       }),
       signal: controller.signal
     })
@@ -534,7 +537,7 @@ const handleCloudChat = async (messageContent: string, modelId: string, historyL
           const data = JSON.parse(line.slice(6))
           if (data.error) {
             lastItem.role = 'error'
-            lastItem.content = `❌ ${data.error}`
+            lastItem.content = ` ${data.error}`
             lastItem.reasoning = ''
           } else if (data.content) {
             lastItem.content += data.content
@@ -604,9 +607,8 @@ const handleData = async messageContent => {
   try {
     const { response, controller } = await fetchOllamaStream(
       messageContent,
-      localModel,
-      serverUrl,
-      isChecked.value
+      localModel, // 使用本地模型名（已去掉 local: 前缀）
+      serverUrl
     )
     fetchCancel.value = { controller }
     if (!response.ok) {
@@ -627,23 +629,23 @@ const handleData = async messageContent => {
           const data = JSON.parse(line)
           if (data.response) {
             accumulatedResponse += data.response
-            // 检测 <think> 标签开始
+            // 检测<think> 标签开始
             if (!thinkingStarted && accumulatedResponse.includes('<think>')) {
               isInThinking = true
               thinkingStarted = true
               console.log('开始思考过程')
-              // 提取 <think> 之前的内容作为正式回答
+              // 提取<think> 之前的内容作为正式回答
               const beforeThink = accumulatedResponse.split('<think>')[0]
               if (beforeThink.trim()) {
                 lastItem.content = beforeThink
               }
-              // 提取 <think> 之后的内容作为思考过程开始
+              // 提取<think> 之后的内容作为思考过程开始
               const afterThink = accumulatedResponse.split('<think>')[1]
               if (afterThink) {
                 lastItem.reasoning = afterThink
               }
             }
-            // 检测 </think> 标签结束
+            // 检测</think> 标签结束
             else if (isInThinking && accumulatedResponse.includes('</think>')) {
               isInThinking = false
               console.log('结束思考过程')
@@ -652,14 +654,14 @@ const handleData = async messageContent => {
               const afterThink = accumulatedResponse.split('</think>')[1]
               // 更新思考内容（去掉标签）
               lastItem.reasoning = thinkContent
-              // 添加 </think> 后的内容到正式回答
+              // 添加</think> 后的内容到正式回答
               if (afterThink) {
                 lastItem.content += afterThink
               }
             }
             // 在思考过程中
             else if (isInThinking) {
-              // 更新思考内容（去掉 <think> 标签）
+              // 更新思考内容（去掉<think> 标签）
               const currentThinking = accumulatedResponse.split('<think>')[1]
               if (currentThinking && !currentThinking.includes('</think>')) {
                 lastItem.reasoning = currentThinking
@@ -669,10 +671,10 @@ const handleData = async messageContent => {
             else if (!isInThinking) {
               // 如果还没开始思考，或者思考已结束
               if (!thinkingStarted) {
-                // 还没遇到 <think> 标签，正常添加到内容
+                // 还没遇到<think> 标签，正常添加到内容
                 lastItem.content += data.response
               } else {
-                // 思考已结束，继续添加到内容（排除 </think> 标签）
+                // 思考已结束，继续添加到内容（排除</think> 标签）
                 const cleanResponse = data.response.replace('</think>', '')
                 if (cleanResponse) {
                   lastItem.content += cleanResponse
@@ -792,6 +794,7 @@ const toggleSources = item => {
 }
 </script>
 <style lang="less">
+/* 应用滚动条样式 */
 ::-webkit-scrollbar-thumb {
   background-color: var(--td-scrollbar-color);
 }
@@ -803,10 +806,12 @@ const toggleSources = item => {
 }
 .chat-box {
   position: relative;
+  /* 撑满父容器（chat-main-area）的全部高度 */
   height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* chat-inner 让 t-chat 内部自己处理滚动 */
   .chat-inner {
     flex: 1;
     min-height: 0;
@@ -815,74 +820,62 @@ const toggleSources = item => {
   .bottomBtn {
     position: absolute;
     left: 50%;
-    margin-left: -18px;
+    margin-left: -20px;
     bottom: 210px;
     padding: 0;
     border: 0;
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     border-radius: 50%;
-    background: var(--bg-overlay);
-    border: 1px solid var(--border-base);
-    box-shadow: var(--shadow-md);
-    color: var(--text-secondary);
-    transition: all var(--transition-fast);
-    &:hover {
-      background: var(--bg-hover);
-      color: var(--text-primary);
-      border-color: var(--border-active);
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-lg);
-    }
+    box-shadow:
+      0px 8px 10px -5px rgba(0, 0, 0, 0.08),
+      0px 16px 24px 2px rgba(0, 0, 0, 0.04),
+      0px 6px 30px 5px rgba(0, 0, 0, 0.05);
   }
   .to-bottom {
-    width: 36px;
-    height: 36px;
-    border: none;
-    background: transparent;
+    width: 40px;
+    height: 40px;
+    /* eslint-disable-next-line no-useless-escape */
+    /* eslint-disable-next-line no-useless-escape */
+    border: 1px solid #dcdcdc;
+    box-sizing: border-box;
+    background: var(--td-bg-color-container);
     border-radius: 50%;
-    font-size: 20px;
-    line-height: 36px;
+    font-size: 24px;
+    line-height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: inherit;
     .t-icon {
-      font-size: 20px;
+      font-size: 24px;
     }
   }
 }
 .model-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  max-width: 160px;
-  padding: 0 8px;
-  height: 28px;
-  border-radius: var(--radius-full);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  transition: border-color var(--transition-fast);
-  &:hover {
-    border-color: var(--border-active);
-  }
+  gap: 6px;
+  max-width: 180px;
+  padding: 0 10px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--td-bg-color-secondarycontainer);
+  border: 1px solid var(--td-border-level-1-color);
 }
 .model-badge__dot {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: var(--accent-emerald);
+  background: #22c55e;
   flex-shrink: 0;
-  box-shadow: 0 0 6px rgba(52, 211, 153, 0.4);
 }
 .model-badge__dot.is-cloud {
-  background: var(--accent-cyan);
-  box-shadow: 0 0 6px rgba(34, 211, 238, 0.4);
+  background: #3b82f6;
 }
 .model-badge__text {
-  font-size: 11px;
-  font-family: var(--font-mono);
-  color: var(--text-secondary);
+  font-size: 12px;
+  color: var(--td-text-color-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -890,55 +883,59 @@ const toggleSources = item => {
 .t-chat-input.position-absolute {
   position: absolute;
   bottom: 10px;
+  /* 距离底部20px */
   left: 0;
   right: 0;
   margin: auto;
+  /* 水平居中 */
   width: 100%;
+  /* 可根据需要调整宽度 */
 }
 .custom-chat-dialog {
-  background-color: rgba(124, 106, 255, 0.04);
-  border: 1px solid rgba(124, 106, 255, 0.08);
-  border-radius: var(--radius-md);
-  margin-top: 8px;
-  padding-right: 16px !important;
+  /* 添加背景颜色 */
+  background-color: #dbeafe59;
+  /* 添加边框圆角 */
+  border-radius: 8px;
+  margin-top: 10px;
+  padding-right: 20px !important;
 }
 .chat-sender {
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 1000;
-  border-top: 1px solid var(--border-subtle);
-  padding: 12px 16px;
+  border-top: 1px solid var(--td-border-level-1-color);
+  padding: 16px;
   box-sizing: border-box;
-  background: var(--bg-surface);
 }
+/* 原有样式保持不变 */
 .chat-box .t-chat {
   padding-bottom: 50px;
 }
 @media (max-width: 768px) {
   .chat-sender {
-    padding: 10px 12px;
+    padding: 12px;
   }
   .chat-box .t-chat {
-    padding-bottom: 80px;
+    padding-bottom: 100px;
   }
 }
 .image-preview-container {
-  padding: 6px 10px;
-  background-color: var(--bg-elevated);
-  border-bottom: 1px solid var(--border-subtle);
-  max-height: 100px;
+  padding: 8px 12px;
+  background-color: var(--td-bg-color-secondarycontainer);
+  border-bottom: 1px solid var(--td-border-level-1-color);
+  max-height: 120px;
   overflow-y: auto;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  border: 1px solid var(--td-border-level-1-color);
 }
 .image-wrapper {
   position: relative;
   display: inline-block;
-  border-radius: var(--radius-sm);
+  border-radius: var(--td-radius-medium);
   overflow: hidden;
-  box-shadow: var(--shadow-xs);
-  transition: transform 0.2s var(--ease-out);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
   &:hover {
     transform: translateY(-2px);
     .remove-image-btn {
@@ -948,99 +945,98 @@ const toggleSources = item => {
 }
 .remove-image-btn {
   position: absolute;
-  top: 3px;
-  right: 3px;
+  top: 4px;
+  right: 4px;
   z-index: 2;
   opacity: 0;
-  background-color: rgba(0, 0, 0, 0.6) !important;
+  background-color: rgba(0, 0, 0, 0.5) !important;
   color: white !important;
-  border: none !important;
+  border: none;
   transition: opacity 0.2s ease-in-out;
 }
 .sender-prefix-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding-left: 10px;
+  gap: 8px;
+  padding-left: 12px;
 }
 .deep-think-btn {
   display: flex;
   align-items: center;
-  gap: 3px;
-  color: var(--text-tertiary);
-  padding: 3px 6px;
-  border-radius: var(--radius-sm);
-  font-size: 11px;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  gap: 4px;
+  color: var(--td-text-color-placeholder);
+  padding: 4px 8px;
+  border-radius: var(--td-radius-medium);
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
   &:hover {
-    background-color: var(--bg-hover);
+    background-color: var(--td-bg-color-container-hover);
   }
   &.is-active {
-    color: var(--accent-violet);
-    font-weight: 600;
+    color: var(--td-brand-color);
+    font-weight: bold;
   }
 }
 .chat-sender {
   :deep(.t-textarea__inner) {
     padding-left: 2px;
-    background: var(--bg-elevated) !important;
-    color: var(--text-primary) !important;
   }
 }
+/* 使用这个更精确和健壮的选择器 */
 .t-chat-action.active-good :deep([aria-label='good']),
 .t-chat-action.active-bad :deep([aria-label='bad']) {
-  color: var(--accent-violet) !important;
-  background-color: var(--accent-violet-subtle) !important;
-  border-radius: var(--radius-sm);
+  color: var(--td-brand-color) !important;
+  background-color: var(--td-brand-color-light) !important;
+  border-radius: var(--td-radius-default);
 }
+/* 如果想让踩的颜色不同 */
 .t-chat-action.active-bad :deep([aria-label='bad']) {
-  color: var(--accent-rose) !important;
-  background-color: var(--accent-rose-subtle) !important;
+  color: var(--td-error-color) !important;
+  background-color: var(--td-error-color-1) !important;
 }
+/* 引用溯源样式 */
 .source-citations {
-  margin-top: 6px;
-  border: 1px solid var(--border-base);
-  border-radius: var(--radius-md);
+  margin-top: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
   overflow: hidden;
-  font-size: 11.5px;
-  background: var(--bg-elevated);
+  font-size: 12px;
 }
 .source-citations__header {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  background: var(--bg-overlay);
+  gap: 6px;
+  padding: 6px 12px;
+  background: #f8fafc;
   cursor: pointer;
-  color: var(--text-secondary);
+  color: #4b5563;
   user-select: none;
-  transition: background 0.12s ease;
+  transition: background 0.15s;
   &:hover {
-    background: var(--bg-hover);
+    background: #f1f5f9;
   }
 }
 .source-icon {
-  width: 13px;
-  height: 13px;
-  color: var(--accent-violet-light);
+  width: 14px;
+  height: 14px;
 }
 .chevron {
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
   margin-left: auto;
-  color: var(--text-quaternary);
-  transition: transform 0.2s var(--ease-out);
+  transition: transform 0.2s;
   &.rotated {
     transform: rotate(180deg);
   }
 }
 .source-citations__list {
-  border-top: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
+  border-top: 1px solid #e5e7eb;
+  background: #fafafa;
 }
 .source-item {
-  padding: 6px 10px;
-  border-bottom: 1px solid var(--border-subtle);
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f0f0;
   &:last-child {
     border-bottom: none;
   }
@@ -1048,16 +1044,16 @@ const toggleSources = item => {
 .source-item__header {
   display: flex;
   align-items: center;
-  gap: 5px;
-  margin-bottom: 3px;
+  gap: 6px;
+  margin-bottom: 4px;
 }
 .source-num {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: var(--accent-violet);
+  background: #4f7ef8;
   color: white;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -1066,28 +1062,26 @@ const toggleSources = item => {
 }
 .source-filename {
   font-weight: 600;
-  color: var(--text-primary);
+  color: #1f2937;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
 }
 .source-score {
-  background: var(--accent-emerald-subtle);
-  color: var(--accent-emerald);
-  padding: 1px 5px;
-  border-radius: var(--radius-full);
+  background: #dcfce7;
+  color: #16a34a;
+  padding: 1px 6px;
+  border-radius: 10px;
   font-weight: 600;
-  font-size: 10px;
   white-space: nowrap;
 }
 .source-item__content {
-  color: var(--text-tertiary);
+  color: #6b7280;
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  font-size: 11px;
 }
 </style>

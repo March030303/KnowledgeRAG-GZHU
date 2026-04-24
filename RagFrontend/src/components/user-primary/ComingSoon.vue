@@ -9,7 +9,7 @@
       <div class="mb-8 p-5 border border-gray-200 rounded-xl">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <span class="text-2xl">{{ isDark ? '🌙' : '☀️' }}</span>
+            <span class="text-2xl">{{ isDark ? '' : '' }}</span>
             <div>
               <h3 class="font-medium text-gray-900">深色模式</h3>
               <p class="text-sm text-gray-500 mt-0.5">切换界面深色 / 浅色主题</p>
@@ -170,7 +170,7 @@
         <div class="border border-gray-200 rounded-xl p-5">
           <div class="flex items-start justify-between mb-4">
             <div class="flex items-center gap-3">
-              <span class="text-2xl">🎙️</span>
+              <span class="text-2xl"></span>
               <div>
                 <h4 class="font-medium text-gray-900">语音交互</h4>
                 <p class="text-sm text-gray-500 mt-0.5">通过语音与 AI 对话，支持语音输入和转录</p>
@@ -198,7 +198,7 @@
                     : 'bg-blue-500 text-white hover:bg-blue-600 hover:scale-105'
                 ]"
               >
-                {{ isRecording ? '⏹️' : '🎤' }}
+                {{ isRecording ? '⏹' : '' }}
               </button>
               <p class="text-sm text-gray-500">
                 {{ isRecording ? '录音中，松开停止...' : '按住录音' }}
@@ -237,7 +237,7 @@
         <div class="border border-gray-200 rounded-xl p-5">
           <div class="flex items-start justify-between mb-3">
             <div class="flex items-center gap-3">
-              <span class="text-2xl">🖥️</span>
+              <span class="text-2xl"></span>
               <div>
                 <h4 class="font-medium text-gray-900">新界面布局</h4>
                 <p class="text-sm text-gray-500 mt-0.5">沉浸式全屏对话布局，隐藏侧边栏，聚焦内容</p>
@@ -256,7 +256,7 @@
         <div class="border border-gray-200 rounded-xl p-5">
           <div class="flex items-start justify-between mb-3">
             <div class="flex items-center gap-3">
-              <span class="text-2xl">🤖</span>
+              <span class="text-2xl"></span>
               <div>
                 <h4 class="font-medium text-gray-900">AI 智能摘要</h4>
                 <p class="text-sm text-gray-500 mt-0.5">自动为长文档生成摘要，在知识库详情页展示</p>
@@ -310,10 +310,10 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">反馈类型</label>
           <t-radio-group v-model="feedback.type">
-            <t-radio value="bug">🐛 Bug 报告</t-radio>
-            <t-radio value="feature">💡 功能建议</t-radio>
-            <t-radio value="ui">🎨 UI 改进</t-radio>
-            <t-radio value="other">💬 其他</t-radio>
+            <t-radio value="bug"> Bug 报告</t-radio>
+            <t-radio value="feature"> 功能建议</t-radio>
+            <t-radio value="ui"> UI 改进</t-radio>
+            <t-radio value="other"> 其他</t-radio>
           </t-radio-group>
         </div>
         <!-- 标题 -->
@@ -391,7 +391,7 @@
       </h2>
       <div class="space-y-4 text-gray-600 text-sm">
         <div class="flex items-center gap-3 p-4 bg-blue-50 rounded-xl">
-          <span class="text-3xl">🧠</span>
+          <span class="text-3xl"></span>
           <div>
             <h3 class="font-semibold text-gray-900">RAG-F 智能知识库系统</h3>
             <p class="text-gray-500 text-xs mt-1">基于 RAG 检索增强生成技术的智能知识管理平台</p>
@@ -515,10 +515,10 @@ onMounted(() => {
 })
 // ─────────────────── ② 第三方账号绑定 ──────────────────────────
 const thirdPartyList = [
-  { key: 'github', label: 'GitHub', icon: '🐙', bgClass: 'bg-gray-100' },
-  { key: 'wechat', label: '微信', icon: '💬', bgClass: 'bg-green-100' },
-  { key: 'qq', label: 'QQ', icon: '🐧', bgClass: 'bg-blue-100' },
-  { key: 'feishu', label: '飞书', icon: '🪐', bgClass: 'bg-indigo-100' }
+  { key: 'github', label: 'GitHub', icon: '', bgClass: 'bg-gray-100' },
+  { key: 'wechat', label: '微信', icon: '', bgClass: 'bg-green-100' },
+  { key: 'qq', label: 'QQ', icon: '', bgClass: 'bg-blue-100' },
+  { key: 'feishu', label: '飞书', icon: '', bgClass: 'bg-indigo-100' }
 ]
 // 从 localStorage 还原绑定状态
 const bindingStatus = reactive<Record<string, string>>(

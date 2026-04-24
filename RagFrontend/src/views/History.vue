@@ -61,7 +61,7 @@
     <!-- 主内容 -->
     <div class="history-content">
       <div v-if="filteredItems.length === 0" class="empty-state">
-        <div class="empty-icon">📭</div>
+        <div class="empty-icon"></div>
         <p>{{ searchKeyword ? '没有找到匹配的记录' : '暂无历史记录' }}</p>
         <span>{{
           searchKeyword ? '尝试其他关键词' : '开始对话或创建任务后，记录会出现在这里'
@@ -78,23 +78,21 @@
               :class="['history-card', { 'history-card--pinned': pinnedIds.has(item.id) }]"
               @click="openItem(item)"
             >
-              <div class="history-card__pin-badge" v-if="pinnedIds.has(item.id)" title="已置顶">
-                📌
-              </div>
+              <div
+                class="history-card__pin-badge"
+                v-if="pinnedIds.has(item.id)"
+                title="已置顶"
+              ></div>
               <div class="history-card__icon" :data-type="item.type">
                 {{ typeIcon(item.type) }}
               </div>
               <div class="history-card__body">
                 <div class="history-card__title">{{ item.title }}</div>
                 <div class="history-card__preview">{{ item.preview }}</div>
-                <div v-if="searchKeyword && getMatchedRounds(item).length > 0" class="history-card__matches">
-                  <div v-for="(round, idx) in getMatchedRounds(item).slice(0, 3)" :key="idx" class="match-round">
-                    <span class="match-round__role">{{ round.role === 'user' ? '👤' : '🤖' }}</span>
-                    <span class="match-round__content">{{ truncateText(round.content, 80) }}</span>
-                  </div>
-                  <div v-if="getMatchedRounds(item).length > 3" class="match-more">
-                    还有 {{ getMatchedRounds(item).length - 3 }} 条匹配...
-                  </div>
+                <!-- 搜索匹配时显示匹配的对话轮次内容 -->
+                <div v-if="searchKeyword && matchedContent(item)" class="history-card__match">
+                  <span class="match-label">匹配内容：</span>
+                  <span class="match-text" v-html="matchedContent(item)"></span>
                 </div>
                 <div class="history-card__meta">
                   <span class="type-tag" :data-type="item.type">{{ typeLabel(item.type) }}</span>
@@ -229,21 +227,7 @@ const searchKeyword = ref('')
 const activeTab = ref<HistoryType | 'all'>('all')
 const selectedItem = ref<HistoryItem | null>(null)
 const allItems = ref<HistoryItem[]>([])
-
-const truncateText = (text: string, maxLen: number) => {
-  if (!text) return ''
-  return text.length > maxLen ? text.slice(0, maxLen) + '...' : text
-}
-
-const getMatchedRounds = (item: HistoryItem) => {
-  if (!searchKeyword.value.trim() || !item.messages || !Array.isArray(item.messages)) return []
-  const kw = searchKeyword.value.toLowerCase()
-  return item.messages.filter(
-    m =>
-      (m.content && m.content.toLowerCase().includes(kw)) ||
-      (m.reasoning && m.reasoning.toLowerCase().includes(kw))
-  )
-}
+// 置顶 IDs（持久化到 localStorage）
 const PINNED_KEY = 'history_pinned_ids'
 const pinnedIds = ref<Set<string>>(new Set(JSON.parse(localStorage.getItem(PINNED_KEY) || '[]')))
 function togglePin(id: string) {
@@ -259,19 +243,33 @@ function togglePin(id: string) {
   localStorage.setItem(PINNED_KEY, JSON.stringify([...s]))
 }
 const tabs = [
-  { value: 'all', icon: '📋', label: '全部' },
-  { value: 'chat', icon: '💬', label: '对话' },
-  { value: 'task', icon: '🤖', label: '任务' },
-  { value: 'note', icon: '📝', label: '笔记' },
-  { value: 'search', icon: '🔍', label: '搜索' }
+  { value: 'all', icon: '', label: '全部' },
+  { value: 'chat', icon: '', label: '对话' },
+  { value: 'task', icon: '', label: '任务' },
+  { value: 'note', icon: '', label: '笔记' },
+  { value: 'search', icon: '', label: '搜索' }
 ]
 // ── Helpers ────────────────────────────────────────────
-const typeIcon = (t: string) => ({ chat: '💬', task: '🤖', note: '📝', search: '🔍' })[t] ?? '📄'
+const typeIcon = (t: string) => ({ chat: '', task: '', note: '', search: '' })[t] ?? ''
 const typeLabel = (t: string) =>
-  ({ chat: 'AI对话', task: '任务', note: '笔记', search: '搜索' })[t] ?? t
+  ({ chat: '对话', task: '任务', note: '笔记', search: '搜索' })[t] ?? t
 const getTabCount = (tab: string) => {
   if (tab === 'all') return allItems.value.length
   return allItems.value.filter(i => i.type === tab).length
+}
+// 搜索匹配高亮
+const matchedContent = (item: HistoryItem): string => {
+  if (!searchKeyword.value.trim() || !item.content) return ''
+  const kw = searchKeyword.value.toLowerCase()
+  const content = item.content
+  const idx = content.toLowerCase().indexOf(kw)
+  if (idx === -1) return ''
+  const start = Math.max(0, idx - 30)
+  const end = Math.min(content.length, idx + searchKeyword.value.length + 30)
+  const snippet =
+    (start > 0 ? '...' : '') + content.slice(start, end) + (end < content.length ? '...' : '')
+  const escapedKw = searchKeyword.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return snippet.replace(new RegExp(escapedKw, 'gi'), m => `<mark>${m}</mark>`)
 }
 // ── Filtering ─────────────────────────────────────────
 const filteredItems = computed(() => {
@@ -281,19 +279,15 @@ const filteredItems = computed(() => {
       : allItems.value.filter(i => i.type === activeTab.value)
   if (searchKeyword.value.trim()) {
     const kw = searchKeyword.value.toLowerCase()
-    items = items.filter(i => {
-      if (i.title.toLowerCase().includes(kw) || i.preview.toLowerCase().includes(kw)) return true
-      if (i.messages && Array.isArray(i.messages)) {
-        return i.messages.some(
-          m =>
-            (m.content && m.content.toLowerCase().includes(kw)) ||
-            (m.reasoning && m.reasoning.toLowerCase().includes(kw))
-        )
-      }
-      return false
-    })
+    items = items.filter(
+      i =>
+        i.title.toLowerCase().includes(kw) ||
+        i.preview.toLowerCase().includes(kw) ||
+        (i.content && i.content.toLowerCase().includes(kw))
+    )
   }
   return items.sort((a, b) => {
+    // 置顶的优先显示
     const aPinned = pinnedIds.value.has(a.id) ? 1 : 0
     const bPinned = pinnedIds.value.has(b.id) ? 1 : 0
     if (bPinned !== aPinned) return bPinned - aPinned
@@ -771,34 +765,5 @@ onMounted(loadAll)
   white-space: pre-wrap;
   word-break: break-word;
   font-family: inherit;
-}
-.history-card__matches {
-  margin-top: 8px;
-  padding: 8px 10px;
-  background: rgba(124, 106, 255, 0.06);
-  border-radius: 6px;
-  border: 1px solid rgba(124, 106, 255, 0.15);
-}
-.match-round {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  padding: 3px 0;
-  font-size: 12px;
-  color: var(--text-secondary, rgba(255,255,255,0.7));
-}
-.match-round__role {
-  flex-shrink: 0;
-  font-size: 13px;
-}
-.match-round__content {
-  line-height: 1.4;
-  word-break: break-all;
-}
-.match-more {
-  font-size: 11px;
-  color: var(--text-tertiary, rgba(255,255,255,0.5));
-  padding-top: 4px;
-  text-align: center;
 }
 </style>

@@ -16,7 +16,7 @@ import aiofiles
 import jwt
 import pymysql
 from fastapi import APIRouter, Body, Depends, File, HTTPException, UploadFile
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 
 from RAGF_User_Management.db_config import db_cursor
@@ -24,7 +24,7 @@ from RAGF_User_Management.db_config import db_cursor
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = HTTPBearer(auto_error=False)
 
 DEFAULT_AVATAR = (
     "https://pic3.zhimg.com/80/v2-71152904edf11db5c8885548393ace6a_720w.webp"
@@ -59,9 +59,11 @@ def _require_jwt(token: str) -> str:
 
 
 @router.get("/api/user/GetUserData")
-async def get_user_data(token: str = Depends(oauth2_scheme)):
+async def get_user_data(credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme)):
     """Return the profile for the authenticated user."""
-    email = _require_jwt(token)
+    if not credentials:
+        raise HTTPException(status_code=401, detail="未提供认证凭据")
+    email = _require_jwt(credentials.credentials)
 
     with db_cursor() as cur:
         # Ensure social_media column exists (migration guard)
@@ -80,7 +82,7 @@ async def get_user_data(token: str = Depends(oauth2_scheme)):
         user_id = row[0]
 
         cur.execute(
-            "SELECT user_id, name, signature, social_media, avatar "
+            "SELECT user_id, nickname, bio, social_media, avatar_url "
             "FROM user_profile WHERE user_id = %s",
             (user_id,),
         )
@@ -101,7 +103,7 @@ async def get_user_data(token: str = Depends(oauth2_scheme)):
 
         # Profile row missing — create it now
         cur.execute(
-            "INSERT IGNORE INTO user_profile (user_id, name, signature, social_media, avatar) "
+            "INSERT IGNORE INTO user_profile (user_id, nickname, bio, social_media, avatar_url) "
             "VALUES (%s, %s, %s, %s, %s)",
             (user_id, "New User", "", "", DEFAULT_AVATAR),
         )
@@ -131,11 +133,13 @@ class UserDataUpdate(BaseModel):
 
 @router.post("/api/UpdateUserData")
 async def update_user_data(
-    token: str = Depends(oauth2_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme),
     user_data: UserDataUpdate = Body(...),
 ):
     """Update name / signature / social_media / avatar for the authenticated user."""
-    email = _require_jwt(token)
+    if not credentials:
+        raise HTTPException(status_code=401, detail="未提供认证凭据")
+    email = _require_jwt(credentials.credentials)
 
     # Handle base64 avatar upload
     if user_data.avatar.startswith("data:image"):
@@ -162,7 +166,7 @@ async def update_user_data(
 
     with db_cursor() as cur:
         cur.execute(
-            "UPDATE user_profile SET name=%s, signature=%s, avatar=%s, social_media=%s "
+            "UPDATE user_profile SET nickname=%s, bio=%s, avatar_url=%s, social_media=%s "
             "WHERE user_id = (SELECT id FROM user WHERE email = %s)",
             (
                 user_data.name,
@@ -182,11 +186,13 @@ async def update_user_data(
 
 @router.post("/api/user/UpdateAvatar")
 async def update_avatar(
-    token: str = Depends(oauth2_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme),
     avatar_file: UploadFile = File(...),
 ):
     """Upload a new avatar image file for the authenticated user."""
-    email = _require_jwt(token)
+    if not credentials:
+        raise HTTPException(status_code=401, detail="未提供认证凭据")
+    email = _require_jwt(credentials.credentials)
 
     upload_dir = os.path.join("local-KLB-files", "avatars")
     os.makedirs(upload_dir, exist_ok=True)
@@ -204,7 +210,7 @@ async def update_avatar(
 
     with db_cursor() as cur:
         cur.execute(
-            "UPDATE user_profile SET avatar = %s "
+            "UPDATE user_profile SET avatar_url = %s "
             "WHERE user_id = (SELECT id FROM user WHERE email = %s)",
             (avatar_url, email),
         )
@@ -221,9 +227,11 @@ async def update_avatar(
 
 
 @router.delete("/api/user/DeleteUserData")
-async def delete_user_data(token: str = Depends(oauth2_scheme)):
+async def delete_user_data(credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme)):
     """Permanently delete the authenticated user's account."""
-    email = _require_jwt(token)
+    if not credentials:
+        raise HTTPException(status_code=401, detail="未提供认证凭据")
+    email = _require_jwt(credentials.credentials)
 
     with db_cursor() as cur:
         cur.execute("DELETE FROM user WHERE email = %s", (email,))

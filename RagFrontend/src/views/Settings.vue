@@ -3,7 +3,7 @@
     <!-- Win11 左侧导航栏 -->
     <aside class="settings-nav">
       <div class="settings-nav__header">
-        <div class="settings-nav__icon">⚙️</div>
+        <div class="settings-nav__icon"></div>
         <div class="settings-nav__title">系统设置</div>
       </div>
       <div v-for="group in tabGroups" :key="group.label" class="nav-group">
@@ -40,7 +40,7 @@
         </div>
         <div v-else class="key-list">
           <div v-if="apiKeys.length === 0" class="empty-state">
-            <div class="empty-icon">🔑</div>
+            <div class="empty-icon"></div>
             <p>暂无 API Key，点击「创建 API Key」开始</p>
           </div>
           <div v-for="key in apiKeys" :key="key.id" class="key-card">
@@ -98,7 +98,7 @@
         </div>
         <!-- 新建成功展示 -->
         <div v-if="newCreatedKey" class="key-reveal-box">
-          <h4>🎉 API Key 创建成功</h4>
+          <h4>API Key 创建成功</h4>
           <p>请立即复制保存，此密钥不会再次显示：</p>
           <div class="key-reveal-value">
             {{ newCreatedKey }}
@@ -119,11 +119,11 @@
         </div>
         <div v-else class="ds-list">
           <div v-if="datasources.length === 0" class="empty-state">
-            <div class="empty-icon">🗄️</div>
+            <div class="empty-icon"></div>
             <p>暂无数据源，支持阿里云 OSS、AWS S3、MySQL 等</p>
           </div>
           <div v-for="ds in datasources" :key="ds.id" class="ds-card">
-            <div class="ds-card__icon">{{ dsTypeIcons[ds.type] || '📦' }}</div>
+            <div class="ds-card__icon">{{ dsTypeIcons[ds.type] || '' }}</div>
             <div class="ds-card__info">
               <div class="ds-card__name">{{ ds.name }}</div>
               <div class="ds-card__type">{{ dsTypeNames[ds.type] }}</div>
@@ -364,7 +364,7 @@
         </div>
         <!-- 已安装模型提示 -->
         <div class="mc-installed-bar" v-if="mcLocalModels.length">
-          <span class="mc-installed-title">🟢 本地已安装模型：</span>
+          <span class="mc-installed-title"> 本地已安装模型：</span>
           <span
             v-for="m in mcLocalModels"
             :key="m"
@@ -375,9 +375,7 @@
           >
         </div>
         <div class="mc-installed-bar mc-installed-bar--empty" v-else-if="mcLocalFetched">
-          <span
-            >⚠️ 未检测到本地已安装模型，请先在 Ollama 中执行 <code>ollama pull 模型名</code></span
-          >
+          <span> 未检测到本地已安装模型，请先在 Ollama 中执行<code>ollama pull 模型名</code></span>
         </div>
         <!-- 表单 -->
         <div class="mc-form">
@@ -389,7 +387,7 @@
               placeholder="http://localhost:11434"
             />
             <button class="mc-btn-secondary" @click="mcFetchLocalModels" :disabled="mcLoadingLocal">
-              {{ mcLoadingLocal ? '检测中...' : '🔍 检测本地模型' }}
+              {{ mcLoadingLocal ? '检测中...' : ' 检测本地模型' }}
             </button>
           </div>
           <div class="mc-form-row">
@@ -427,10 +425,10 @@
           <!-- 操作按钮 -->
           <div class="mc-actions">
             <button class="mc-btn-test" @click="mcTestConfig" :disabled="mcTesting">
-              {{ mcTesting ? '测试中...' : '🧪 测试连接' }}
+              {{ mcTesting ? '测试中...' : ' 测试连接' }}
             </button>
             <button class="mc-btn-save" @click="mcSaveConfig" :disabled="mcSaving">
-              {{ mcSaving ? '保存中...' : '💾 保存配置' }}
+              {{ mcSaving ? '保存中...' : ' 保存配置' }}
             </button>
             <button class="mc-btn-reset" @click="mcLoadConfig">↺ 重置</button>
           </div>
@@ -442,7 +440,7 @@
               mcTestResult.ok ? 'mc-test-result--ok' : 'mc-test-result--err'
             ]"
           >
-            <span class="mc-test-icon">{{ mcTestResult.ok ? '✅' : '❌' }}</span>
+            <span class="mc-test-icon">{{ mcTestResult.ok ? '' : '' }}</span>
             <span>{{ mcTestResult.message }}</span>
             <div v-if="mcTestResult.installed_models && !mcTestResult.ok" class="mc-installed-hint">
               已安装模型：{{ mcTestResult.installed_models.join(' / ') || '（无）' }}
@@ -451,13 +449,13 @@
         </div>
         <!-- 说明卡片 -->
         <div class="mc-tips-card">
-          <h4>💡 常见超时原因与解决办法</h4>
+          <h4>常见超时原因与解决办法</h4>
           <ul>
             <li>模型参数过大（如 7b+），建议先改用更轻量的小参数模型（约数百 MB 级）</li>
-            <li>Ollama 服务未启动 → 运行 <code>ollama serve</code></li>
-            <li>模型未下载 → 运行 <code>ollama pull 模型名</code></li>
+            <li>Ollama 服务未启动 → 运行<code>ollama serve</code></li>
+            <li>模型未下载 → 运行<code>ollama pull 模型名</code></li>
             <li>超时设置过短 → 将超时改为 300 秒</li>
-            <li>使用 Docker 时 Ollama 地址应为 <code>http://host.docker.internal:11434</code></li>
+            <li>使用 Docker 时 Ollama 地址应为<code>http://host.docker.internal:11434</code></li>
           </ul>
         </div>
       </div>
@@ -469,6 +467,7 @@
       <EnterpriseToolsTab v-if="activeTab === 'tools'" />
       <MultiModelTab v-if="activeTab === 'multimodel'" />
       <ComplianceTab v-if="activeTab === 'compliance'" />
+      <AppearanceTab v-if="activeTab === 'appearance'" />
       <!-- ── 办公联动（扩展版，含钉钉/企微/Notion/GitHub） ──────── -->
       <div v-if="activeTab === 'integrations'" class="tab-content">
         <div class="section-header">
@@ -631,11 +630,11 @@
                 </button>
               </div>
               <details class="guide-box">
-                <summary>📋 钉钉配置步骤</summary>
+                <summary>钉钉配置步骤</summary>
                 <ol>
                   <li>钉钉群 → 群设置 → 机器人 → 添加机器人 → 自定义</li>
                   <li>安全设置选择「加签」，复制密钥填写上方</li>
-                  <li>复制 Webhook 地址填写上方 → 保存 → 测试 ✅</li>
+                  <li>复制 Webhook 地址填写上方 → 保存 → 测试</li>
                 </ol>
               </details>
             </template>
@@ -751,15 +750,15 @@
           </div>
         </transition>
       </div>
-      <!-- 外观设置（通过 useTheme hook 跨层级全局样式变更） -->
+      <!-- 外观设置 -->
       <div v-if="activeTab === 'appearance'" class="tab-content">
         <div class="section-header">
           <h2>外观设置</h2>
-          <p class="section-desc">自定义界面主题、颜色和字体，通过 CSS 变量实现跨层级全局样式变更</p>
+          <p class="section-desc">自定义界面主题、颜色和字体，打造专属体验</p>
         </div>
         <div class="appearance-grid">
           <div class="appearance-card">
-            <div class="appearance-card__title">🌗 主题模式</div>
+            <div class="appearance-card__title">主题模式</div>
             <div class="theme-options">
               <button
                 v-for="t in themeOptions"
@@ -773,7 +772,7 @@
             </div>
           </div>
           <div class="appearance-card">
-            <div class="appearance-card__title">🎨 主题色</div>
+            <div class="appearance-card__title">主题色</div>
             <div class="color-options">
               <button
                 v-for="c in colorOptions"
@@ -786,7 +785,7 @@
             </div>
           </div>
           <div class="appearance-card">
-            <div class="appearance-card__title">🔡 字体大小</div>
+            <div class="appearance-card__title">字体大小</div>
             <div class="font-size-options">
               <button
                 v-for="f in fontSizeOptions"
@@ -799,7 +798,7 @@
             </div>
           </div>
           <div class="appearance-card">
-            <div class="appearance-card__title">📐 布局紧凑度</div>
+            <div class="appearance-card__title">布局紧凑度</div>
             <div class="layout-options">
               <button
                 v-for="l in layoutOptions"
@@ -811,6 +810,25 @@
                 >{{ l.label }}
               </button>
             </div>
+          </div>
+          <!-- 语言设置 -->
+          <div class="appearance-card">
+            <div class="appearance-card__title">界面语言</div>
+            <div class="lang-options">
+              <button
+                :class="['lang-btn', { 'lang-btn--active': currentLocale === 'zh' }]"
+                @click="switchLocale('zh')"
+              >
+                🇨🇳 中文
+              </button>
+              <button
+                :class="['lang-btn', { 'lang-btn--active': currentLocale === 'en' }]"
+                @click="switchLocale('en')"
+              >
+                🇬🇧 English
+              </button>
+            </div>
+            <p class="mc-hint" style="margin-top: 8px">选择后立即生效，无需刷新页面</p>
           </div>
         </div>
       </div>
@@ -828,7 +846,7 @@
           </div>
         </div>
         <div class="stats-chart-placeholder">
-          <div class="chart-placeholder-icon">📊</div>
+          <div class="chart-placeholder-icon"></div>
           <p>近 7 日使用趋势图</p>
           <p class="text-xs text-gray-400">（接入 ECharts 后可视化展示）</p>
         </div>
@@ -855,11 +873,11 @@
         <!-- ECharts：请求量 + 响应时间 + 模型调用 -->
         <div v-if="monitorData" class="monitor-charts">
           <div class="mon-chart-box">
-            <div class="mon-chart-title">📊 Top 接口请求量</div>
+            <div class="mon-chart-title">Top 接口请求量</div>
             <div ref="monReqRef" style="width: 100%; height: 260px"></div>
           </div>
           <div class="mon-chart-box">
-            <div class="mon-chart-title">⚡ 响应时间（avg / p99）</div>
+            <div class="mon-chart-title">响应时间（avg / p99）</div>
             <div ref="monLatRef" style="width: 100%; height: 260px"></div>
           </div>
           <div class="mon-chart-box">
@@ -870,10 +888,10 @@
         <!-- 操作栏 -->
         <div class="monitor-actions">
           <button class="mc-btn-secondary" @click="fetchMonitor" :disabled="monitorLoading">
-            {{ monitorLoading ? '加载中...' : '🔄 刷新数据' }}
+            {{ monitorLoading ? '加载中...' : ' 刷新数据' }}
           </button>
           <a href="/metrics" target="_blank" class="mc-btn-secondary" style="text-decoration: none">
-            📄 Prometheus /metrics
+            Prometheus /metrics
           </a>
           <span class="mon-tips">Grafana 抓取地址：<code>http://localhost:8000/metrics</code></span>
         </div>
@@ -885,59 +903,6 @@
           <p class="section-desc">提交问题反馈和功能请求，跟踪处理进度</p>
         </div>
         <button class="btn-primary mb-4" @click="showNewTicket = !showNewTicket">+ 提交工单</button>
-        <!-- App 下载区块 -->
-        <div class="app-download-card">
-          <div class="app-download-card__header">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              class="app-dl-icon"
-            >
-              <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
-              <line x1="12" y1="18" x2="12" y2="18.01" stroke-linecap="round" />
-            </svg>
-            <div>
-              <div class="app-download-card__title">📱 RAG-F 移动端 App</div>
-              <div class="app-download-card__subtitle">React Native · iOS / Android 双端支持</div>
-            </div>
-          </div>
-          <div class="app-download-btns">
-            <a
-              class="app-dl-btn app-dl-btn--android"
-              href="/download"
-              target="_blank"
-              rel="noopener"
-            >
-              <svg viewBox="0 0 24 24" fill="currentColor" style="width: 16px; height: 16px">
-                <path
-                  d="M17.523 15.341a1 1 0 01-.997 1H7.474a1 1 0 01-.997-1V8.66a1 1 0 01.997-1h9.052a1 1 0 01.997 1zM4.5 7.5A1.5 1.5 0 003 9v6a1.5 1.5 0 003 0V9A1.5 1.5 0 004.5 7.5zm15 0A1.5 1.5 0 0018 9v6a1.5 1.5 0 003 0V9a1.5 1.5 0 00-1.5-1.5zM8.5 3.5a.5.5 0 01.5-.5h6a.5.5 0 01.5.5v1a.5.5 0 01-.5.5H9a.5.5 0 01-.5-.5v-1zm0 16a.5.5 0 01.5-.5h2v1h-2a.5.5 0 01-.5-.5zm4.5-.5h2v1h-2v-1z"
-                />
-              </svg>
-              Android APK 下载
-            </a>
-            <a class="app-dl-btn app-dl-btn--ios" href="/download" target="_blank" rel="noopener">
-              <svg viewBox="0 0 24 24" fill="currentColor" style="width: 16px; height: 16px">
-                <path
-                  d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"
-                />
-              </svg>
-              iOS TestFlight
-            </a>
-            <a
-              class="app-dl-btn app-dl-btn--github"
-              href="https://github.com/March030303/KnowledgeRAG-GZHU/tree/master/RagMobile"
-              target="_blank"
-              rel="noopener"
-            >
-              源码 / 自行构建
-            </a>
-          </div>
-          <p class="app-download-card__hint">
-            点击上方按钮可打开下载页面，支持 Android APK 直装与 iOS TestFlight
-          </p>
-        </div>
         <div v-if="showNewTicket" class="ticket-form">
           <div class="form-row">
             <label>问题类型</label>
@@ -962,13 +927,13 @@
           </div>
           <div class="form-actions">
             <button class="btn-cancel" @click="showNewTicket = false">取消</button>
-            <button class="btn-primary" @click="submitTicket">提交并发送邮件 ✉️</button>
+            <button class="btn-primary" @click="submitTicket">提交并发送邮件</button>
           </div>
         </div>
         <div class="ticket-list">
           <div v-if="tickets.length === 0" class="empty-state">
-            <div class="empty-icon">🎫</div>
-            <p>暂无工单，运行良好 ✨</p>
+            <div class="empty-icon"></div>
+            <p>暂无工单，运行良好</p>
           </div>
           <div v-for="ticket in tickets" :key="ticket.id" class="ticket-card">
             <div>
@@ -988,7 +953,6 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ref, onMounted, reactive, computed, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
 import axios from 'axios'
 import { MessagePlugin } from 'tdesign-vue-next'
 import {
@@ -1009,7 +973,6 @@ import EnterpriseToolsTab from './SettingsTabs/EnterpriseToolsTab.vue'
 import MultiModelTab from './SettingsTabs/MultiModelTab.vue'
 import ComplianceTab from './SettingsTabs/ComplianceTab.vue'
 import CommercialTab from './SettingsTabs/CommercialTab.vue'
-const route = useRoute()
 const activeTab = ref('apikeys')
 // Win11 风格分组导航
 const tabGroups: Array<{
@@ -1019,42 +982,45 @@ const tabGroups: Array<{
   {
     label: '账号与安全',
     tabs: [
-      { id: 'apikeys', label: 'API Key', icon: '🔑', desc: '管理开放接口密钥' },
-      { id: 'rbac', label: '角色权限', icon: '🛡️', desc: '用户角色与权限管理' },
-      { id: 'compliance', label: '合规中心', icon: '✅', desc: 'SSO/脱敏/限流配置' }
+      { id: 'apikeys', label: 'API Key', icon: '', desc: '管理开放接口密钥' },
+      { id: 'rbac', label: '角色权限', icon: '', desc: '用户角色与权限管理' },
+      { id: 'compliance', label: '合规中心', icon: '', desc: 'SSO/脱敏/限流配置' }
     ]
   },
   {
     label: '数据与存储',
     tabs: [
-      { id: 'datasources', label: '多数据源', icon: '🗄️', desc: '连接外部数据源' },
-      { id: 'version', label: '版本管理', icon: '📚', desc: '文档版本历史' },
-      { id: 'ocr', label: 'OCR 解析', icon: '📄', desc: 'OCR文档识别配置' }
+      { id: 'datasources', label: '多数据源', icon: '', desc: '连接外部数据源' },
+      { id: 'version', label: '版本管理', icon: '', desc: '文档版本历史' },
+      { id: 'ocr', label: 'OCR 解析', icon: '', desc: 'OCR文档识别配置' }
     ]
   },
   {
     label: 'AI 与模型',
     tabs: [
-      { id: 'model-config', label: '模型配置', icon: '⚡', desc: '设置 Ollama 模型与超时' },
-      { id: 'multimodel', label: '多模型', icon: '⚡', desc: '配置多个AI模型' },
-      { id: 'rageval', label: 'RAG 评估', icon: '🔬', desc: '效果评估与调优' },
-      { id: 'tools', label: '企业工具', icon: '🧰', desc: '11种企业级工具' }
+      { id: 'model-config', label: '模型配置', icon: '', desc: '设置 Ollama 模型与超时' },
+      { id: 'multimodel', label: '多模型', icon: '', desc: '配置多个AI模型' },
+      { id: 'rageval', label: 'RAG 评估', icon: '', desc: '效果评估与调优' },
+      { id: 'tools', label: '企业工具', icon: '', desc: '11种企业级工具' }
     ]
   },
   {
     label: '集成与联动',
     tabs: [
-      { id: 'integrations', label: '办公联动', icon: '🔗', desc: '飞书/钉钉/企微等' },
-      { id: 'audit', label: '审计日志', icon: '📋', desc: '用户操作审计' }
+      { id: 'integrations', label: '办公联动', icon: '', desc: '飞书/钉钉/企微等' },
+      { id: 'audit', label: '审计日志', icon: '', desc: '用户操作审计' }
     ]
+  },
+  {
+    label: '个性化',
+    tabs: [{ id: 'appearance', label: '外观设置', icon: '', desc: '主题/颜色/字体' }]
   },
   {
     label: '系统',
     tabs: [
-      { id: 'appearance', label: '外观设置', icon: '🎨', desc: '主题/颜色/字体' },
-      { id: 'stats', label: '使用统计', icon: '📊', desc: '查看使用数据' },
-      { id: 'monitor', label: '系统监控', icon: '📡', desc: 'API响应/模型调用' },
-      { id: 'tickets', label: '工单管理', icon: '🎫', desc: '问题反馈与跟踪' }
+      { id: 'stats', label: '使用统计', icon: '', desc: '查看使用数据' },
+      { id: 'monitor', label: '系统监控', icon: '', desc: 'API响应/模型调用' },
+      { id: 'tickets', label: '工单管理', icon: '', desc: '问题反馈与跟踪' }
     ]
   }
 ]
@@ -1125,11 +1091,11 @@ const dsTypes = ref<any[]>([])
 
 const newDs = reactive({ name: '', type: 'oss', config: {} as Record<string, any>, kb_id: null })
 const dsTypeIcons: Record<string, string> = {
-  oss: '☁️',
-  s3: '🪣',
-  mysql: '🐬',
-  postgresql: '🐘',
-  sqlite: '📁'
+  oss: '',
+  s3: '',
+  mysql: '',
+  postgresql: '',
+  sqlite: ''
 }
 const dsTypeNames: Record<string, string> = {
   oss: '阿里云 OSS',
@@ -1230,9 +1196,6 @@ function formatDateTime(ts: number): string {
   return new Date(ts * 1000).toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-')
 }
 onMounted(async () => {
-  if (route.query.tab && typeof route.query.tab === 'string') {
-    activeTab.value = route.query.tab
-  }
   loadPlatformConfigs()
   mcLoadConfig()
   await Promise.all([
@@ -1367,7 +1330,7 @@ const obsidianStatus = ref<any>({ configured: false, synced_files: 0 })
 const obsidianSyncResult = ref<any>(null)
 const obsidianLoading = ref(false)
 const obsidianExclude = ref('templates/,\\.trash/')
-const obsidianForm = reactive({ vault_path: 'D:\\obesdian', kb_id: '' })
+const obsidianForm = reactive({ vault_path: '', kb_id: '' })
 async function fetchObsidianStatus() {
   try {
     const res = await axios.get('/api/integrations/obsidian/status')
@@ -1500,7 +1463,7 @@ async function testPlatform(platform: string) {
     const saved = JSON.parse(localStorage.getItem('integration_configs') || '{}')
     const cfg = saved[platform] || {}
     await axios.post(`/api/integrations/${platform}/test`, cfg)
-    MessagePlugin.success('测试消息发送成功 ✅')
+    MessagePlugin.success('测试消息发送成功 ')
   } catch {
     MessagePlugin.warning('后端接口未就绪，请确保后端已启动并配置正确')
   }
@@ -1508,36 +1471,36 @@ async function testPlatform(platform: string) {
 // 集成平台列表（computed，动态显示连接状态）
 const PLATFORM_SVGS: Record<string, string> = {
   obsidian: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px">
-    <defs><linearGradient id="og1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#6c31e3"/><stop offset="100%" style="stop-color:#9d5ef7"/></linearGradient></defs>
-    <path fill="url(#og1)" d="M63.6 2.8C51.4-1.5 37.7 2.3 30.2 12.8L8.5 43.3c-6.3 9-5.6 21.1 1.7 29.3l27.6 31.5c5.7 6.5 15.4 7 21.7 1.1l34.4-32.5c5.6-5.3 6.6-13.9 2.3-20.4L63.6 2.8z"/>
-    <path fill="rgba(255,255,255,0.15)" d="M55 15 L75 55 L55 85 L35 55 Z"/>
-    <circle fill="rgba(255,255,255,0.3)" cx="55" cy="50" r="12"/>
-  </svg>`,
+<defs><linearGradient id="og1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#6c31e3"/><stop offset="100%" style="stop-color:#9d5ef7"/></linearGradient></defs>
+<path fill="url(#og1)" d="M63.6 2.8C51.4-1.5 37.7 2.3 30.2 12.8L8.5 43.3c-6.3 9-5.6 21.1 1.7 29.3l27.6 31.5c5.7 6.5 15.4 7 21.7 1.1l34.4-32.5c5.6-5.3 6.6-13.9 2.3-20.4L63.6 2.8z"/>
+<path fill="rgba(255,255,255,0.15)" d="M55 15 L75 55 L55 85 L35 55 Z"/>
+<circle fill="rgba(255,255,255,0.3)" cx="55" cy="50" r="12"/>
+</svg>`,
   feishu: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px">
-    <rect width="200" height="200" rx="40" fill="#1664FF"/>
-    <path fill="white" d="M60 140 L100 60 L140 140 L120 140 L100 100 L80 140 Z"/>
-    <path fill="rgba(255,255,255,0.6)" d="M75 110 L125 110 L115 130 L85 130 Z"/>
-  </svg>`,
+<rect width="200" height="200" rx="40" fill="#1664FF"/>
+<path fill="white" d="M60 140 L100 60 L140 140 L120 140 L100 100 L80 140 Z"/>
+<path fill="rgba(255,255,255,0.6)" d="M75 110 L125 110 L115 130 L85 130 Z"/>
+</svg>`,
   dingtalk: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px">
-    <rect width="200" height="200" rx="40" fill="#1677FF"/>
-    <path fill="white" d="M100 40 C68 40 42 66 42 98 C42 118 52 136 68 147 L60 165 L95 150 C97 150 99 151 100 151 C132 151 158 125 158 98 C158 66 132 40 100 40 Z"/>
-    <path fill="#1677FF" d="M85 90 C85 90 110 78 125 72 C118 85 108 100 108 100 C108 100 130 95 140 93 C130 108 100 130 100 130 C100 130 88 105 85 90 Z"/>
-  </svg>`,
+<rect width="200" height="200" rx="40" fill="#1677FF"/>
+<path fill="white" d="M100 40 C68 40 42 66 42 98 C42 118 52 136 68 147 L60 165 L95 150 C97 150 99 151 100 151 C132 151 158 125 158 98 C158 66 132 40 100 40 Z"/>
+<path fill="#1677FF" d="M85 90 C85 90 110 78 125 72 C118 85 108 100 108 100 C108 100 130 95 140 93 C130 108 100 130 100 130 C100 130 88 105 85 90 Z"/>
+</svg>`,
   wecom: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px">
-    <rect width="200" height="200" rx="40" fill="#07C160"/>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    <path fill="white" d="M80 75 C64 75 51 87 51 102 C51 112 57 120 66 125 L62 138 L78 130 C79 130 80 130 80 130 C96 130 109 118 109 102 C109 87 96 75 80 75 Z"/>
-    <path fill="white" d="M122 60 C107 60 95 71 95 84 C95 94 101 102 110 107 L106 118 L120 111 C121 111 122 111 122 111 C137 111 149 100 149 84 C149 71 137 60 122 60 Z"/>
-  </svg>`,
+<rect width="200" height="200" rx="40" fill="#07C160"/>
+ // eslint-disable-next-line @typescript-eslint/no-explicit-any
+<path fill="white" d="M80 75 C64 75 51 87 51 102 C51 112 57 120 66 125 L62 138 L78 130 C79 130 80 130 80 130 C96 130 109 118 109 102 C109 87 96 75 80 75 Z"/>
+<path fill="white" d="M122 60 C107 60 95 71 95 84 C95 94 101 102 110 107 L106 118 L120 111 C121 111 122 111 122 111 C137 111 149 100 149 84 C149 71 137 60 122 60 Z"/>
+</svg>`,
   notion: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px">
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    <rect width="200" height="200" rx="20" fill="white" stroke="#e5e7eb" stroke-width="4"/>
-    <path fill="#1a1a1a" d="M45 45 L45 155 L70 155 L70 90 L130 155 L155 155 L155 45 L130 45 L130 110 L70 45 Z"/>
-  </svg>`,
+ // eslint-disable-next-line @typescript-eslint/no-explicit-any
+<rect width="200" height="200" rx="20" fill="white" stroke="#e5e7eb" stroke-width="4"/>
+<path fill="#1a1a1a" d="M45 45 L45 155 L70 155 L70 90 L130 155 L155 155 L155 45 L130 45 L130 110 L70 45 Z"/>
+</svg>`,
   github: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px">
-    <rect width="200" height="200" rx="40" fill="#24292e"/>
-    <path fill="white" d="M100 30 C62.2 30 32 60.2 32 98 C32 128.2 51.6 153.8 78.8 162.6 C82.2 163.2 83.4 161.2 83.4 159.4 C83.4 157.8 83.4 153.8 83.2 148.4 C64.2 152.4 60.2 140.2 60.2 140.2 C57 132.4 52.4 130.4 52.4 130.4 C46.2 126.4 52.8 126.4 52.8 126.4 C59.6 126.8 63.2 133.4 63.2 133.4 C69.4 144.2 79.4 141 83.6 139.2 C84.2 135 86 132 88 130.4 C72.2 128.6 55.6 122.6 55.6 95.2 C55.6 87.8 58.2 81.8 63.4 77 C62.6 75.2 60.2 68.4 64.2 59 C64.2 59 70 57 83.2 65.8 C89.2 64.2 95.6 63.4 102 63.4 C108.4 63.4 114.8 64.2 120.8 65.8 C134 57 139.8 59 139.8 59 C143.8 68.4 141.4 75.2 140.6 77 C145.8 81.8 148.4 87.8 148.4 95.2 C148.4 122.6 131.8 128.6 116 130.4 C118.6 132.8 121 137.4 121 144.4 C121 154.4 120.8 162.4 120.8 164.8 C120.8 166.6 122 168.6 125.4 168 C152.4 159 168 133.6 168 98 C168 60.2 137.8 30 100 30 Z"/>
-  </svg>`
+<rect width="200" height="200" rx="40" fill="#24292e"/>
+<path fill="white" d="M100 30 C62.2 30 32 60.2 32 98 C32 128.2 51.6 153.8 78.8 162.6 C82.2 163.2 83.4 161.2 83.4 159.4 C83.4 157.8 83.4 153.8 83.2 148.4 C64.2 152.4 60.2 140.2 60.2 140.2 C57 132.4 52.4 130.4 52.4 130.4 C46.2 126.4 52.8 126.4 52.8 126.4 C59.6 126.8 63.2 133.4 63.2 133.4 C69.4 144.2 79.4 141 83.6 139.2 C84.2 135 86 132 88 130.4 C72.2 128.6 55.6 122.6 55.6 95.2 C55.6 87.8 58.2 81.8 63.4 77 C62.6 75.2 60.2 68.4 64.2 59 C64.2 59 70 57 83.2 65.8 C89.2 64.2 95.6 63.4 102 63.4 C108.4 63.4 114.8 64.2 120.8 65.8 C134 57 139.8 59 139.8 59 C143.8 68.4 141.4 75.2 140.6 77 C145.8 81.8 148.4 87.8 148.4 95.2 C148.4 122.6 131.8 128.6 116 130.4 C118.6 132.8 121 137.4 121 144.4 C121 154.4 120.8 162.4 120.8 164.8 C120.8 166.6 122 168.6 125.4 168 C152.4 159 168 133.6 168 98 C168 60.2 137.8 30 100 30 Z"/>
+</svg>`
 }
 const integrationPlatforms = computed(() => [
   {
@@ -1628,10 +1591,10 @@ function handleLayoutChange(layoutId: string) {
 
 const usageStats = ref({ total_queries: 0, total_tokens: 0, kb_count: 0, doc_count: 0 })
 const statsCards = computed(() => [
-  { icon: '💬', value: usageStats.value.total_queries, label: '累计问答次数' },
-  { icon: '🪙', value: usageStats.value.total_tokens, label: '累计Token消耗' },
-  { icon: '📚', value: usageStats.value.kb_count, label: '知识库数量' },
-  { icon: '📄', value: usageStats.value.doc_count, label: '文档总数' }
+  { icon: '', value: usageStats.value.total_queries, label: '累计问答次数' },
+  { icon: '', value: usageStats.value.total_tokens, label: '累计Token消耗' },
+  { icon: '', value: usageStats.value.kb_count, label: '知识库数量' },
+  { icon: '', value: usageStats.value.doc_count, label: '文档总数' }
 ])
 async function fetchUsageStats() {
   try {
@@ -1649,11 +1612,11 @@ const monitorCards = computed(() => {
   if (!monitorData.value) return []
   const ov = monitorData.value.overview
   return [
-    { key: 'uptime', icon: '⏱', label: '运行时长(h)', value: ov.uptime_h },
-    { key: 'reqs', icon: '📨', label: '总请求数', value: ov.total_reqs },
-    { key: 'errors', icon: '❌', label: '错误请求', value: ov.total_errors },
-    { key: 'uploads', icon: '📤', label: '上传文件数', value: ov.kb_uploads },
-    { key: 'models', icon: '⚡', label: '使用模型数', value: ov.models_used }
+    { key: 'uptime', icon: '', label: '运行时长(h)', value: ov.uptime_h },
+    { key: 'reqs', icon: '', label: '总请求数', value: ov.total_reqs },
+    { key: 'errors', icon: '', label: '错误请求', value: ov.total_errors },
+    { key: 'uploads', icon: '', label: '上传文件数', value: ov.kb_uploads },
+    { key: 'models', icon: '', label: '使用模型数', value: ov.models_used }
   ]
 })
 async function fetchMonitor() {
@@ -1764,9 +1727,9 @@ async function submitTicket() {
         `详细描述：\n${ticket.content || '（无）'}`
     )
     window.open(`mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`)
-    MessagePlugin.success('工单已保存，正在打开邮件客户端发送 ✉️')
+    MessagePlugin.success('工单已保存，正在打开邮件客户端发送 ')
   } else {
-    MessagePlugin.success('工单已提交 ✅')
+    MessagePlugin.success('工单已提交 ')
   }
   showNewTicket.value = false
   Object.assign(newTicket, { type: 'bug', title: '', content: '' })

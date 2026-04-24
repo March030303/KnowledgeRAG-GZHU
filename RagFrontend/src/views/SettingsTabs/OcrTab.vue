@@ -11,10 +11,10 @@
         <label>OCR 引擎</label>
         <select v-model="config.engine" class="form-select">
           <option value="mineru">MinerU（深度学习版面分析，推荐）</option>
-              <option value="paddleocr">PaddleOCR（本地，精度高）</option>
-              <option value="tesseract">Tesseract（本地，免费）</option>
-              <option value="baidu">百度云 OCR（高精度，收费）</option>
-              <option value="aliyun">阿里云 OCR（高精度，收费）</option>
+          <option value="paddleocr">PaddleOCR（本地，精度高）</option>
+          <option value="tesseract">Tesseract（本地，免费）</option>
+          <option value="baidu">百度云 OCR（高精度，收费）</option>
+          <option value="aliyun">阿里云 OCR（高精度，收费）</option>
         </select>
       </div>
       <div class="form-row">
@@ -74,7 +74,7 @@
     <div class="card" style="margin-top: 16px">
       <div class="card-title">在线测试</div>
       <div class="upload-area" @dragover.prevent @drop="handleDrop" @click="fileInput?.click()">
-        <div class="upload-icon">📄</div>
+        <div class="upload-icon"></div>
         <p>拖拽图片 / 扫描 PDF 到此处，或点击选择文件</p>
         <p class="upload-hint">支持 JPG、PNG、PDF，最大 20MB</p>
         <input
@@ -107,7 +107,7 @@
       <div class="card-title">最近识别记录</div>
       <div class="history-list">
         <div v-for="item in history" :key="item.id" class="history-item">
-          <div class="history-icon">{{ item.type === 'pdf' ? '📄' : '🖼️' }}</div>
+          <div class="history-icon">{{ item.type === 'pdf' ? '' : '' }}</div>
           <div class="history-info">
             <div class="history-name">{{ item.filename }}</div>
             <div class="history-meta">
@@ -145,7 +145,9 @@ async function fetchOcrHistory() {
   }
 }
 
-onMounted(() => { fetchOcrHistory() })
+onMounted(() => {
+  fetchOcrHistory()
+})
 
 const config = reactive({
   engine: 'paddleocr',

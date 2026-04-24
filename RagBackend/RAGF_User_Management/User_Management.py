@@ -2,9 +2,9 @@ import logging
 
 import jwt
 from fastapi import APIRouter, Depends, Form, HTTPException
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = HTTPBearer(auto_error=False)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -21,10 +21,13 @@ from RAGF_User_Management.db_config import get_db_connection
 
 
 @router.get("/api/GetUserData")
-async def get_user_data(token: str = Depends(oauth2_scheme)):
+async def get_user_data(credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme)):
     """
     获取用户数据
     """
+    if not credentials:
+        raise HTTPException(status_code=401, detail="未提供认证凭据")
+    token = credentials.credentials
     print("token:", token)
     conn = None
     cursor = None
@@ -71,7 +74,7 @@ async def get_user_data(token: str = Depends(oauth2_scheme)):
 
 @router.post("/api/UpdateUserData")
 async def update_user_data(
-    token: str = Depends(oauth2_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme),
     name: str = Form(...),
     signatur: str = Form(...),
     avatar: str = Form(...),
@@ -79,6 +82,9 @@ async def update_user_data(
     """
     更新用户数据
     """
+    if not credentials:
+        raise HTTPException(status_code=401, detail="未提供认证凭据")
+    token = credentials.credentials
     conn = None
     cursor = None
     try:
@@ -114,7 +120,10 @@ async def update_user_data(
 
 
 @router.delete("/api/DeleteUserData")
-async def delete_user_data(token: str = Depends(oauth2_scheme)):
+async def delete_user_data(credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme)):
+    if not credentials:
+        raise HTTPException(status_code=401, detail="未提供认证凭据")
+    token = credentials.credentials
     conn = None
     cursor = None
     try:

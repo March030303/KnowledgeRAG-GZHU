@@ -682,7 +682,7 @@ async def app_download_page():
 <div class="card">
   <div class="logo">🧠</div>
   <h1>KnowledgeRAG</h1>
-  <p class="subtitle">智能知识管理 · AI 驱动检索<br/>随时随地，掌握你的知识库</p>
+  <p class="subtitle">智能知识管理 · 语义检索增强<br/>随时随地，掌握你的知识库</p>
   <div class="version-badge">v1.0.0 最新版</div>
 
   <div class="features">
@@ -692,8 +692,8 @@ async def app_download_page():
       <div class="feature-desc">创建、上传、管理文档</div>
     </div>
     <div class="feature">
-      <div class="feature-icon">⚡</div>
-      <div class="feature-title">AI 智能问答</div>
+      <div class="feature-icon">🤖</div>
+      <div class="feature-title">智能问答</div>
       <div class="feature-desc">RAG 精准语义检索</div>
     </div>
     <div class="feature">
@@ -732,7 +732,7 @@ async def app_download_page():
   </a>
 
   <footer>
-    <p>ASF-RAG · 开源免费 ·
+    <p>KnowledgeRAG-GZHU · 开源免费 ·
       <a href="https://github.com/March030303/KnowledgeRAG-GZHU/releases" target="_blank">更新日志</a>
     </p>
     <p style="margin-top:6px">需要帮助？<a href="mailto:support@rag-gzhu.com">联系我们</a></p>

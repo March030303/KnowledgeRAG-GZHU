@@ -177,7 +177,7 @@ services:
       # Python
       PYTHONUNBUFFERED: '1'
     ports:
-      - '8000:8000'
+      - '8080:8000'
     volumes:
       # 持久化本地文件、向量库、用户头像（命名卷，IO 性能优于宿主机目录挂载）
       - ragf_files:/app/local-KLB-files

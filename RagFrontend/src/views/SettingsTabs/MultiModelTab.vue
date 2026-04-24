@@ -6,7 +6,7 @@
     </div>
     <!-- 当前默认模型 -->
     <div class="current-model-banner">
-      <span class="banner-icon">🤖</span>
+      <span class="banner-icon"></span>
       <div>
         <div class="banner-title">当前默认模型</div>
         <div class="banner-model">
@@ -14,7 +14,7 @@
         </div>
       </div>
       <span class="banner-status" :class="defaultModel?.online ? 'status--ok' : 'status--off'">
-        {{ defaultModel?.online ? '✓ 在线' : '✗ 离线' }}
+        {{ defaultModel?.online ? '✓ 在线' : ' 离线' }}
       </span>
     </div>
     <!-- 模型供应商列表 -->
@@ -52,6 +52,7 @@
                     {{ m }}
                   </option>
                 </select>
+                <button class="btn-refresh" @click="refreshModels(provider)">刷新模型列表</button>
               </div>
             </div>
           </template>
@@ -141,7 +142,7 @@
     </div>
     <!-- 负载均衡策略 -->
     <div class="card" style="margin-top: 16px">
-      <div class="card-title">⚖️ 负载均衡 & 故障转移</div>
+      <div class="card-title">负载均衡 & 故障转移</div>
       <div class="lb-grid">
         <div class="lb-item">
           <label>路由策略</label>
@@ -196,7 +197,7 @@ import axios from 'axios'
 const providers = ref([
   {
     id: 'ollama',
-    icon: '🦙',
+    icon: '',
     name: 'Ollama（本地）',
     type: 'local',
     type_label: '本地',
@@ -212,7 +213,7 @@ const providers = ref([
   },
   {
     id: 'deepseek',
-    icon: '🔮',
+    icon: '',
     name: 'DeepSeek',
     type: 'cloud',
     type_label: '云端',
@@ -228,7 +229,7 @@ const providers = ref([
   },
   {
     id: 'openai',
-    icon: '🌐',
+    icon: '',
     name: 'OpenAI / 兼容接口',
     type: 'cloud',
     type_label: '云端',
@@ -250,7 +251,7 @@ const providers = ref([
   },
   {
     id: 'hunyuan',
-    icon: '🌀',
+    icon: '',
     name: '腾讯混元',
     type: 'cloud',
     type_label: '云端',

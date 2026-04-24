@@ -220,11 +220,11 @@ const imageMap: Record<string, { src: string; alt: string }> = {
 const currentDisplayImage = computed(() => imageMap[currentImageKey.value] || imageMap.welcome)
 // 功能标签
 const featureTags = [
-  { icon: '🧠', label: 'RAG 检索增强' },
-  { icon: '📚', label: '知识库管理' },
-  { icon: '⚡', label: 'Agent 推理' },
-  { icon: '🔒', label: '端到端加密' },
-  { icon: '🌐', label: '多模型支持' }
+  { icon: '', label: 'RAG 检索增强' },
+  { icon: '', label: '知识库管理' },
+  { icon: '', label: 'Agent 推理' },
+  { icon: '', label: '端到端加密' },
+  { icon: '', label: '多模型支持' }
 ]
 const handleImageChange = (imageKey: string) => {
   currentImageKey.value = imageKey
@@ -274,7 +274,7 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 2px;
-  background: linear-gradient(90deg, transparent 0%, rgba(124, 106, 255, 0.4) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(56, 189, 248, 0.4) 50%, transparent 100%);
   animation: scan 6s linear infinite;
 }
 @keyframes scan {

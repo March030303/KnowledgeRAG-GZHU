@@ -151,7 +151,7 @@
       </div>
       <!-- 脱敏测试 -->
       <div class="card" style="margin-top: 12px">
-        <div class="card-title">🧪 在线测试</div>
+        <div class="card-title">在线测试</div>
         <textarea
           v-model="maskingTestInput"
           class="test-textarea"
@@ -247,10 +247,10 @@ import { MessagePlugin } from 'tdesign-vue-next'
 import axios from 'axios'
 const activeTab = ref('sso')
 const subTabs = [
-  { id: 'sso', label: '🔐 单点登录 SSO' },
-  { id: 'masking', label: '🛡️ 数据脱敏' },
-  { id: 'ratelimit', label: '⚡ API 限流' },
-  { id: 'report', label: '📊 合规报表' }
+  { id: 'sso', label: ' 单点登录 SSO' },
+  { id: 'masking', label: ' 数据脱敏' },
+  { id: 'ratelimit', label: ' API 限流' },
+  { id: 'report', label: ' 合规报表' }
 ]
 const callbackBase = computed(() => `${window.location.protocol}//${window.location.hostname}:8000`)
 const ssoProviders = ref([
@@ -258,7 +258,7 @@ const ssoProviders = ref([
     id: 'oidc',
     name: 'OIDC / OAuth2',
     type: 'OpenID Connect',
-    icon: '🔑',
+    icon: '',
     enabled: false,
     config: { issuer: '', client_id: '', client_secret: '' }
   },
@@ -266,7 +266,7 @@ const ssoProviders = ref([
     id: 'github',
     name: 'GitHub OAuth',
     type: 'Social Login',
-    icon: '🐙',
+    icon: '',
     enabled: false,
     config: { client_id: '', client_secret: '' }
   },
@@ -274,7 +274,7 @@ const ssoProviders = ref([
     id: 'ldap',
     name: 'LDAP / AD',
     type: '企业目录',
-    icon: '🏢',
+    icon: '',
     enabled: false,
     config: { host: '', base_dn: '', bind_dn: '', bind_password: '' }
   }
@@ -373,17 +373,17 @@ const rateLimitRules = ref([
   }
 ])
 const reports = ref([
-  { id: 'access', icon: '🔍', name: '访问审计报告', desc: '用户登录/操作行为汇总', period: '30d' },
+  { id: 'access', icon: '', name: '访问审计报告', desc: '用户登录/操作行为汇总', period: '30d' },
   {
     id: 'data_export',
-    icon: '📤',
+    icon: '',
     name: '数据访问报告',
     desc: '知识库读写与导出记录',
     period: '30d'
   },
   {
     id: 'rate_limit',
-    icon: '⚡',
+    icon: '',
     name: '限流统计报告',
     desc: 'API 调用超限与触发明细',
     period: '7d'

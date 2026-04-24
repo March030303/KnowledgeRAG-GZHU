@@ -259,7 +259,7 @@
                     : 'text-white/70 hover:text-white hover:bg-white/10'
                 ]"
               >
-                📧 邮箱验证
+                邮箱验证
               </button>
               <button
                 type="button"
@@ -271,7 +271,7 @@
                     : 'text-white/70 hover:text-white hover:bg-white/10'
                 ]"
               >
-                📱 手机验证
+                手机验证
               </button>
             </div>
             <!-- 邮箱输入 -->

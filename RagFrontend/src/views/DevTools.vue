@@ -255,7 +255,7 @@
           <div class="wb-chat mt-4">
             <div class="wb-messages" ref="wbMsgsEl">
               <div v-if="wbMessages.length === 0" class="text-center text-gray-500 py-8">
-                <p>👋 WorkBuddy 开发助手已就绪</p>
+                <p>WorkBuddy 开发助手已就绪</p>
                 <p class="text-xs mt-1">可直接提问关于本项目的任何开发问题</p>
               </div>
               <div
@@ -264,12 +264,12 @@
                 :class="['wb-msg', msg.role === 'user' ? 'wb-msg--user' : 'wb-msg--ai']"
               >
                 <div class="wb-msg-role">
-                  {{ msg.role === 'user' ? '👤 开发者' : '🤖 WorkBuddy' }}
+                  {{ msg.role === 'user' ? ' 开发者' : ' WorkBuddy' }}
                 </div>
                 <div class="wb-msg-content">{{ msg.content }}</div>
               </div>
               <div v-if="wbLoading" class="wb-msg wb-msg--ai">
-                <div class="wb-msg-role">🤖 WorkBuddy</div>
+                <div class="wb-msg-role">WorkBuddy</div>
                 <div class="wb-msg-content text-gray-400">思考中...</div>
               </div>
             </div>
@@ -319,10 +319,10 @@
           <div class="code-block">
             <p class="text-gray-400 text-xs mb-2">路径：KnowledgeRAG-GZHU/RagBackend/.env</p>
             <pre>
-SMTP_USER=your@163.com     # 反馈邮件发件箱
-SMTP_PASS=your_auth_code   # 163授权码
-DEV_KEY=ragf-dev-2026      # DevTools访问密钥（建议修改）
-OSS_BUCKET=your-bucket     # 阿里云OSS存储桶名</pre
+SMTP_USER=your@163.com # 反馈邮件发件箱
+SMTP_PASS=your_auth_code # 163授权码
+DEV_KEY=ragf-dev-2026 # DevTools访问密钥（建议修改）
+OSS_BUCKET=your-bucket # 阿里云OSS存储桶名</pre
             >
           </div>
         </div>
@@ -370,10 +370,10 @@ function authenticate() {
 }
 // ─── 标签页 ──────────────────────────────────────────────────
 const tabs = [
-  { key: 'overview', label: '📊 系统概览' },
-  { key: 'api', label: '🔌 API测试' },
-  { key: 'audit', label: '📋 审计日志' },
-  { key: 'workbuddy', label: '🤖 WorkBuddy' },
+  { key: 'overview', label: ' 系统概览' },
+  { key: 'api', label: ' API测试' },
+  { key: 'audit', label: ' 审计日志' },
+  { key: 'workbuddy', label: ' WorkBuddy' },
   { key: 'env', label: '⚙️ 环境配置' }
 ]
 const activeTab = ref('overview')
@@ -584,33 +584,33 @@ async function collectProjectContext(): Promise<string> {
     const v = localStorage.getItem(k)
     if (v !== null) {
       const display = k === 'jwt' ? v.substring(0, 20) + '...' : v.substring(0, 80)
-      lines.push(`  ${k}: ${display}`)
+      lines.push(` ${k}: ${display}`)
     }
   }
   // 5. 前端文件树
   lines.push('\n=== 前端文件树(RagFrontend/src) ===')
-  lines.push(frontendFileTree.map(f => `  ${f}`).join('\n'))
+  lines.push(frontendFileTree.map(f => ` ${f}`).join('\n'))
   // 6. 后端文件树
   lines.push('\n=== 后端文件树(RagBackend) ===')
-  lines.push(backendFileTree.map(f => `  ${f}`).join('\n'))
+  lines.push(backendFileTree.map(f => ` ${f}`).join('\n'))
   // 7. 路由列表
   lines.push('\n=== 前端路由 ===')
-  lines.push('  / → /knowledge | /knowledge/:id | /chat | /square | /shared/:id')
-  lines.push('  /agent | /history | /files | /settings | /user/* | /devtools')
-  lines.push('  /acmd_search | /service | /testrange | /DOC | /404')
+  lines.push(' / → /knowledge | /knowledge/:id | /chat | /square | /shared/:id')
+  lines.push(' /agent | /history | /files | /settings | /user/* | /devtools')
+  lines.push(' /acmd_search | /service | /testrange | /DOC | /404')
   // 8. 最近操作（audit logs快照）
   if (auditLogs.value.length > 0) {
     lines.push('\n=== 最近审计记录(前5条) ===')
     auditLogs.value.slice(0, 5).forEach(log => {
-      lines.push(`  [${log.method}] ${log.path} → ${log.status_code} (${log.user_email || '匿名'})`)
+      lines.push(` [${log.method}] ${log.path} → ${log.status_code} (${log.user_email || '匿名'})`)
     })
   }
   // 9. 已知的 Bug / 最近修复
   lines.push('\n=== 最近修复记录 ===')
   lines.push(
-    '  commit c9693f8: 9项修复 - Chat布局/RAG开关/字体/语言/语音/反馈邮件/探索功能/DevTools'
+    ' commit c9693f8: 9项修复 - Chat布局/RAG开关/字体/语言/语音/反馈邮件/探索功能/DevTools'
   )
-  lines.push('  已知问题: Docker Hub 拉取镜像需翻墙，本地启动方式已验证可用')
+  lines.push(' 已知问题: Docker Hub 拉取镜像需翻墙，本地启动方式已验证可用')
   return lines.join('\n')
 }
 async function checkWbStatus() {

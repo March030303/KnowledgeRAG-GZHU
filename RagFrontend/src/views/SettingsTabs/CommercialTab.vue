@@ -85,7 +85,7 @@
     <!-- 工单系统 -->
     <div class="ticket-section">
       <div class="ticket-header">
-        <span class="section-title">🎫 工单管理</span>
+        <span class="section-title"> 工单管理</span>
         <button class="btn-new-ticket" @click="showTicketModal = true">+ 提交工单</button>
       </div>
       <div class="ticket-list">
@@ -176,7 +176,7 @@ const plans = [
   },
   {
     id: 'pro',
-    icon: '⚡',
+    icon: '',
     name: 'Pro 版',
     price: '¥39',
     price_unit: '/月',
@@ -193,7 +193,7 @@ const plans = [
   },
   {
     id: 'enterprise',
-    icon: '🏢',
+    icon: '',
     name: '企业版',
     price: '联系销售',
     price_unit: '',
@@ -211,10 +211,10 @@ const plans = [
   }
 ]
 const monthStats = ref([
-  { key: 'calls', icon: '📡', value: '4,820', label: 'API 调用', up: true, change: '+12%' },
-  { key: 'tokens', icon: '🔤', value: '1.2M', label: 'Token 消耗', up: true, change: '+8%' },
-  { key: 'docs', icon: '📄', value: '38', label: '文档上传', up: false, change: '-5%' },
-  { key: 'users', icon: '👥', value: '3', label: '活跃成员', up: true, change: '+1' }
+  { key: 'calls', icon: '', value: '4,820', label: 'API 调用', up: true, change: '+12%' },
+  { key: 'tokens', icon: '', value: '1.2M', label: 'Token 消耗', up: true, change: '+8%' },
+  { key: 'docs', icon: '', value: '38', label: '文档上传', up: false, change: '-5%' },
+  { key: 'users', icon: '', value: '3', label: '活跃成员', up: true, change: '+1' }
 ])
 const tickets = ref([
   {

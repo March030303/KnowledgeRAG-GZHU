@@ -4,8 +4,8 @@
       <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-gray-800">文件管理</h1>
         <div class="flex gap-3 items-center">
-          <span v-if="pinnedFiles.length > 0" class="text-sm text-blue-500 font-medium"
-            >📌 {{ pinnedFiles.length }} 个已置顶</span
+          <span v-if="pinnedFiles.length > 0" class="text-sm text-blue-500 font-medium">
+            {{ pinnedFiles.length }} 个已置顶</span
           >
           <t-button theme="primary" @click="refreshData">
             <template #icon>
@@ -17,7 +17,7 @@
       </div>
       <!-- 置顶文件区 -->
       <div v-if="pinnedFiles.length > 0" class="pinned-section mb-4">
-        <div class="pinned-header">📌 置顶文件</div>
+        <div class="pinned-header">置顶文件</div>
         <div class="pinned-list">
           <div v-for="file in pinnedFiles" :key="file.id" class="pinned-item">
             <t-tag variant="light" :theme="getFileTypeTheme(file.file_type)" class="mr-2">{{
@@ -69,7 +69,7 @@
                     @click="togglePin(row)"
                     :title="pinnedIds.has(row.id) ? '取消置顶' : '置顶'"
                   >
-                    {{ pinnedIds.has(row.id) ? '📌' : '置顶' }}
+                    {{ pinnedIds.has(row.id) ? '' : '置顶' }}
                   </t-button>
                   <t-button variant="text" theme="primary" @click="previewDocument(row)">
                     预览
@@ -125,7 +125,7 @@
                     :theme="pinnedIds.has(row.id) ? 'primary' : 'default'"
                     @click="togglePin(row)"
                   >
-                    {{ pinnedIds.has(row.id) ? '📌' : '置顶' }}
+                    {{ pinnedIds.has(row.id) ? '' : '置顶' }}
                   </t-button>
                   <t-button variant="text" theme="primary" @click="previewDocument(row)">
                     预览

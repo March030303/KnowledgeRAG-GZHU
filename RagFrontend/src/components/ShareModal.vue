@@ -98,7 +98,7 @@
           </button>
         </div>
         <div class="platform-note">
-          <span>💡 已联动：</span>
+          <span> 已联动：</span>
           <span v-for="p in linkedPlatforms" :key="p" class="platform-tag">{{ p }}</span>
           <button class="add-platform-btn" @click="showPlatformModal = true">+ 添加</button>
         </div>
@@ -132,15 +132,15 @@ const show = ref(true)
 // ── 公开设置 ──────────────────────────────────────────
 const visibility = ref('public')
 const visOptions = [
-  { value: 'private', icon: '🔒', label: '私有' },
-  { value: 'shared', icon: '🔗', label: '链接可见' },
-  { value: 'public', icon: '🌐', label: '完全公开' }
+  { value: 'private', icon: '', label: '私有' },
+  { value: 'shared', icon: '', label: '链接可见' },
+  { value: 'public', icon: '', label: '完全公开' }
 ]
 // ── Tab ────────────────────────────────────────────────
 const shareTabs = [
-  { id: 'link', label: '🔗 链接' },
-  { id: 'qrcode', label: '📱 二维码' },
-  { id: 'apps', label: '📤 分享到应用' }
+  { id: 'link', label: ' 链接' },
+  { id: 'qrcode', label: ' 二维码' },
+  { id: 'apps', label: ' 分享到应用' }
 ]
 const activeTab = ref('link')
 // ── 链接 ──────────────────────────────────────────────
@@ -231,21 +231,21 @@ watch(shareLink, () => {
 })
 // ── 应用分享 ──────────────────────────────────────────
 const shareApps = [
-  { id: 'feishu', name: '飞书', icon: '🦅', color: '#1456f0' },
-  { id: 'dingtalk', name: '钉钉', icon: '📌', color: '#1890ff' },
-  { id: 'wework', name: '企业微信', icon: '💼', color: '#07c160' },
-  { id: 'wechat', name: '微信', icon: '💬', color: '#07c160' },
-  { id: 'qq', name: 'QQ', icon: '🐧', color: '#12b7f5' },
-  { id: 'email', name: '邮件', icon: '✉️', color: '#6b7280' },
-  { id: 'copy', name: '复制链接', icon: '🔗', color: '#374151' }
+  { id: 'feishu', name: '飞书', icon: '', color: '#1456f0' },
+  { id: 'dingtalk', name: '钉钉', icon: '', color: '#1890ff' },
+  { id: 'wework', name: '企业微信', icon: '', color: '#07c160' },
+  { id: 'wechat', name: '微信', icon: '', color: '#07c160' },
+  { id: 'qq', name: 'QQ', icon: '', color: '#12b7f5' },
+  { id: 'email', name: '邮件', icon: '', color: '#6b7280' },
+  { id: 'copy', name: '复制链接', icon: '', color: '#374151' }
 ]
 const linkedPlatforms = ref(['飞书', '钉钉'])
 const showPlatformModal = ref(false)
 const allPlatforms = ref([
-  { id: 'feishu', name: '飞书', icon: '🦅', color: '#1456f0', linked: true },
-  { id: 'dingtalk', name: '钉钉', icon: '📌', color: '#1890ff', linked: true },
-  { id: 'wework', name: '企业微信', icon: '💼', color: '#07c160', linked: false },
-  { id: 'obsidian', name: 'Obsidian', icon: '💎', color: '#7c3aed', linked: false }
+  { id: 'feishu', name: '飞书', icon: '', color: '#1456f0', linked: true },
+  { id: 'dingtalk', name: '钉钉', icon: '', color: '#1890ff', linked: true },
+  { id: 'wework', name: '企业微信', icon: '', color: '#07c160', linked: false },
+  { id: 'obsidian', name: 'Obsidian', icon: '', color: '#7c3aed', linked: false }
 ])
 function shareToApp(app: any) {
   if (app.id === 'copy') {

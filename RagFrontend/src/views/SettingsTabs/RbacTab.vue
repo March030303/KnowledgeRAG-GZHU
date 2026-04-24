@@ -192,9 +192,9 @@ import { MessagePlugin } from 'tdesign-vue-next'
 import axios from 'axios'
 const activeSubTab = ref('roles')
 const subTabs = [
-  { id: 'roles', label: '🎭 角色列表' },
-  { id: 'users', label: '👥 用户管理' },
-  { id: 'matrix', label: '🗂️ 权限矩阵' }
+  { id: 'roles', label: ' 角色列表' },
+  { id: 'users', label: ' 用户管理' },
+  { id: 'matrix', label: ' 权限矩阵' }
 ]
 const showRoleModal = ref(false)
 const userSearch = ref('')
@@ -205,7 +205,7 @@ const roles = ref([
   {
     id: 'admin',
     name: '管理员',
-    icon: '👑',
+    icon: '',
     color: '#ef4444',
     desc: '拥有所有权限',
     member_count: 2,
@@ -215,7 +215,7 @@ const roles = ref([
   {
     id: 'editor',
     name: '编辑者',
-    icon: '✏️',
+    icon: '',
     color: '#4f7ef8',
     desc: '可编辑知识库内容',
     member_count: 8,
@@ -225,7 +225,7 @@ const roles = ref([
   {
     id: 'viewer',
     name: '访客',
-    icon: '👁️',
+    icon: '',
     color: '#10b981',
     desc: '只可查看和对话',
     member_count: 24,
@@ -235,7 +235,7 @@ const roles = ref([
   {
     id: 'auditor',
     name: '审计员',
-    icon: '🔍',
+    icon: '',
     color: '#f59e0b',
     desc: '可查看审计日志',
     member_count: 1,
@@ -282,17 +282,17 @@ const users = ref([
   }
 ])
 const resources = [
-  { id: 'kb', name: '知识库', icon: '📚' },
-  { id: 'doc', name: '文档', icon: '📄' },
-  { id: 'chat', name: 'RAG对话', icon: '💬' },
-  { id: 'audit', name: '审计日志', icon: '📋' },
-  { id: 'api', name: 'API Key', icon: '🔑' },
+  { id: 'kb', name: '知识库', icon: '' },
+  { id: 'doc', name: '文档', icon: '' },
+  { id: 'chat', name: 'RAG对话', icon: '' },
+  { id: 'audit', name: '审计日志', icon: '' },
+  { id: 'api', name: 'API Key', icon: '' },
   { id: 'settings', name: '系统设置', icon: '⚙️' }
 ]
 const permTypes = [
-  { key: 'read', label: '读取', icon: '👁' },
-  { key: 'write', label: '写入', icon: '✏' },
-  { key: 'delete', label: '删除', icon: '🗑' },
+  { key: 'read', label: '读取', icon: '' },
+  { key: 'write', label: '写入', icon: '' },
+  { key: 'delete', label: '删除', icon: '' },
   { key: 'manage', label: '管理', icon: '⚙' }
 ]
 // 权限矩阵状态（role_id:res_id:perm_key -> boolean）
@@ -371,7 +371,7 @@ function createRole() {
   roles.value.push({
     id: `custom_${Date.now()}`,
     name: newRole.name,
-    icon: '🎭',
+    icon: '',
     color: newRole.color,
     desc: newRole.desc,
     member_count: 0,

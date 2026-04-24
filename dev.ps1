@@ -15,7 +15,7 @@ function Test-DockerMySQL {
 if ($Status) {
   Write-Host "--- Status ---" -ForegroundColor Magenta
   if (Test-DockerMySQL) { Write-Host "  [OK] MySQL (Docker ragf-mysql)" -ForegroundColor Green } else { Write-Host "  [X]  MySQL (Docker ragf-mysql not responding)" -ForegroundColor Red }
-  if (Test-Port 8000) { Write-Host "  [OK] Backend  http://localhost:8000/docs" -ForegroundColor Green } else { Write-Host "  [X]  Backend" -ForegroundColor Red }
+  if (Test-Port 8080) { Write-Host "  [OK] Backend  http://localhost:8080/docs" -ForegroundColor Green } else { Write-Host "  [X]  Backend" -ForegroundColor Red }
   $fp = Get-FrontPort; if ($fp -gt 0) { Write-Host "  [OK] Frontend http://localhost:$fp" -ForegroundColor Green } else { Write-Host "  [X]  Frontend" -ForegroundColor Red }
   if (Test-Port 11434) { Write-Host "  [OK] Ollama" -ForegroundColor Green } else { Write-Host "  [--] Ollama not running (optional)" -ForegroundColor Yellow }
   exit 0
@@ -24,7 +24,7 @@ if ($Status) {
 if ($Stop) {
   $p5 = Get-PidOnPort 5173; if ($p5) { taskkill /PID $p5 /F | Out-Null; Write-Host "Stopped frontend(5173)" -ForegroundColor Green }
   $p5b = Get-PidOnPort 5174; if ($p5b) { taskkill /PID $p5b /F | Out-Null; Write-Host "Stopped frontend(5174)" -ForegroundColor Green }
-  $p8 = Get-PidOnPort 8000; if ($p8) { taskkill /PID $p8 /F | Out-Null; Write-Host "Stopped backend" -ForegroundColor Green }
+  $p8 = Get-PidOnPort 8080; if ($p8) { taskkill /PID $p8 /F | Out-Null; Write-Host "Stopped backend" -ForegroundColor Green }
   Write-Host "Note: Docker MySQL (ragf-mysql) is managed by Docker, use 'docker compose stop' to stop it." -ForegroundColor Yellow
   exit 0
 }
@@ -53,14 +53,14 @@ if (Test-DockerMySQL) {
   exit 1
 }
 
-Write-Host "[2/3] Backend (8000)"
-if (Test-Port 8000) { Write-Host "  [skip] already running" -ForegroundColor Cyan }
+Write-Host "[2/3] Backend (8080)"
+if (Test-Port 8080) { Write-Host "  [skip] already running" -ForegroundColor Cyan }
 else {
   $py = if (Get-Command python -ErrorAction SilentlyContinue) { "python" } elseif (Get-Command python3 -ErrorAction SilentlyContinue) { "python3" } else { $null }
   if (-not $py) { Write-Host "  [X] python not found" -ForegroundColor Red; exit 1 }
-  Start-Process -FilePath $py -ArgumentList "-m","uvicorn","main:app","--host","0.0.0.0","--port","8000","--reload" -WorkingDirectory $BACK -WindowStyle Minimized
-  $w=0; while (-not (Test-Port 8000) -and $w -lt 15) { Start-Sleep 1; $w++ }
-  if (Test-Port 8000) { Write-Host "  [OK] http://localhost:8000/docs" -ForegroundColor Green } else { Write-Host "  [X] timeout" -ForegroundColor Red }
+  Start-Process -FilePath $py -ArgumentList "-m","uvicorn","main:app","--host","0.0.0.0","--port","8080","--reload" -WorkingDirectory $BACK -WindowStyle Minimized
+  $w=0; while (-not (Test-Port 8080) -and $w -lt 15) { Start-Sleep 1; $w++ }
+  if (Test-Port 8080) { Write-Host "  [OK] http://localhost:8080/docs" -ForegroundColor Green } else { Write-Host "  [X] timeout" -ForegroundColor Red }
 }
 
 Write-Host "[3/3] Frontend (Vite)"
@@ -78,8 +78,8 @@ else {
 
 Write-Host ""
 Write-Host "=== All ready! ===" -ForegroundColor Green
-Write-Host "  Backend:  http://localhost:8000" -ForegroundColor Green
-Write-Host "  API Docs: http://localhost:8000/docs" -ForegroundColor Green
+Write-Host "  Backend:  http://localhost:8080" -ForegroundColor Green
+Write-Host "  API Docs: http://localhost:8080/docs" -ForegroundColor Green
 $ffp = Get-FrontPort; if ($ffp -gt 0) { Write-Host "  Frontend: http://localhost:$ffp" -ForegroundColor Green; Start-Process "http://localhost:$ffp" } else { Write-Host "  Frontend: check Vite window (5173 or 5174)" -ForegroundColor Yellow }
 Write-Host ""
 Write-Host "  [DB] Local dev uses Docker MySQL ragf-mysql on 127.0.0.1:3307 (container 3306)" -ForegroundColor Cyan

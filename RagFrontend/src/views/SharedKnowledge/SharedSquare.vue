@@ -79,7 +79,7 @@
       <!-- 左侧：推荐圈子 -->
       <aside class="square-aside">
         <div class="aside-section">
-          <h3 class="aside-title">🔥 热门圈子</h3>
+          <h3 class="aside-title">热门圈子</h3>
           <div v-if="circlesLoading" class="aside-loading">加载中...</div>
           <div v-else-if="hotCircles.length === 0" class="aside-empty">
             暂无圈子，快来创建第一个！
@@ -109,7 +109,7 @@
           </div>
         </div>
         <div class="aside-section">
-          <h3 class="aside-title">📌 我的圈子</h3>
+          <h3 class="aside-title">我的圈子</h3>
           <div v-if="myCircles.length === 0" class="aside-empty">还未加入任何圈子</div>
           <div v-for="c in myCircles" :key="c.id" class="circle-item" @click="filterByCircle(c)">
             <div class="circle-avatar" :style="{ background: c.color }">{{ c.name[0] }}</div>
@@ -122,7 +122,7 @@
         </div>
         <!-- 分享我的知识库 -->
         <div class="aside-section">
-          <h3 class="aside-title">📤 分享知识库</h3>
+          <h3 class="aside-title">分享知识库</h3>
           <p class="aside-hint">将你的知识库发布到广场，与大家共享</p>
           <button class="share-my-kb-btn" @click="showShareMyKb = true">选择知识库发布</button>
         </div>
@@ -144,7 +144,7 @@
         </div>
         <!-- 空状态 -->
         <div v-else-if="kbList.length === 0" class="empty-state">
-          <div class="empty-icon">📚</div>
+          <div class="empty-icon"></div>
           <p>暂无知识库</p>
           <p class="empty-hint">成为第一个发布者！</p>
           <button class="empty-action-btn" @click="showShareMyKb = true">立即发布</button>
@@ -170,7 +170,7 @@
             <div class="kb-info">
               <div class="kb-title-row">
                 <span class="kb-name">{{ kb.kb_name }}</span>
-                <span v-if="kb.view_count > 500" class="hot-badge">🔥热</span>
+                <span v-if="kb.view_count > 500" class="hot-badge">热</span>
                 <span v-if="isNewKb(kb.created_at)" class="new-badge">NEW</span>
               </div>
               <p class="kb-desc">{{ kb.description || '暂无描述' }}</p>
@@ -185,7 +185,7 @@
                   <span>{{ kb.author_name || '匿名' }}</span>
                 </div>
                 <div class="kb-stats">
-                  <span class="stat-item">👁 {{ formatNum(kb.view_count) }}</span>
+                  <span class="stat-item"> {{ formatNum(kb.view_count) }}</span>
                   <span class="stat-item" :class="{ starred: starredSet.has(kb.id) }">
                     ⭐ {{ formatNum(kb.star_count) }}
                   </span>
@@ -211,7 +211,7 @@
     <div v-if="showShareMyKb" class="modal-overlay" @click.self="showShareMyKb = false">
       <div class="modal-card">
         <div class="modal-header">
-          <h3>📤 发布知识库到广场</h3>
+          <h3>发布知识库到广场</h3>
           <button @click="showShareMyKb = false" class="modal-close">✕</button>
         </div>
         <div class="modal-body">
