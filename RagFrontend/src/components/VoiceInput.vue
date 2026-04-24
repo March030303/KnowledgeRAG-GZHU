@@ -10,7 +10,7 @@
         'voice-btn--ready': !isRecording && !isProcessing
       }"
       :title="btnTitle"
-      :disabled="isProcessing || !supported"
+      :disabled="isProcessing || !supported || (whisperChecked && !whisperReady)"
       @click="toggle"
     >
       <!-- 录制中：停止图标 + 波纹动画 -->
@@ -49,11 +49,21 @@
     </div>
     <!-- 不支持提示 -->
     <span v-if="!supported" class="voice-unsupported">浏览器不支持录音</span>
+    <!-- Whisper 不可用提示 -->
+    <span v-if="supported && whisperChecked && !whisperReady" class="voice-unsupported">
+      语音服务不可用
+    </span>
+    <!-- Whisper 状态指示 -->
+    <span
+      v-if="supported && whisperChecked && whisperReady && !isRecording && !isProcessing"
+      class="voice-status-dot"
+      title="Whisper 语音服务就绪"
+    ></span>
   </div>
 </template>
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 const props = withDefaults(
   defineProps<{
     kbId?: string // 知识库 ID（传入则触发 voice/ask，否则只转录）
@@ -76,6 +86,36 @@ const isProcessing = ref(false)
 const transcript = ref('')
 const elapsed = ref(0)
 const supported = ref(typeof MediaRecorder !== 'undefined')
+// ── Whisper 可用性检测 ──────────────────────────────────────────
+const whisperChecked = ref(false)
+const whisperReady = ref(false)
+const whisperStatus = ref<{
+  ready: boolean
+  whisper_installed: boolean
+  ffmpeg_installed: boolean
+  model_loaded: boolean
+  current_model: string
+  install_hint: string | null
+} | null>(null)
+let healthCheckInterval: ReturnType<typeof setInterval> | null = null
+
+async function checkWhisperHealth() {
+  try {
+    const res = await fetch('/api/voice/health')
+    if (res.ok) {
+      const data = await res.json()
+      whisperStatus.value = data
+      whisperReady.value = data.ready === true
+    } else {
+      whisperReady.value = false
+    }
+  } catch {
+    whisperReady.value = false
+  } finally {
+    whisperChecked.value = true
+  }
+}
+
 let mediaRecorder: MediaRecorder | null = null
 let audioChunks: Blob[] = []
 let timerInterval: number | null = null
@@ -83,6 +123,8 @@ let startTime = 0
 // ── 计算属性 ─────────────────────────────────────────────────────
 const btnTitle = computed(() => {
   if (!supported.value) return '浏览器不支持录音'
+  if (whisperChecked.value && !whisperReady.value)
+    return whisperStatus.value?.install_hint || '语音服务不可用，请安装 openai-whisper 和 ffmpeg'
   if (isProcessing.value) return '识别中...'
   if (isRecording.value) return '点击停止录制'
   return '点击开始语音输入'
@@ -132,6 +174,10 @@ function stopRecording() {
 
 async function processAudio() {
   if (audioChunks.length === 0) return
+  if (!whisperReady.value) {
+    emit('error', '语音服务不可用，请安装 openai-whisper 和 ffmpeg')
+    return
+  }
   isProcessing.value = true
   try {
     const blob = new Blob(audioChunks, { type: 'audio/webm' })
@@ -203,9 +249,15 @@ async function copyTranscript() {
     /* ignore */
   }
 }
+onMounted(() => {
+  checkWhisperHealth()
+  // 每 30 秒重新检测一次 Whisper 可用性
+  healthCheckInterval = setInterval(checkWhisperHealth, 30000)
+})
 onUnmounted(() => {
   if (isRecording.value) stopRecording()
   if (timerInterval !== null) clearInterval(timerInterval)
+  if (healthCheckInterval !== null) clearInterval(healthCheckInterval)
 })
 </script>
 <style scoped>
@@ -348,5 +400,12 @@ onUnmounted(() => {
 .voice-unsupported {
   font-size: 12px;
   color: #9ca3af;
+}
+.voice-status-dot {
+  width: 6px;
+  height: 6px;
+  background: #22c55e;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 </style>

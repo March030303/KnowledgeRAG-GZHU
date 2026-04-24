@@ -148,20 +148,21 @@
         </div>
         <!-- 知识库选择器（RAG模式下展示） -->
         <div v-if="ragMode" class="rag-kb-selector">
-          <div class="rag-kb-label">选择知识库</div>
+          <div class="rag-kb-label">选择知识库（可多选）</div>
           <t-select
-            v-model="selectedKbId"
+            v-model="selectedKbIds"
             placeholder="请选择知识库"
             size="small"
+            multiple
             clearable
             :options="kbSelectOptions"
             class="rag-kb-select"
           />
-          <div v-if="selectedKbId" class="rag-kb-hint">
+          <div v-if="selectedKbIds.length > 0" class="rag-kb-hint">
             <svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2">
               <path stroke-linecap="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            已启用知识库增强
+            已启用 {{ selectedKbIds.length }} 个知识库增强
           </div>
         </div>
       </div>
@@ -221,6 +222,28 @@
     </div>
     <!-- 主聊天区域 -->
     <div class="chat-main-area">
+      <!-- 知识库增强徽章 -->
+      <div v-if="ragMode && selectedKbIds.length > 0" class="kb-badges-bar">
+        <span class="kb-badges-label">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            style="width: 14px; height: 14px"
+          >
+            <path
+              stroke-linecap="round"
+              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+            />
+          </svg>
+          RAG 知识库：
+        </span>
+        <span v-for="id in selectedKbIds" :key="id" class="kb-badge">
+          {{ getKbName(id) }}
+          <button class="kb-badge-remove" @click="removeKb(id)">×</button>
+        </span>
+      </div>
       <!-- 停止提示 -->
       <div
         v-if="showStopHint"
@@ -237,7 +260,8 @@
         :key="currentSession.id"
         :loading="isStreamLoad"
         :ragMode="ragMode"
-        :ragKbId="selectedKbId"
+        :ragKbId="selectedKbIds.length > 0 ? selectedKbIds[0] : ''"
+        :ragKbIds="selectedKbIds"
         @chat-updated="handleChatUpdated"
         @send-message="inputEnter"
       />
@@ -327,7 +351,7 @@ const maxRetries = 3
 const chatSessions = ref<ChatSession[]>([])
 // ====== RAG 模式 ======
 const ragMode = ref(false)
-const selectedKbId = ref<string>('')
+const selectedKbIds = ref<string[]>([])
 const kbList = ref<any[]>([])
 // ====== 多模型 & 检索策略 ======
 const selectedModel = ref(localStorage.getItem('selected_model') || '')
@@ -371,6 +395,13 @@ const loadKbList = async () => {
   } catch {
     kbList.value = []
   }
+}
+const getKbName = (id: string) => {
+  const kb = kbList.value.find((k: any) => (k.kbId || k.id) === id)
+  return kb ? kb.kbName || kb.title || kb.name || id : id
+}
+const removeKb = (id: string) => {
+  selectedKbIds.value = selectedKbIds.value.filter(i => i !== id)
 }
 // 计算属性
 const currentSession = computed(() => {
@@ -686,7 +717,8 @@ const inputEnter = async (inputValue: string) => {
         model: currentModel || undefined,
         // RAG 模式参数
         rag_mode: ragMode.value,
-        kb_id: ragMode.value ? selectedKbId.value : undefined,
+        kb_id: ragMode.value && selectedKbIds.value.length > 0 ? selectedKbIds.value[0] : undefined,
+        kb_ids: ragMode.value ? selectedKbIds.value : undefined,
         // Ollama 本地设置（云端模型时后端忽略）
         ollamaSettings: {
           serverUrl: settings.serverUrl,
@@ -987,6 +1019,50 @@ onUnmounted(() => {
 .rag-kb-hint svg {
   width: 12px;
   height: 12px;
+}
+/* 知识库增强徽章 */
+.kb-badges-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #f0f9ff;
+  border-bottom: 1px solid #bae6fd;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.kb-badges-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #0369a1;
+  font-weight: 500;
+}
+.kb-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: #dbeafe;
+  color: #1e40af;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.kb-badge-remove {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 2px;
+  border-radius: 50%;
+  transition: color 0.15s;
+}
+.kb-badge-remove:hover {
+  color: #ef4444;
 }
 /* 动画效果 */
 @keyframes fade-in {

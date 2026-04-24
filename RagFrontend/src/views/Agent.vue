@@ -146,9 +146,42 @@
               rows="4"
               @keydown.ctrl.enter="startTask"
             ></textarea>
+            <!-- 已上传文件预览 -->
+            <div v-if="uploadedFiles.length > 0" class="uploaded-files-preview">
+              <div v-for="(f, idx) in uploadedFiles" :key="idx" class="uploaded-file-item">
+                <span class="file-icon">{{ fileIcon(f.name) }}</span>
+                <span class="file-name" :title="f.name">{{ f.name }}</span>
+                <span class="file-size">{{ formatFileSize(f.size) }}</span>
+                <button class="file-remove" @click="removeFile(idx)">×</button>
+              </div>
+            </div>
             <!-- 选项栏 -->
             <div class="input-options">
               <div class="input-options__left">
+                <!-- 文件上传按钮 -->
+                <label class="option-item file-upload-label">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    class="w-4 h-4"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 7"
+                    />
+                  </svg>
+                  <span class="option-label">上传文件</span>
+                  <input
+                    type="file"
+                    multiple
+                    class="hidden-file-input"
+                    @change="handleFileUpload"
+                    accept=".pdf,.docx,.doc,.txt,.md,.csv,.xlsx,.png,.jpg,.jpeg,.gif,.bmp,.mp3,.wav,.m4a,.mp4,.webm"
+                  />
+                </label>
                 <label class="option-item">
                   <span class="option-icon"></span>
                   <span class="option-label">使用知识库</span>
@@ -448,6 +481,51 @@ const taskOptions = ref({
   selectedKbId: '',
   webSearch: false
 })
+// ── 文件上传 ──────────────────────────────────────────────
+interface UploadedFile {
+  name: string
+  size: number
+  type: string
+  file: File
+}
+const uploadedFiles = ref<UploadedFile[]>([])
+
+function handleFileUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (!input.files) return
+  for (let i = 0; i < input.files.length; i++) {
+    const f = input.files[i]
+    if (f.size > 50 * 1024 * 1024) {
+      MessagePlugin.warning(`文件 ${f.name} 超过 50MB 限制`)
+      continue
+    }
+    // 避免重复上传
+    if (uploadedFiles.value.some(uf => uf.name === f.name && uf.size === f.size)) continue
+    uploadedFiles.value.push({ name: f.name, size: f.size, type: f.type, file: f })
+  }
+  input.value = '' // 重置 input
+}
+
+function removeFile(idx: number) {
+  uploadedFiles.value.splice(idx, 1)
+}
+
+function fileIcon(name: string): string {
+  const ext = name.split('.').pop()?.toLowerCase() || ''
+  if (['pdf'].includes(ext)) return '📄'
+  if (['docx', 'doc'].includes(ext)) return '📝'
+  if (['xlsx', 'csv'].includes(ext)) return '📊'
+  if (['png', 'jpg', 'jpeg', 'gif', 'bmp'].includes(ext)) return '🖼️'
+  if (['mp3', 'wav', 'm4a'].includes(ext)) return '🎵'
+  if (['mp4', 'webm'].includes(ext)) return '🎬'
+  return '📎'
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return bytes + 'B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + 'KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + 'MB'
+}
 let stopSignal = false
 let taskStartTime = 0
 let taskAbortController: AbortController | null = null
@@ -577,27 +655,47 @@ const startTask = async () => {
 }
 // ── 通过 /api/agent/task SSE 运行任务（云端+本地统一） ─
 async function runViaAgentTaskAPI(query: string, model: string, taskRecord: TaskRecord) {
-  const payload = {
-    query,
-    model,
-    kb_id:
-      taskOptions.value.useKnowledgeBase && taskOptions.value.selectedKbId
-        ? taskOptions.value.selectedKbId
-        : null,
-    retrieval_config:
-      taskOptions.value.useKnowledgeBase && taskOptions.value.selectedKbId
-        ? retrievalConfig.value
-        : undefined,
-    temperature: 0.7,
-    max_tokens: 4096
-  }
-  const resp = await fetch('/api/agent/task', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const hasFiles = uploadedFiles.value.length > 0
+  let fetchOptions: RequestInit
 
-    body: JSON.stringify(payload),
-    signal: taskAbortController?.signal
-  })
+  if (hasFiles) {
+    // 有文件时使用 FormData
+    const formData = new FormData()
+    formData.append('query', query)
+    formData.append('model', model)
+    formData.append('temperature', '0.7')
+    formData.append('max_tokens', '4096')
+    if (taskOptions.value.useKnowledgeBase && taskOptions.value.selectedKbId) {
+      formData.append('kb_id', taskOptions.value.selectedKbId)
+    }
+    for (const f of uploadedFiles.value) {
+      formData.append('files', f.file)
+    }
+    fetchOptions = { method: 'POST', body: formData, signal: taskAbortController?.signal }
+  } else {
+    const payload = {
+      query,
+      model,
+      kb_id:
+        taskOptions.value.useKnowledgeBase && taskOptions.value.selectedKbId
+          ? taskOptions.value.selectedKbId
+          : null,
+      retrieval_config:
+        taskOptions.value.useKnowledgeBase && taskOptions.value.selectedKbId
+          ? retrievalConfig.value
+          : undefined,
+      temperature: 0.7,
+      max_tokens: 4096
+    }
+    fetchOptions = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: taskAbortController?.signal
+    }
+  }
+
+  const resp = await fetch('/api/agent/task', fetchOptions)
   if (!resp.ok) {
     throw new Error(`后端返回 ${resp.status}`)
   }
@@ -707,6 +805,7 @@ const resetTask = () => {
   currentTask.value = null
   isRunning.value = false
   stopSignal = false
+  uploadedFiles.value = []
 }
 const copyOutput = () => {
   navigator.clipboard.writeText(finalOutput.value).then(() => {
@@ -1095,6 +1194,58 @@ onUnmounted(() => {
 }
 .option-label {
   white-space: nowrap;
+}
+/* 文件上传 */
+.file-upload-label {
+  cursor: pointer;
+}
+.hidden-file-input {
+  display: none;
+}
+.uploaded-files-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 14px;
+  border-top: 1px solid #f3f4f6;
+}
+.uploaded-file-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #1e40af;
+}
+.file-icon {
+  font-size: 14px;
+}
+.file-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-size {
+  color: #6b7280;
+  font-size: 10px;
+}
+.file-remove {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+  border-radius: 50%;
+  transition: color 0.15s;
+}
+.file-remove:hover {
+  color: #ef4444;
 }
 .start-btn {
   display: flex;

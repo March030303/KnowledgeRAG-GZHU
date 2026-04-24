@@ -43,6 +43,23 @@
         <div class="eval-ov-label">{{ card.label }}</div>
       </div>
     </div>
+    <!-- 高级指标卡片 -->
+    <div class="eval-section-title">高级检索指标</div>
+    <div class="eval-metrics-row">
+      <div class="eval-metric-card" v-for="m in advancedMetrics" :key="m.key">
+        <div class="eval-metric-value" :style="{ color: m.color }">{{ m.value }}</div>
+        <div class="eval-metric-label">{{ m.label }}</div>
+        <div class="eval-metric-desc">{{ m.desc }}</div>
+      </div>
+    </div>
+    <button
+      class="eval-btn-run"
+      @click="computeAdvancedMetrics"
+      :disabled="metricsLoading"
+      style="margin-bottom: 16px"
+    >
+      {{ metricsLoading ? '计算中...' : '计算高级指标' }}
+    </button>
     <!-- ECharts：三图并排 -->
     <div v-if="chartData" class="eval-charts-row">
       <!-- 雷达图：多模型三维度对比 -->
@@ -59,6 +76,21 @@
       <div class="eval-chart-box">
         <div class="eval-chart-title">响应时间分布</div>
         <div ref="latencyRef" style="width: 100%; height: 280px"></div>
+      </div>
+    </div>
+    <!-- 指标趋势图 -->
+    <div
+      v-if="metricsTrend.length > 0"
+      class="eval-charts-row"
+      style="grid-template-columns: 1fr 1fr"
+    >
+      <div class="eval-chart-box">
+        <div class="eval-chart-title">评分趋势（近30天）</div>
+        <div ref="trendRatingRef" style="width: 100%; height: 260px"></div>
+      </div>
+      <div class="eval-chart-box">
+        <div class="eval-chart-title">满意度趋势（近30天）</div>
+        <div ref="trendSatisRef" style="width: 100%; height: 260px"></div>
       </div>
     </div>
     <!-- 历史评测列表 -->
@@ -192,6 +224,77 @@ const showAllQs = ref(false)
 const radarRef = ref<HTMLElement>()
 const catBarRef = ref<HTMLElement>()
 const latencyRef = ref<HTMLElement>()
+const trendRatingRef = ref<HTMLElement>()
+const trendSatisRef = ref<HTMLElement>()
+// ── 高级指标 ────────────────────────────────────────────────────
+const metricsLoading = ref(false)
+const metricsData = ref<any>(null)
+const metricsTrend = ref<any[]>([])
+
+const advancedMetrics = computed(() => {
+  const m = metricsData.value?.metrics
+  if (!m) return []
+  return [
+    {
+      key: 'recall',
+      label: 'Recall@K',
+      value: (m.recall_at_k * 100).toFixed(1) + '%',
+      desc: '检索召回率',
+      color: m.recall_at_k >= 0.7 ? '#22c55e' : m.recall_at_k >= 0.4 ? '#f59e0b' : '#ef4444'
+    },
+    {
+      key: 'precision',
+      label: 'Precision@K',
+      value: (m.precision_at_k * 100).toFixed(1) + '%',
+      desc: '检索精确率',
+      color: m.precision_at_k >= 0.7 ? '#22c55e' : m.precision_at_k >= 0.4 ? '#f59e0b' : '#ef4444'
+    },
+    {
+      key: 'mrr',
+      label: 'MRR',
+      value: m.mrr.toFixed(4),
+      desc: '平均倒数排名',
+      color: m.mrr >= 0.7 ? '#22c55e' : m.mrr >= 0.4 ? '#f59e0b' : '#ef4444'
+    },
+    {
+      key: 'ndcg',
+      label: 'NDCG@K',
+      value: m.ndcg_at_k.toFixed(4),
+      desc: '归一化折损累积增益',
+      color: m.ndcg_at_k >= 0.7 ? '#22c55e' : m.ndcg_at_k >= 0.4 ? '#f59e0b' : '#ef4444'
+    }
+  ]
+})
+
+async function computeAdvancedMetrics() {
+  metricsLoading.value = true
+  try {
+    const res = await axios.post('/api/rag-eval/advanced-metrics', {
+      question: 'metrics-eval',
+      top_k: 5,
+      strategy: 'hybrid'
+    })
+    metricsData.value = res.data
+    // 同时获取趋势数据
+    const trendRes = await axios.get('/api/rag-eval/metrics-trend', { params: { days: 30 } })
+    metricsTrend.value = trendRes.data?.trend || []
+    await nextTick()
+    renderTrendCharts()
+  } catch {
+    metricsData.value = {
+      metrics: {
+        recall_at_k: 0,
+        precision_at_k: 0,
+        mrr: 0,
+        ndcg_at_k: 0,
+        sample_count: 0,
+        top_k: 5
+      }
+    }
+  } finally {
+    metricsLoading.value = false
+  }
+}
 // ── 从 store 获取持久化状态 ──────────────────────────────────
 const running = computed(() => evalStore.running)
 const latestRun = computed(() => evalStore.latestRun)
@@ -290,7 +393,49 @@ function renderCharts() {
     renderRadar(echarts)
     renderCatBar(echarts)
     renderLatencyHist(echarts)
+    renderTrendCharts()
   } catch {}
+}
+
+function renderTrendCharts() {
+  // @ts-ignore
+  const echarts = (window as any).echarts
+  if (!echarts || metricsTrend.value.length === 0) return
+
+  if (trendRatingRef.value) {
+    const chart = echarts.init(trendRatingRef.value)
+    chart.setOption({
+      tooltip: { trigger: 'axis' },
+      xAxis: { type: 'category', data: metricsTrend.value.map(t => t.date?.slice(5) || '') },
+      yAxis: { type: 'value', min: 0, max: 5, axisLabel: { formatter: '{value}' } },
+      series: [
+        {
+          type: 'line',
+          data: metricsTrend.value.map(t => t.avg_rating),
+          smooth: true,
+          itemStyle: { color: '#6366f1' },
+          areaStyle: { color: 'rgba(99,102,241,0.1)' }
+        }
+      ]
+    })
+  }
+  if (trendSatisRef.value) {
+    const chart = echarts.init(trendSatisRef.value)
+    chart.setOption({
+      tooltip: { trigger: 'axis', formatter: '{b}: {c}%' },
+      xAxis: { type: 'category', data: metricsTrend.value.map(t => t.date?.slice(5) || '') },
+      yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: '{value}%' } },
+      series: [
+        {
+          type: 'line',
+          data: metricsTrend.value.map(t => t.satisfaction_rate),
+          smooth: true,
+          itemStyle: { color: '#22c55e' },
+          areaStyle: { color: 'rgba(34,197,94,0.1)' }
+        }
+      ]
+    })
+  }
 }
 function renderRadar(echarts: any) {
   // intentionally empty
@@ -638,5 +783,41 @@ watch(chartData, async val => {
   cursor: pointer;
   padding: 4px 0;
   text-decoration: underline;
+}
+/* 高级指标 */
+.eval-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 20px 0 12px;
+  color: var(--td-text-color-primary, #111);
+}
+.eval-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.eval-metric-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 8px;
+  background: var(--td-bg-color-container, #fff);
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  gap: 4px;
+}
+.eval-metric-value {
+  font-size: 22px;
+  font-weight: 700;
+}
+.eval-metric-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+}
+.eval-metric-desc {
+  font-size: 10px;
+  color: #9ca3af;
 }
 </style>

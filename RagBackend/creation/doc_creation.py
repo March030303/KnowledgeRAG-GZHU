@@ -432,3 +432,144 @@ async def get_templates():
             },
         ]
     }
+
+
+# - Skill 预设模板 -
+_SKILLS = [
+    {
+        "id": "academic-paper",
+        "name": "学术论文",
+        "desc": "完整的学术论文结构，含摘要、引言、方法、实验、结论",
+        "icon": "🎓",
+        "type": "outline",
+        "preset": {
+            "topic": "",
+            "requirements": "学术论文风格，包含摘要、关键词、引言、相关工作、方法、实验与结果、讨论、结论、参考文献等完整结构，约5000字，面向研究生/科研人员",
+        },
+    },
+    {
+        "id": "tech-report",
+        "name": "技术报告",
+        "desc": "项目技术报告，含背景、架构、实现、测试",
+        "icon": "🔧",
+        "type": "outline",
+        "preset": {
+            "topic": "",
+            "requirements": "技术报告风格，包含项目背景、技术架构设计、核心实现、测试验证、部署运维、性能优化等章节，约3000字，面向技术团队",
+        },
+    },
+    {
+        "id": "business-plan",
+        "name": "商业方案",
+        "desc": "商业计划书/方案，含市场分析、产品策略、财务预测",
+        "icon": "💼",
+        "type": "outline",
+        "preset": {
+            "topic": "",
+            "requirements": "商业方案风格，包含执行摘要、市场分析、产品策略、营销方案、运营计划、财务预测、风险分析等章节，约4000字，面向投资人/管理层",
+        },
+    },
+    {
+        "id": "meeting-minutes",
+        "name": "会议纪要",
+        "desc": "规范化会议纪要，含议题、决议、待办",
+        "icon": "📋",
+        "type": "polish",
+        "preset": {
+            "text": "",
+            "style": "正式商务风格",
+        },
+    },
+    {
+        "id": "project-proposal",
+        "name": "项目申报书",
+        "desc": "项目申报/立项报告模板",
+        "icon": "📑",
+        "type": "outline",
+        "preset": {
+            "topic": "",
+            "requirements": "项目申报书风格，包含项目概述、立项依据、研究内容、技术路线、预期成果、经费预算、进度安排等章节，约3000字",
+        },
+    },
+    {
+        "id": "weekly-report",
+        "name": "周报/日报",
+        "desc": "工作周报/日报模板，含进展、问题、计划",
+        "icon": "📅",
+        "type": "template",
+        "preset": {
+            "template_type": "工作周报",
+            "scenario": "技术研发团队周报，包含本周进展、遇到的问题、下周计划、需要协调的事项",
+        },
+    },
+    {
+        "id": "api-doc",
+        "name": "API 文档",
+        "desc": "RESTful API 接口文档模板",
+        "icon": "🔌",
+        "type": "template",
+        "preset": {
+            "template_type": "API接口文档",
+            "scenario": "RESTful API 接口文档，包含接口列表、请求参数、响应格式、错误码、认证方式、调用示例",
+        },
+    },
+    {
+        "id": "readme",
+        "name": "README",
+        "desc": "GitHub 项目 README 文档",
+        "icon": "📖",
+        "type": "template",
+        "preset": {
+            "template_type": "项目README",
+            "scenario": "GitHub 开源项目 README，包含项目简介、功能特性、快速开始、安装说明、使用示例、配置说明、贡献指南、许可证",
+        },
+    },
+]
+
+
+@router.get("/skills")
+async def get_skills():
+    """获取所有可用的创作 Skill 预设"""
+    return {"skills": _SKILLS}
+
+
+class SkillExecuteRequest(BaseModel):
+    skill_id: str
+    user_input: str  # 用户补充的输入（如论文主题）
+    model: Optional[str] = None
+
+
+@router.post("/skill-execute")
+async def execute_skill(req: SkillExecuteRequest):
+    """根据 Skill 预设执行创作（SSE 流式）"""
+    skill = next((s for s in _SKILLS if s["id"] == req.skill_id), None)
+    if not skill:
+        raise HTTPException(status_code=404, detail=f"Skill {req.skill_id} 不存在")
+
+    model = req.model or _get_default_model()
+    skill_type = skill["type"]
+    preset = skill["preset"]
+
+    if skill_type == "outline":
+        prompt = _PROMPTS["outline"].format(
+            topic=req.user_input or preset.get("topic", ""),
+            requirements=preset.get("requirements", ""),
+        )
+    elif skill_type == "polish":
+        prompt = _PROMPTS["polish"].format(
+            text=req.user_input or preset.get("text", ""),
+            style=preset.get("style", "正式风格"),
+        )
+    elif skill_type == "template":
+        prompt = _PROMPTS["template"].format(
+            template_type=preset.get("template_type", ""),
+            scenario=req.user_input or preset.get("scenario", ""),
+        )
+    else:
+        prompt = req.user_input
+
+    return StreamingResponse(
+        _stream_via_model_router(model, prompt),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
+    )

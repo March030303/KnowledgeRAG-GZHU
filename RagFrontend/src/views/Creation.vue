@@ -2,10 +2,12 @@
   <div class="creation-page">
     <div class="creation-sidebar">
       <div class="cs-title">文档创作</div>
+      <!-- 基础创作类型 -->
+      <div class="cs-section-label">基础功能</div>
       <div
         v-for="t in types"
         :key="t.id"
-        :class="['cs-item', activeType === t.id && 'cs-item--active']"
+        :class="['cs-item', activeType === t.id && !activeSkill ? 'cs-item--active' : '']"
         @click="selectCreationType(t.id)"
       >
         <span class="cs-icon">{{ t.icon }}</span>
@@ -14,10 +16,38 @@
           <div class="cs-desc">{{ t.desc }}</div>
         </div>
       </div>
+      <!-- Skill 预设模板 -->
+      <div class="cs-section-label" style="margin-top: 12px">Skill 模板</div>
+      <div
+        v-for="s in skills"
+        :key="s.id"
+        :class="['cs-item', activeSkill === s.id ? 'cs-item--active' : '']"
+        @click="selectSkill(s)"
+      >
+        <span class="cs-icon">{{ s.icon }}</span>
+        <div>
+          <div class="cs-name">{{ s.name }}</div>
+          <div class="cs-desc">{{ s.desc }}</div>
+        </div>
+      </div>
     </div>
     <div class="creation-main">
+      <!-- Skill 模式 -->
+      <div v-if="activeSkill" class="creation-form">
+        <h3>{{ currentSkill?.icon }} {{ currentSkill?.name }}</h3>
+        <p class="cs-skill-desc">{{ currentSkill?.desc }}</p>
+        <div class="cf-row">
+          <label>{{ skillInputLabel }}</label>
+          <textarea
+            v-model="skillInput"
+            rows="4"
+            class="cf-textarea"
+            :placeholder="skillInputPlaceholder"
+          ></textarea>
+        </div>
+      </div>
       <!-- 大纲生成 -->
-      <div v-if="activeType === 'outline'" class="creation-form">
+      <div v-if="!activeSkill && activeType === 'outline'" class="creation-form">
         <h3>大纲生成</h3>
         <div class="cf-row">
           <label>主题 / 标题</label>
@@ -38,7 +68,7 @@
         </div>
       </div>
       <!-- 摘要生成 -->
-      <div v-if="activeType === 'summary'" class="creation-form">
+      <div v-if="!activeSkill && activeType === 'summary'" class="creation-form">
         <h3>摘要生成</h3>
         <div class="cf-row">
           <label>原文（支持粘贴长文本）</label>
@@ -61,7 +91,7 @@
         </div>
       </div>
       <!-- 翻译 -->
-      <div v-if="activeType === 'translate'" class="creation-form">
+      <div v-if="!activeSkill && activeType === 'translate'" class="creation-form">
         <h3>文本翻译</h3>
         <div class="cf-row">
           <label>原文</label>
@@ -84,7 +114,7 @@
         </div>
       </div>
       <!-- 格式优化 -->
-      <div v-if="activeType === 'polish'" class="creation-form">
+      <div v-if="!activeSkill && activeType === 'polish'" class="creation-form">
         <h3>格式优化</h3>
         <div class="cf-row">
           <label>原文</label>
@@ -106,7 +136,7 @@
         </div>
       </div>
       <!-- 内容扩写 -->
-      <div v-if="activeType === 'expand'" class="creation-form">
+      <div v-if="!activeSkill && activeType === 'expand'" class="creation-form">
         <h3>内容扩写</h3>
         <div class="cf-row">
           <label>大纲 / 要点</label>
@@ -191,7 +221,87 @@ const activeType = ref('outline')
 const generating = ref(false)
 const output = ref('')
 
+// ── Skill 模板 ──────────────────────────────────────────────────
+interface SkillItem {
+  id: string
+  name: string
+  desc: string
+  icon: string
+  type: string
+  preset: Record<string, string>
+}
+const skills = ref<SkillItem[]>([])
+const activeSkill = ref<string>('')
+const skillInput = ref('')
+const currentSkill = computed(() => skills.value.find(s => s.id === activeSkill.value))
+const skillInputLabel = computed(() => {
+  const s = currentSkill.value
+  if (!s) return '输入内容'
+  if (s.type === 'outline') return '主题 / 标题'
+  if (s.type === 'polish') return '原文内容'
+  if (s.type === 'template') return '场景描述 / 补充说明'
+  return '输入内容'
+})
+const skillInputPlaceholder = computed(() => {
+  const s = currentSkill.value
+  if (!s) return '请输入...'
+  if (s.id === 'academic-paper') return '如：基于大语言模型的中文文本纠错方法研究'
+  if (s.id === 'tech-report') return '如：KnowledgeRAG-GZHU 知识库问答系统'
+  if (s.id === 'business-plan') return '如：AI + 教育赛道的创业项目'
+  if (s.id === 'meeting-minutes') return '粘贴会议记录内容...'
+  if (s.id === 'project-proposal') return '如：面向高校的知识库智能问答系统'
+  if (s.id === 'weekly-report') return '描述本周工作内容和下周计划...'
+  if (s.id === 'api-doc') return '描述你的 API 接口功能...'
+  if (s.id === 'readme') return '描述你的项目功能和技术栈...'
+  return '请输入...'
+})
+
+async function loadSkills() {
+  try {
+    const res = await axios.get<{ skills: SkillItem[] }>('/api/creation/skills')
+    if (res.data?.skills) {
+      skills.value = res.data.skills
+    }
+  } catch {
+    // 降级：内置基础 Skill 列表
+    skills.value = [
+      {
+        id: 'academic-paper',
+        name: '学术论文',
+        desc: '完整学术论文结构',
+        icon: '🎓',
+        type: 'outline',
+        preset: { requirements: '学术论文风格，约5000字' }
+      },
+      {
+        id: 'tech-report',
+        name: '技术报告',
+        desc: '项目技术报告',
+        icon: '🔧',
+        type: 'outline',
+        preset: { requirements: '技术报告风格，约3000字' }
+      },
+      {
+        id: 'business-plan',
+        name: '商业方案',
+        desc: '商业计划书',
+        icon: '💼',
+        type: 'outline',
+        preset: { requirements: '商业方案风格，约4000字' }
+      }
+    ]
+  }
+}
+
+function selectSkill(skill: SkillItem) {
+  activeSkill.value = skill.id
+  activeType.value = skill.type
+  skillInput.value = ''
+  output.value = ''
+}
+
 function selectCreationType(typeId: string) {
+  activeSkill.value = ''
   activeType.value = typeId
   output.value = ''
 }
@@ -258,6 +368,56 @@ async function generate() {
   generating.value = true
   output.value = ''
   const model = selectedModel.value
+
+  // Skill 模式走 /api/creation/skill-execute
+  if (activeSkill.value) {
+    try {
+      const resp = await fetch('/api/creation/skill-execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ skill_id: activeSkill.value, user_input: skillInput.value, model })
+      })
+      if (!resp.ok) {
+        output.value = `[错误] 服务器返回 ${resp.status}，请检查后端是否正常运行`
+        return
+      }
+      const reader = resp.body!.getReader()
+      const decoder = new TextDecoder()
+      let buf = ''
+      let finished = false
+      while (!finished) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += decoder.decode(value, { stream: true })
+        const lines = buf.split('\n')
+        buf = lines.pop() ?? ''
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed.startsWith('data: ')) continue
+          const token = trimmed.slice(6)
+          if (token === '[DONE]') {
+            finished = true
+            break
+          }
+          if (token.startsWith('[ERROR]')) {
+            output.value += `\n\n${token.slice(8)}`
+            finished = true
+            break
+          }
+          if (token) {
+            output.value += token
+          }
+        }
+      }
+    } catch (e: any) {
+      output.value = `[错误] ${e?.message || e}`
+    } finally {
+      generating.value = false
+    }
+    return
+  }
+
+  // 原有基础创作模式
   const endpointMap: Record<string, { url: string; body: any }> = {
     outline: {
       url: '/api/creation/outline',
@@ -338,6 +498,7 @@ function renderMd(text: string): string {
 }
 onMounted(() => {
   loadModels()
+  loadSkills()
 })
 </script>
 <style scoped>
@@ -388,6 +549,19 @@ onMounted(() => {
 .cs-desc {
   font-size: 11px;
   color: #9ca3af;
+}
+.cs-section-label {
+  font-size: 10px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 8px 4px;
+  font-weight: 600;
+}
+.cs-skill-desc {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 16px;
 }
 .creation-main {
   flex: 1;

@@ -387,6 +387,15 @@ try:
 except Exception as _e:
     logger.warning(f"Agent企业工具链加载失败: {_e}")
 
+# Agent task execution (SSE streaming + file upload)
+try:
+    from agent_tools.agent_task_api import router as agent_task_router
+
+    app.include_router(agent_task_router, tags=["Agent-任务执行SSE"])
+    logger.info("Agent任务执行API已加载")
+except Exception as _e:
+    logger.warning(f"Agent任务执行API加载失败: {_e}")
+
 # Multi-model extension
 try:
     from multi_model.extended_model_router import router as ext_model_router

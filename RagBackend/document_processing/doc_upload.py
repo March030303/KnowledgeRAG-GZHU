@@ -44,7 +44,7 @@ MAX_FILE_SIZE = int(os.getenv("KB_MAX_FILE_SIZE", 50 * 1024 * 1024))  # 50MB
 KB_UPLOAD_CONCURRENCY = int(os.getenv("KB_UPLOAD_CONCURRENCY", 8))
 KB_CHUNK_SIZE = int(os.getenv("KB_CHUNK_SIZE", 1000))  # 文本分块字符数
 
-# FIX: [DOC-001] 扩展允许的文件格式
+# FIX: [DOC-001] 扩展允许的文件格式（含多模态：音频/视频）
 ALLOWED_EXTENSIONS = {
     # 文档格式
     ".pdf",
@@ -63,6 +63,22 @@ ALLOWED_EXTENSIONS = {
     ".jpeg",
     ".gif",
     ".bmp",
+    # 音频格式（Whisper 转录）
+    ".mp3",
+    ".wav",
+    ".m4a",
+    ".ogg",
+    ".flac",
+    ".aac",
+    ".wma",
+    # 视频格式（提取音轨 → Whisper 转录）
+    ".mp4",
+    ".avi",
+    ".mov",
+    ".mkv",
+    ".flv",
+    ".wmv",
+    ".webm",
 }
 
 # 并发限制（FIX: [DOC-005] 配置化魔法数字）
@@ -471,6 +487,31 @@ async def upload_complete(request: Request) -> JSONResponse:
 
         logger.info(f"文件处理完成: {req.fileName}, 文件 ID: {doc_id}")
 
+        # 多模态内容提取：图像/音频/视频自动提取文本
+        multimodal_exts = {
+            ".png", ".jpg", ".jpeg", ".gif", ".bmp",
+            ".mp3", ".wav", ".m4a", ".ogg", ".flac", ".aac", ".wma",
+            ".mp4", ".avi", ".mov", ".mkv", ".flv", ".wmv", ".webm",
+        }
+        extracted_text = ""
+        if file_ext in multimodal_exts:
+            try:
+                from knowledge.ocr_parser import extract_content
+
+                with open(str(final_file_path), "rb") as f:
+                    file_bytes = f.read()
+                extracted_text = extract_content(file_bytes, req.fileName, "")
+                if extracted_text and not extracted_text.startswith("["):
+                    # 将提取的文本保存为同目录下的 .txt 文件，方便后续向量化
+                    text_path = final_file_path.with_suffix(".extracted.txt")
+                    with open(str(text_path), "w", encoding="utf-8") as tf:
+                        tf.write(extracted_text)
+                    logger.info(f"多模态内容提取完成: {req.fileName}, 提取 {len(extracted_text)} 字符")
+                else:
+                    logger.warning(f"多模态内容提取失败或无内容: {req.fileName} -> {extracted_text[:100]}")
+            except Exception as mm_err:
+                logger.warning(f"多模态内容提取异常: {req.fileName}: {mm_err}")
+
         return JSONResponse(
             status_code=200,
             content={
@@ -481,6 +522,8 @@ async def upload_complete(request: Request) -> JSONResponse:
                 "filePath": str(final_file_path),
                 "chunks": estimated_chunks,
                 "slicingMethod": slicing_method,
+                "multimodalExtracted": bool(extracted_text and not extracted_text.startswith("[")),
+                "extractedCharCount": len(extracted_text) if extracted_text else 0,
             },
         )
 
