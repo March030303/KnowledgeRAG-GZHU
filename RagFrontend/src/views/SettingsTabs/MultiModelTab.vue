@@ -439,17 +439,6 @@ async function setDefault(provider: any) {
   MessagePlugin.success(`已将 ${provider.config.model || provider.name} 设为默认模型`)
 }
 
-async function pullModel(provider: any) {
-  if (!provider.config.model) {
-    MessagePlugin.warning('请先填写或选择模型名，再执行拉取')
-    return
-  }
-  MessagePlugin.info(
-    `请先在终端执行 ollama pull ${provider.config.model}，随后我已为你刷新本地模型列表`
-  )
-  await refreshOllamaModels(provider)
-}
-
 function formatTokens(n: number) {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n)
 }

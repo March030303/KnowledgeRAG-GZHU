@@ -17,7 +17,7 @@
     <t-layout>
       <t-content class="bg-gray-50 max-h-screen overflow-auto">
         <!-- 动态组件渲染 -->
-        <component :is="currentComponent" @model-downloaded="handleModelDownloaded" />
+        <component :is="currentComponent" />
       </t-content>
     </t-layout>
   </t-layout>
@@ -55,12 +55,6 @@ const currentComponent = computed(() => componentMap[activeTab.value])
 const ollamaServerUrl = ref('http://localhost:11434')
 
 // 事件处理
-const handleModelDownloaded = () => {
-  // 模型下载完成后，如果当前在模型列表页面，则刷新列表
-  if (activeTab.value === 'models') {
-    // 可以通过 ref 或事件总线通知模型列表组件刷新
-  }
-}
 
 // 加载设置
 const loadSettings = () => {
@@ -107,40 +101,6 @@ const ollamaApi = {
     } catch (error) {
       console.error('删除模型失败:', error)
       return false
-    }
-  },
-
-  // 下载模型
-  async downloadModel(name, onProgress) {
-    try {
-      const response = await fetch(`${ollamaServerUrl.value}/api/pull`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
-      })
-
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        const chunk = decoder.decode(value)
-        const lines = chunk.split('\n').filter(line => line.trim())
-
-        for (const line of lines) {
-          try {
-            const data = JSON.parse(line)
-            if (onProgress) onProgress(data)
-          } catch (e) {
-            console.warn('解析进度数据失败:', e)
-          }
-        }
-      }
-    } catch (error) {
-      console.error('下载模型失败:', error)
-      throw error
     }
   },
 

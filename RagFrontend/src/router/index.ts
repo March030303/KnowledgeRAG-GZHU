@@ -19,6 +19,8 @@ const ROLE_ROUTE_MAP: Record<string, string[]> = {
 }
 
 function canAccessRoute(role: string, path: string): boolean {
+  // 单用户模式下所有路由均可访问
+  if (import.meta.env.VITE_SINGLE_USER_MODE === 'true') return true
   const allowed = ROLE_ROUTE_MAP[role] || ROLE_ROUTE_MAP.guest
   if (allowed.includes('*')) return true
   return allowed.some(r => path.startsWith(r))

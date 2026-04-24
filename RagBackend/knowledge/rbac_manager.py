@@ -3,15 +3,23 @@
 扩展原有三级权限（个人/共享/广场）→ 角色+部门+资源粒度
 """
 
+import logging
 import os
 import sqlite3
 from typing import Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/rbac")
 DB_PATH = os.path.join(os.path.dirname(__file__), "rbac.db")
+
+# 单用户模式：所有用户视为 admin，跳过权限检查
+SINGLE_USER_MODE = os.getenv("SINGLE_USER_MODE", "true").lower() in ("true", "1", "yes")
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login/login")
 
 
 def get_db():
@@ -76,13 +84,88 @@ PERMISSION_HIERARCHY = {
 }
 
 
-# - -
+# ── 权限校验依赖 ──────────────────────────────────────────────
+def _verify_token(token: str) -> dict:
+    """解码 JWT token，返回 payload 或抛异常"""
+    try:
+        import jwt as pyjwt
+        secret = os.getenv("JWT_SECRET") or os.getenv("JWT_SECRET_KEY") or "changeme_jwt_secret"
+        return pyjwt.decode(token, secret, algorithms=["HS256"])
+    except Exception:
+        try:
+            from jwt import decode as jwt_decode
+            secret = os.getenv("JWT_SECRET") or os.getenv("JWT_SECRET_KEY") or "changeme_jwt_secret"
+            return jwt_decode(token, secret, algorithms=["HS256"])
+        except Exception as e:
+            raise HTTPException(status_code=401, detail=f"无效的认证令牌: {e}")
+
+
+def _get_user_role_by_email(email: str) -> str:
+    """根据邮箱查询用户角色，未分配则返回默认角色"""
+    if SINGLE_USER_MODE:
+        return "admin"
+    conn = get_db()
+    # 先查 user 表获取 user_id（邮箱→id），再查 user_roles
+    try:
+        row = conn.execute(
+            """
+            SELECT r.name FROM user_roles ur
+            JOIN roles r ON ur.role_id = r.id
+            WHERE ur.user_id = (
+                SELECT CAST(id AS TEXT) FROM sqlite_master LIMIT 0
+            )
+            ORDER BY r.id LIMIT 1
+            """
+        ).fetchone()
+    except Exception:
+        pass
+
+    # 简化：直接用 email 作为 user_id 查 user_roles
+    row = conn.execute(
+        """
+        SELECT r.name FROM user_roles ur
+        JOIN roles r ON ur.role_id = r.id
+        WHERE ur.user_id = ?
+        ORDER BY r.id LIMIT 1
+        """,
+        (email,),
+    ).fetchone()
+    conn.close()
+    if row:
+        return row[0]
+    return "admin" if SINGLE_USER_MODE else "viewer"
+
+
+async def get_current_user_role(token: str = Depends(oauth2_scheme)) -> str:
+    """FastAPI 依赖：从 JWT 提取用户并返回角色名"""
+    payload = _verify_token(token)
+    email = payload.get("sub", "")
+    return _get_user_role_by_email(email)
+
+
+async def check_is_admin(role: str = Depends(get_current_user_role)) -> str:
+    """FastAPI 依赖：校验当前用户是否为管理员，非管理员返回 403"""
+    if SINGLE_USER_MODE:
+        return "admin"
+    if role not in ("admin", "super_admin"):
+        raise HTTPException(status_code=403, detail="需要管理员权限")
+    return role
+
+
+# ── 当前用户角色查询 ──────────────────────────────────────────
+@router.get("/me", summary="获取当前用户角色")
+async def get_my_role(role: str = Depends(get_current_user_role)):
+    """前端调用此接口获取当前登录用户的角色，用于菜单/路由权限判断"""
+    return {"role": role, "single_user_mode": SINGLE_USER_MODE}
+
+
+# ── 管理类接口（需要 admin 权限） ───────────────────────────────
 class DeptCreate(BaseModel):
     name: str
     parent_id: Optional[int] = None
 
 
-@router.post("/dept/create")
+@router.post("/dept/create", dependencies=[Depends(check_is_admin)])
 def create_dept(req: DeptCreate):
     conn = get_db()
     conn.execute(
@@ -118,7 +201,7 @@ class RoleAssign(BaseModel):
     granted_by: Optional[str] = "system"
 
 
-@router.post("/roles/assign")
+@router.post("/roles/assign", dependencies=[Depends(check_is_admin)])
 def assign_role(req: RoleAssign):
     conn = get_db()
     conn.execute(
@@ -157,7 +240,7 @@ class KbPermGrant(BaseModel):
     granted_by: Optional[str] = "system"
 
 
-@router.post("/kb/grant")
+@router.post("/kb/grant", dependencies=[Depends(check_is_admin)])
 def grant_kb_permission(req: KbPermGrant):
     conn = get_db()
     perms = PERMISSION_HIERARCHY.get(req.permission, [req.permission])
@@ -175,7 +258,7 @@ def grant_kb_permission(req: KbPermGrant):
     return {"status": "granted", "permissions": perms}
 
 
-@router.delete("/kb/{kb_id}/revoke")
+@router.delete("/kb/{kb_id}/revoke", dependencies=[Depends(check_is_admin)])
 def revoke_kb_permission(kb_id: str, subject_type: str, subject_id: str):
     conn = get_db()
     conn.execute(

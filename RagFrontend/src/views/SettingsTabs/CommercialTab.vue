@@ -153,7 +153,7 @@
 </template>
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { MessagePlugin } from 'tdesign-vue-next'
 import axios from 'axios'
 const showTicketModal = ref(false)
@@ -161,8 +161,8 @@ const currentPlan = reactive({ tier: 'free', label: '免费版', expire_at: 0 })
 const quotas = ref([
   { key: 'storage', label: '存储空间', used: 0.8, limit: 1 },
   { key: 'kb', label: '知识库数量', used: 2, limit: 3 },
-  { key: 'calls', label: '今日 API 调用', used: 142, limit: 500 },
-  { key: 'members', label: '团队成员', used: 3, limit: 5 }
+  { key: 'calls', label: '今日 API 调用', used: 0, limit: 500 },
+  { key: 'members', label: '团队成员', used: 1, limit: 5 }
 ])
 const plans = [
   {
@@ -211,27 +211,57 @@ const plans = [
   }
 ]
 const monthStats = ref([
-  { key: 'calls', icon: '', value: '4,820', label: 'API 调用', up: true, change: '+12%' },
-  { key: 'tokens', icon: '', value: '1.2M', label: 'Token 消耗', up: true, change: '+8%' },
-  { key: 'docs', icon: '', value: '38', label: '文档上传', up: false, change: '-5%' },
-  { key: 'users', icon: '', value: '3', label: '活跃成员', up: true, change: '+1' }
+  { key: 'calls', icon: '', value: '-', label: 'API 调用', up: true, change: '' },
+  { key: 'tokens', icon: '', value: '-', label: 'Token 消耗', up: true, change: '' },
+  { key: 'docs', icon: '', value: '-', label: '文档上传', up: false, change: '' },
+  { key: 'users', icon: '', value: '-', label: '活跃成员', up: true, change: '' }
 ])
-const tickets = ref([
-  {
-    id: 1001,
-    title: '上传 PDF 时报错 500',
-    type: 'bug',
-    status: 'open',
-    created_at: Date.now() / 1000 - 3600
-  },
-  {
-    id: 1002,
-    title: '能否支持 Word 文档导出',
-    type: 'feature',
-    status: 'processing',
-    created_at: Date.now() / 1000 - 86400
+
+// 从后端 /api/metrics/stats 获取真实统计数据
+async function fetchMetrics() {
+  try {
+    const res = await axios.get('/api/metrics/stats')
+    const data = res.data || {}
+    // 更新 API 调用配额
+    const totalCalls = data.total_requests || 0
+    const callsQuota = quotas.value.find(q => q.key === 'calls')
+    if (callsQuota) callsQuota.used = totalCalls
+    // 更新月度统计
+    const callsStat = monthStats.value.find(s => s.key === 'calls')
+    if (callsStat) {
+      callsStat.value = totalCalls.toLocaleString()
+      callsStat.change = ''
+    }
+    const docsStat = monthStats.value.find(s => s.key === 'docs')
+    if (docsStat) {
+      docsStat.value = String(data.kb_uploads || 0)
+      docsStat.change = ''
+    }
+    const tokensStat = monthStats.value.find(s => s.key === 'tokens')
+    if (tokensStat) {
+      const modelCalls = Object.values(data.model_calls || {}) as number[]
+      const totalModelCalls = modelCalls.reduce((a: number, b: number) => a + b, 0)
+      tokensStat.value =
+        totalModelCalls > 1000 ? `${(totalModelCalls / 1000).toFixed(1)}K` : String(totalModelCalls)
+    }
+  } catch {
+    // 后端不可用时保持默认值
   }
-])
+}
+
+onMounted(fetchMetrics)
+const tickets = ref<any[]>([])
+
+async function fetchTickets() {
+  try {
+    const res = await axios.get('/api/billing/tickets')
+    if (Array.isArray(res.data)) tickets.value = res.data
+  } catch {
+    tickets.value = []
+  }
+}
+
+onMounted(fetchTickets)
 const typeLabels: Record<string, string> = {
   billing: '计费',
   technical: '技术',

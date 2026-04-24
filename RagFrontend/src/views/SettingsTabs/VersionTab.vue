@@ -154,10 +154,21 @@ function getDocIcon(type: string) {
 async function fetchDocVersions() {
   loading.value = true
   try {
-    const res = await axios.get('/api/versions/documents')
-    if (res.data.documents) docs.value = res.data.documents
+    // 后端无"列出所有文档版本概览"接口，改为从知识库文档列表获取后再展开查询
+    const res = await axios.get('/api/documents-list/all')
+    if (Array.isArray(res.data)) {
+      docs.value = res.data.map((d: any) => ({
+        ...d,
+        id: d.id || d.doc_id,
+        name: d.filename || d.title || d.name || '未命名',
+        version_count: d.version_count || 0,
+        has_snapshot: d.has_snapshot || false,
+        updated_at: d.updated_at || d.upload_time || Date.now() / 1000,
+        type: (d.filename || '').split('.').pop() || 'md'
+      }))
+    }
   } catch {
-    /* use mock */
+    docs.value = []
   } finally {
     loading.value = false
   }
@@ -165,54 +176,80 @@ async function fetchDocVersions() {
 async function selectDoc(doc: any) {
   selectedDoc.value = doc
   try {
-    const res = await axios.get(`/api/versions/document/${doc.id}`)
-    versions.value = res.data.versions || []
-  } catch {
-    // Mock versions
-    versions.value = Array.from({ length: doc.version_count }, (_, i) => ({
-      id: doc.version_count - i,
-      version: doc.version_count - i,
-      created_at: Date.now() / 1000 - i * 3600,
-      author: ['张三', '李四', '王五'][i % 3],
-      message: i === 0 ? '修复章节标题格式' : i === 1 ? '新增附录 A' : '初始版本',
-
-      chars_added: Math.floor(Math.random() * 500),
-      chars_deleted: Math.floor(Math.random() * 100),
-      file_size: `${(doc.version_count - i) * 12}KB`,
-      is_snapshot: i === 0 && doc.has_snapshot
+    // 后端真实接口：GET /api/doc-versions/{doc_id}
+    const res = await axios.get(`/api/doc-versions/${doc.id}`)
+    versions.value = (res.data || []).map((v: any) => ({
+      ...v,
+      author: v.created_by || 'system',
+      message: v.change_summary || '自动保存',
+      chars_added: v.chars_added || 0,
+      chars_deleted: v.chars_deleted || 0,
+      file_size: v.content_snapshot ? `${(v.content_snapshot.length / 1024).toFixed(1)}KB` : '-',
+      is_snapshot: v.is_current === 1 && v.change_summary === '快照保存'
     }))
+  } catch {
+    versions.value = []
   }
 }
 function previewVersion(ver: any) {
-  MessagePlugin.info(`正在加载 v${ver.version} 预览...`)
+  // 后端接口：GET /api/doc-versions/{doc_id}/{version}
+  axios
+    .get(`/api/doc-versions/${selectedDoc.value?.id}/${ver.version}`)
+    .then(res => {
+      const content = res.data?.content_snapshot || res.data?.content || '（无内容）'
+      MessagePlugin.info({
+        content: content.slice(0, 300) + (content.length > 300 ? '...' : ''),
+        duration: 5000
+      })
+    })
+    .catch(() => MessagePlugin.warning('加载预览失败'))
 }
-function diffVersion(ver: any) {
+async function diffVersion(ver: any) {
   diffModal.fromVer = ver.version
-  diffModal.oldContent = `# 文档 v${ver.version}\n\n这是版本 v${ver.version} 的内容示例。\n\n旧的段落将在此处显示红色高亮。`
-  diffModal.newContent = `# 文档（当前版本）\n\n这是当前版本的内容示例。\n\n新增段落会以绿色高亮显示在此处。\n\n--- 新增内容开始 ---\n优化了描述，增加了更多细节。`
+  try {
+    // 后端接口：GET /api/doc-versions/{doc_id}/diff/{v1}/{v2}
+    const currentVer = versions.value[0]?.version || ver.version
+    const res = await axios.get(
+      `/api/doc-versions/${selectedDoc.value?.id}/diff/${ver.version}/${currentVer}`
+    )
+    const data = res.data || {}
+    diffModal.oldContent = data.old_content || data.content_v1 || `# 版本 v${ver.version}`
+    diffModal.newContent = data.new_content || data.content_v2 || `# 当前版本`
+  } catch {
+    diffModal.oldContent = `# 版本 v${ver.version}\n\n（加载对比内容失败）`
+    diffModal.newContent = `# 当前版本\n\n（加载对比内容失败）`
+  }
   diffModal.show = true
 }
 async function rollbackTo(ver: any) {
   if (!confirm(`确定将文档回滚至 v${ver.version}？此操作将创建新版本记录。`)) return
   try {
-    await axios.post(`/api/versions/document/${selectedDoc.value?.id}/rollback`, {
-      version: ver.version
+    // 后端接口：POST /api/doc-versions/rollback
+    await axios.post('/api/doc-versions/rollback', {
+      doc_id: selectedDoc.value?.id,
+      target_version: ver.version
     })
-    MessagePlugin.success(
-      `已回滚至 v${ver.version}，新建 v${(selectedDoc.value?.version_count || 0) + 1}`
-    )
-
+    MessagePlugin.success(`已回滚至 v${ver.version}`)
     if (selectedDoc.value) selectDoc(selectedDoc.value)
   } catch {
-    MessagePlugin.warning('后端未就绪，演示模式下模拟成功')
+    MessagePlugin.error('回滚失败，请检查后端服务')
   }
 }
 async function createSnapshot() {
+  if (!selectedDoc.value) return
   try {
-    await axios.post(`/api/versions/document/${selectedDoc.value?.id}/snapshot`)
+    // 后端接口：POST /api/doc-versions/save（快照本质是保存一个带"快照保存"描述的版本）
+    await axios.post('/api/doc-versions/save', {
+      doc_id: selectedDoc.value.id,
+      kb_id: selectedDoc.value.kb_id || '',
+      filename: selectedDoc.value.name,
+      content: selectedDoc.value.content_snapshot || '',
+      change_summary: '快照保存'
+    })
     MessagePlugin.success('快照已创建')
+    if (selectedDoc.value) selectDoc(selectedDoc.value)
   } catch {
-    MessagePlugin.warning('演示模式')
+    MessagePlugin.error('创建快照失败')
   }
 }
 

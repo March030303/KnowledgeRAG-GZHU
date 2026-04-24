@@ -135,11 +135,10 @@ const testResult = ref<any>(null)
 const history = ref<any[]>([])
 
 async function fetchOcrHistory() {
+  // 后端暂无 OCR 历史接口，从 localStorage 读取本地记录
   try {
-    const res = await axios.get('/api/ocr/history')
-    if (res.data && Array.isArray(res.data.records)) {
-      history.value = res.data.records
-    }
+    const saved = localStorage.getItem('ocr_history')
+    if (saved) history.value = JSON.parse(saved)
   } catch {
     history.value = []
   }
@@ -171,11 +170,9 @@ const langOptions = [
 async function saveConfig() {
   saving.value = true
   try {
-    await axios.post('/api/ocr/configure', config)
-    MessagePlugin.success('OCR 配置已保存')
-  } catch {
-    MessagePlugin.warning('后端未就绪，配置已暂存本地')
+    // 后端暂无 OCR 配置保存接口，先保存到本地
     localStorage.setItem('ocrConfig', JSON.stringify(config))
+    MessagePlugin.success('OCR 配置已保存')
   } finally {
     saving.value = false
   }
@@ -191,20 +188,49 @@ function handleFile(e: Event) {
 async function processFile(file: File) {
   testLoading.value = true
   testResult.value = null
+  const startTime = Date.now()
   try {
+    // 后端真实接口：POST /api/ocr/extract
     const fd = new FormData()
     fd.append('file', file)
-    fd.append('engine', config.engine)
-    const res = await axios.post('/api/ocr/parse', fd)
-    testResult.value = res.data
-  } catch {
-    // Mock result for demo
+    const res = await axios.post('/api/ocr/extract', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    const text = res.data?.text || res.data?.content || ''
     testResult.value = {
-      text: `[演示模式] 已识别文件：${file.name}\n\n这里将显示 OCR 识别出的文字内容。\n当后端 /api/ocr/parse 接口就绪后将展示真实结果。`,
-      confidence: 92,
-      char_count: 68,
-      duration_ms: 1240
+      text,
+      confidence: res.data?.confidence || 0,
+      char_count: text.length,
+      duration_ms: Date.now() - startTime
     }
+    // 保存到本地历史记录
+    const record = {
+      id: Date.now(),
+      filename: file.name,
+      type: file.name.endsWith('.pdf') ? 'pdf' : 'image',
+      char_count: text.length,
+      created_at: Date.now() / 1000,
+      status: 'success' as const
+    }
+    history.value.unshift(record)
+    localStorage.setItem('ocr_history', JSON.stringify(history.value.slice(0, 20)))
+  } catch (e: any) {
+    testResult.value = {
+      text: `[识别失败] ${e?.response?.data?.detail || e?.message || '请确认后端 OCR 服务已启动，且已安装相应依赖（PaddleOCR/MinerU/Tesseract）'}`,
+      confidence: 0,
+      char_count: 0,
+      duration_ms: Date.now() - startTime
+    }
+    const record = {
+      id: Date.now(),
+      filename: file.name,
+      type: file.name.endsWith('.pdf') ? 'pdf' : 'image',
+      char_count: 0,
+      created_at: Date.now() / 1000,
+      status: 'fail' as const
+    }
+    history.value.unshift(record)
+    localStorage.setItem('ocr_history', JSON.stringify(history.value.slice(0, 20)))
   } finally {
     testLoading.value = false
   }

@@ -6,7 +6,12 @@
         <div class="settings-nav__icon"></div>
         <div class="settings-nav__title">系统设置</div>
       </div>
-      <div v-for="group in tabGroups" :key="group.label" class="nav-group">
+      <div
+        v-for="group in tabGroups"
+        :key="group.label"
+        class="nav-group"
+        v-show="group.tabs.length > 0"
+      >
         <div class="nav-group__label">{{ group.label }}</div>
         <button
           v-for="tab in group.tabs"
@@ -974,6 +979,8 @@ import MultiModelTab from './SettingsTabs/MultiModelTab.vue'
 import ComplianceTab from './SettingsTabs/ComplianceTab.vue'
 import CommercialTab from './SettingsTabs/CommercialTab.vue'
 const activeTab = ref('apikeys')
+// 单用户模式下隐藏 RBAC 角色权限 Tab
+const singleUserMode = import.meta.env.VITE_SINGLE_USER_MODE === 'true'
 // Win11 风格分组导航
 const tabGroups: Array<{
   label: string
@@ -983,7 +990,9 @@ const tabGroups: Array<{
     label: '账号与安全',
     tabs: [
       { id: 'apikeys', label: 'API Key', icon: '', desc: '管理开放接口密钥' },
-      { id: 'rbac', label: '角色权限', icon: '', desc: '用户角色与权限管理' },
+      ...(!singleUserMode
+        ? [{ id: 'rbac', label: '角色权限', icon: '', desc: '用户角色与权限管理' }]
+        : []),
       { id: 'compliance', label: '合规中心', icon: '', desc: 'SSO/脱敏/限流配置' }
     ]
   },
