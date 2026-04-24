@@ -897,6 +897,38 @@ eas build -p android --profile production
 
 ## 9. 部署方案
 
+### 桌面端打包（Windows 安装包）
+
+#### Tauri 桌面端（轻量，推荐）
+
+基于 Rust + WebView2，安装包仅 **3-5MB**（比 Electron 小 90%+）。
+
+```bash
+# 首次构建需安装 Rust（https://rustup.rs/）
+cd RagFrontend
+npm run tauri:build          # 构建 Windows 安装包
+# 输出：src-tauri/target/release/bundle/nsis/*.exe
+```
+
+> **注意：** Tauri 打包仅封装前端，后端需独立运行（Docker 或 PyInstaller）。
+
+#### PyInstaller 后端打包
+
+将 FastAPI 后端打包为独立 `.exe`，无需 Python 环境。
+
+```bash
+# 1. 安装 PyInstaller
+pip install pyinstaller
+
+# 2. 打包（项目根目录执行）
+pyinstaller rag_backend.spec
+# 输出：dist/rag_backend.exe
+```
+
+详细打包文档：[docs/打包指南.md](./docs/打包指南.md)
+
+---
+
 ### Docker Compose（完整栈）
 
 ```yaml
@@ -1019,7 +1051,20 @@ KnowledgeRAG-GZHU/
 │
 ├── dev.ps1                              # 一键开发启动脚本
 ├── docker-compose.yml                   # 完整栈（Redis + MySQL + Ollama + Worker）
-└── docker-compose.lite.yml              # 轻量版（frontend + backend + SQLite）
+├── docker-compose.lite.yml              # 轻量版（frontend + backend + SQLite）
+├── rag_backend.spec                    # PyInstaller 后端打包配置
+├── docs/
+│   └── 打包指南.md                     # 桌面端打包完整指南
+│
+├── RagFrontend/
+│   ├── src-tauri/                      # Tauri 桌面端打包配置
+│   │   ├── tauri.conf.json             # 窗口 / 打包目标 / 图标配置
+│   │   ├── Cargo.toml                  # Rust 依赖
+│   │   ├── src/lib.rs                 # Rust 主进程入口
+│   │   ├── capabilities/               # 前端权限配置
+│   │   └── icons/                      # 应用图标
+│   ├── Dockerfile
+│   └── nginx.conf
 ```
 
 ---
@@ -1163,7 +1208,7 @@ A: 参考 [第8节](#8-移动端-app)，使用 EAS Cloud Build：`eas build -p a
 
 ## 14. 后续规划
 
-- [x] 用户认证与权限管理
+- [x] 桌面端打包（Tauri 前端 + PyInstaller 后端）
 - [x] 多模型支持与参数配置
 - [x] 用户自定义模型配置（Ollama 地址/模型名/超时）
 - [x] 多格式文档处理（PDF/Word/Excel/图片）
