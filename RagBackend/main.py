@@ -115,13 +115,50 @@ async def _init_db_tables():
     )
 
 
-# Configure CORS
+# Configure CORS (安全加固)
+# 生产环境必须显式指定允许的域名；开发环境允许 localhost
+def _get_cors_origins() -> list[str]:
+    """从环境变量或配置获取允许的 CORS 来源"""
+    env_origins = os.getenv("CORS_ORIGINS", "").strip()
+    if env_origins and env_origins != "*":
+        return [o.strip() for o in env_origins.split(",") if o.strip()]
+
+    # 开发模式：允许常见本地开发地址
+    if os.getenv("ENV_MODE", "development").lower() == "production":
+        # 生产环境不允许通配符 + credentials 的组合
+        logger.warning(
+            "⚠️ 生产环境未设置 CORS_ORIGINS，将拒绝所有跨域请求。"
+            "请通过环境变量 CORS_ORIGINS 配置允许的域名（逗号分隔）"
+        )
+        return []
+    return [
+        "http://localhost:*",
+        "http://127.0.0.1:*",
+        "http://localhost",
+        "http://127.0.0.1",
+    ]
+
+
+_cors_origins = _get_cors_origins()
+
+# 当有具体 origin 列表时才启用 credentials；通配符时禁用（CORS 规范要求）
+_cors_allow_credentials = len(_cors_origins) > 0 and "*" not in ",".join(_cors_origins)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Should restrict to specific domains in production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_cors_origins,
+    allow_credentials=_cors_allow_credentials,
+    allow_methods=[
+        "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
+    ],
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+        "X-Request-ID",
+        "Accept",
+        "Origin",
+    ],
+    max_age=600,  # 预检请求缓存 10 分钟
 )
 
 # TraceID middleware (registered after CORS, injects unique trace_id per request)
