@@ -1247,6 +1247,7 @@ onUnmounted(() => {
 .file-remove:hover {
   color: #ef4444;
 }
+
 .start-btn {
   display: flex;
   align-items: center;
