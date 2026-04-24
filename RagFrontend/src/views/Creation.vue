@@ -208,7 +208,7 @@
 </template>
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import axios from 'axios'
 const types = [
   { id: 'outline', name: '大纲生成', desc: '主题→层次化大纲', icon: '' },
