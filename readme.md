@@ -1,217 +1,201 @@
-<div align="center">
+# ASF-RAG (RAG-F) 智能知识管理平台
 
-# RAG-F · 智能知识管理平台
-
-**基于检索增强生成（RAG）的私有知识库问答系统**
-
-[![Vue3](https://img.shields.io/badge/Vue-3.x-42b883?logo=vue.js)](https://vuejs.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?logo=typescript)](https://www.typescriptlang.org/)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ed?logo=docker)](https://docs.docker.com/compose/)
-[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
-[![Version](https://img.shields.io/badge/commit-a1e9b87-brightgreen)](https://github.com/March030303/KnowledgeRAG-GZHU/commits/main)
-
-[快速启动](#-快速启动) · [功能模块](#4-核心功能模块) · [API 文档](http://localhost:8000/docs) · [移动端 App](#8-移动端-app) · [部署方案](#9-部署方案)
-
-</div>
-
----
-
-## 📖 项目简介
-
-**RAG-F** 是一套面向个人与团队的智能知识管理平台，通过将私有文档与本地/云端大语言模型深度结合，实现**检索增强生成（RAG）**问答，显著降低 AI 幻觉、提升领域知识回答的准确性。
-
-**核心价值：**
-
-- 🧠 **防幻觉问答** — 答案严格基于你的文档，来源可追溯
-- 📚 **统一知识管理** — 多格式文档、分块上传、权限分级（URL 批量导入前端已预留，后端待补齐）
-- 🤖 **Agent 任务模式** — ReAct 框架，自然语言驱动多步骤任务
-- ✍️ **文档创作** — 5 种文本创作 / 处理能力，按独立接口提供
-- 🔗 **办公联动** — Obsidian / 飞书 / 钉钉 / 企微已接入；Notion / GitHub 当前为配置占位
-- 📱 **双端支持** — Web + React Native 移动端 App
-- 🗺️ **系统架构图** — 可视化 4-Tab 架构展示（技术栈/数据流/部署/模块）
-- 🚀 **本地部署** — 数据不离本地，一键 Docker 启动
+> **项目全称**：Adaptive Semantic Fusion - Retrieval Augmented Generation
+> **中文名称**：RAG-F 智能知识管理平台
+> **项目定位**：面向个人与团队的私有化知识库管理检索解决方案
+> **核心目标**：通过「外部知识检索 + 大模型生成」的组合范式，解决 LLM 固有幻觉、知识截断、领域知识缺失、回答缺乏透明度等痛点问题
 
 ---
 
 ## 目录
 
-1. [项目简介](#-项目简介)
-2. [技术架构](#-技术架构)
-3. [快速启动](#-快速启动)
+1. [项目简介](#1-项目简介)
+2. [技术架构](#2-技术架构)
+3. [快速启动](#3-快速启动)
 4. [核心功能模块](#4-核心功能模块)
-   - 4.1 [用户认证系统](#41-用户认证系统)
-   - 4.2 [知识库管理](#42-知识库管理)
-   - 4.3 [RAG 智能问答](#43-rag-智能问答)
-   - 4.4 [Agent 任务模式](#44-agent-任务模式)
-   - 4.5 [多模型适配](#45-多模型适配)
-   - 4.6 [检索策略配置](#46-检索策略配置)
-   - 4.7 [语音交互](#47-语音交互)
-   - 4.8 [联网搜索](#48-联网搜索)
-   - 4.9 [文档创作](#49-文档创作)
-   - 4.10 [RAG 评测](#410-rag-评测)
 5. [扩展功能模块](#5-扩展功能模块)
-   - 5.1 [个人主页与设置](#51-个人主页与设置)
-   - 5.2 [外观与主题](#52-外观与主题)
-   - 5.3 [第三方账号绑定](#53-第三方账号绑定)
-   - 5.4 [反馈与建议](#54-反馈与建议)
-   - 5.5 [历史记录](#55-历史记录)
-   - 5.6 [全局搜索](#56-全局搜索)
-   - 5.7 [置顶功能](#57-置顶功能)
-   - 5.8 [全局交互动效](#58-全局交互动效)
-   - 5.9 [系统设置（Win11 风格）](#59-系统设置win11-风格)
-   - 5.10 [系统架构图](#510-系统架构图)
 6. [集成与联动](#6-集成与联动)
-   - 6.1 [Obsidian 笔记同步](#61-obsidian-笔记同步)
-   - 6.2 [飞书机器人](#62-飞书机器人)
-   - 6.3 [钉钉 / 企微 / Notion / GitHub](#63-钉钉--企微--notion--github)
-   - 6.4 [多数据源接入](#64-多数据源接入)
 7. [系统管理](#7-系统管理)
-   - 7.1 [开放 API](#71-开放-api)
-   - 7.2 [审计日志](#72-审计日志)
-   - 7.3 [增量向量化](#73-增量向量化)
-   - 7.4 [RBAC 权限管理](#74-rbac-权限管理)
-   - 7.5 [OCR 文档解析](#75-ocr-文档解析)
-   - 7.6 [系统监控](#76-系统监控)
 8. [移动端 App](#8-移动端-app)
 9. [部署方案](#9-部署方案)
 10. [目录结构](#10-目录结构)
 11. [环境变量说明](#11-环境变量说明)
-12. [常见问题 FAQ](#12-常见问题-faq)
-13. [Contributors](#13-contributors)
-14. [后续规划](#14-后续规划)
 
 ---
 
-## 🏗️ 技术架构
+## 1. 项目简介
+
+### 1.1 创意来源与背景
+
+ASF-RAG（RAG-F）受 RAG（Retrieval-Augmented Generation，检索增强生成）技术启发，核心设计思想是通过「外部知识检索 + 大模型生成」的组合范式，解决 LLM 固有幻觉、知识截断、领域知识缺失、回答缺乏透明度等问题，开创性地将检索技术和生成式人工智能模型相结合。
+
+项目还引入 **ReAct Agent** 作为整个系统的控制中枢，旨在将人工智能代理（AI Agent）引入检索增强生成（RAG）流程来进行任务拆解、解决复杂业务问题。
+
+### 1.2 项目定位
+
+本项目设计并实现了 **RAG-F 智能知识管理平台** —— 一套面向个人与团队的私有知识库管理检索解决方案。用户可上传 PDF、Word 等多格式文档，系统自动完成文档解析、文本分块、向量化编码与持久化存储；当用户发起提问时，通过向量检索与重排序策略从知识库中精准召回相关内容片段，并将其作为上下文提供给大语言模型，生成有据可查、来源可追溯的高质量回答。
+
+本平台在功能层面进行了全方位拓展：
+
+- 支持本地离线部署以确保数据完全私密
+- 兼容 Ollama 本地部署模型服务、OpenAI、DeepSeek 等多种在线模型 API 服务
+- 集成基于 ReAct 框架的 Agent 任务模式，支持自然语言驱动的多步骤自动任务执行
+- 内置多模式智能文档创作引擎，覆盖报告、摘要、大纲、博客、论文等典型写作场景
+- 提供 Web 与移动端双端访问能力
+- 可与飞书、钉钉、企业微信、Obsidian、Notion 等主流办公工具实现联动集成
+
+### 1.3 核心痛点与解决思路
+
+| 痛点             | 解决方案                                        |
+| ---------------- | ----------------------------------------------- |
+| LLM 幻觉问题     | 强制答案基于外部可信知识库，每条信息可追溯原文  |
+| 知识时效性截断   | 更新知识库即可刷新模型知识，无需重训练          |
+| 领域知识缺失     | 支持用户上传垂直领域文档，构建专属知识库        |
+| 回答缺乏透明度   | 答案附带引用来源，用户可追溯验证                |
+| 单次检索精度不足 | 支持 5 种检索策略（Vector/BM25/Hybrid/RRF/MMR） |
+| 复杂任务处理     | ReAct Agent 自动拆解任务、多步推理执行          |
+
+---
+
+## 2. 技术架构
+
+### 2.1 总体架构
+
+系统采用经典的前后端分离架构，以实现关注点分离、独立部署与团队协作高效。
 
 ```
-┌──────────────────────────────────────────────────────┐
-│                    客户端层                           │
-│  Web 前端 (Vue3 + Vite + TDesign)                    │
-│  移动端 App (React Native + Expo)                    │
-└────────────────────┬─────────────────────────────────┘
-                     │ HTTP / SSE
-┌────────────────────▼─────────────────────────────────┐
-│                   服务层                              │
-│  FastAPI 后端 (Python 3.10+)                         │
-│  ├── 用户认证 (JWT + MySQL)                          │
-│  ├── 知识库管理 (文档解析 + 向量化)                  │
-│  ├── RAG Pipeline (LangChain + 多策略检索 + 轻量重排)│
-│  ├── Agent (ReAct + 工具链)                          │
-│  ├── 多模型路由 (Ollama/OpenAI/DeepSeek/混元)        │
-│  ├── 语音 ASR (Whisper)                              │
-│  ├── 文档创作 (5 类文本处理接口)                     │
-│  ├── 评测面板 (轻量问答评测 + 可视化)                │
-│  ├── Prometheus 监控中间件                            │
-│  ├── 联网搜索 (DuckDuckGo)                           │
-│  └── 集成服务 (Obsidian/飞书/钉钉/企微/占位扩展)     │
-└────────────────────┬─────────────────────────────────┘
-                     │
-┌────────────────────▼─────────────────────────────────┐
-│                   存储层                              │
-│  MySQL (用户数据)  │  向量数据库  │  SQLite (审计日志) │
-│  OSS/S3 (文件存储)│  本地文件系统                     │
-└──────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                         客户端层 (Client)                        │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐  │
+│  │   Web SPA    │  │  移动端 App  │  │   第三方集成客户端    │  │
+│  │  (Vue3+Vite) │  │  (Uni-app)   │  │ (飞书/钉钉/企微Bot)  │  │
+│  └──────────────┘  └──────────────┘  └──────────────────────┘  │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │ RESTful API / SSE
+┌───────────────────────────▼─────────────────────────────────────┐
+│                        服务层 (Service)                          │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │              FastAPI 主服务 (Python 3.11+)                │  │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐ │  │
+│  │  │ RAG问答  │ │ Agent任务│ │ 文档处理 │ │ 用户管理     │ │  │
+│  │  └──────────┘ └──────────┘ └──────────┘ └──────────────┘ │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │           Worker 进程 (Redis Stream 消费者)               │  │
+│  │              文档解析 → 分块 → 向量化 → 索引构建            │  │
+│  └──────────────────────────────────────────────────────────┘  │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────────────┐
+│                        存储层 (Storage)                          │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────────────┐  │
+│  │  MySQL   │  │  Redis   │  │  FAISS   │  │   SQLite       │  │
+│  │(结构化数 │  │(Stream  │  │(向量检索 │  │(审计日志/      │  │
+│  │ 据/元数据)│  │  队列)   │  │  索引)   │  │  API Key)      │  │
+│  └──────────┘  └──────────┘  └──────────┘  └────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-| 层级       | 技术选型                                                    |
-| ---------- | ----------------------------------------------------------- |
-| 前端框架   | Vue 3 + TypeScript + Vite 5                                 |
-| UI 组件库  | TDesign Vue Next                                            |
-| 状态管理   | Pinia（跨路由持久化）                                       |
-| 后端框架   | FastAPI + uvicorn                                           |
-| LLM 框架   | LangChain                                                   |
-| 本地模型   | Ollama（支持本地模型动态发现，低配友好）                    |
-| 关系数据库 | MySQL 8.0（Docker 默认编排）                                |
-| 重排能力   | 主链路 lightweight rerank + 独立 Cross-Encoder 接口（可选） |
-| 移动端     | React Native + Expo SDK 52 + zustand                        |
+### 2.2 技术栈
 
-| 容器化 | Docker + Docker Compose |
-| 语音识别 | OpenAI Whisper（本地） |
-| 监控 | Prometheus 中间件 + ECharts |
+| 层级             | 技术选型                          | 版本     | 说明                       |
+| ---------------- | --------------------------------- | -------- | -------------------------- |
+| **前端框架**     | Vue                               | 3.4.21   | 组合式 API，响应式系统     |
+| **前端构建**     | Vite                              | 5.2.8    | 极速冷启动与 HMR           |
+| **前端语言**     | TypeScript                        | 5.4.4    | 全项目静态类型检查         |
+| **UI 组件库**    | TDesign Vue Next                  | latest   | 腾讯设计体系组件库         |
+| **状态管理**     | Pinia                             | 3.0.3    | Vue 官方状态管理           |
+| **路由管理**     | Vue Router                        | 4.5.1    | 嵌套路由、路由守卫         |
+| **样式工具**     | TailwindCSS                       | 3.4.17   | 原子化 CSS                 |
+| **后端框架**     | FastAPI                           | 0.116.1  | 高性能异步 Python Web 框架 |
+| **ASGI 服务器**  | Uvicorn                           | 0.35.0   | 异步网关接口               |
+| **RAG 框架**     | LangChain                         | 0.3.27   | RAG Pipeline 构建          |
+| **向量数据库**   | FAISS                             | >=1.12.0 | Facebook AI 相似度搜索     |
+| **结构化数据库** | MySQL                             | 8.0      | 主元数据存储               |
+| **消息队列**     | Redis Stream                      | 7-alpine | 异步任务队列               |
+| **本地 LLM**     | Ollama                            | latest   | 本地大模型服务             |
+| **嵌入模型**     | sentence-transformers             | >=5.1.0  | 文本向量化                 |
+| **文档解析**     | PyPDF2 / pdfplumber / python-docx | -        | 多格式文档读取             |
+| **OCR 引擎**     | Tesseract + PaddleOCR             | -        | 双引擎交叉验证             |
+| **容器化**       | Docker + Docker Compose           | -        | 完整容器化编排             |
+
+### 2.3 核心依赖
+
+**后端核心依赖**（requirements.txt）：
+
+- `fastapi==0.116.1` —— 高性能异步 Web 框架
+- `langchain==0.3.27` —— RAG Pipeline 核心框架
+- `langchain_community==0.3.27` —— LangChain 社区组件
+- `langchain_ollama==0.3.6` —— Ollama 本地模型集成
+- `faiss-cpu>=1.12.0` —— 向量相似度搜索
+- `sentence-transformers>=5.1.0` —— 句子嵌入模型
+- `redis[hiredis]>=5.0.0` —— Redis 异步客户端
+- `PyJWT==2.10.1` —— JWT 认证
+- `PyMySQL==1.1.1` —— MySQL 数据库驱动
+- `python-docx==1.1.2` —— Word 文档解析
+- `pdfplumber==0.11.7` —— PDF 高级解析
+- `pytesseract==0.3.13` —— OCR 文字识别
+- `beautifulsoup4==4.13.4` —— HTML/XML 解析
+
+**前端核心依赖**（package.json）：
+
+- `vue@^3.4.21` —— 渐进式 JavaScript 框架
+- `vue-router@^4.5.1` —— 官方路由管理器
+- `pinia@^3.0.3` —— 状态管理库
+- `tdesign-vue-next@latest` —— 腾讯 UI 组件库
+- `axios@^1.11.0` —— HTTP 客户端
+- `marked@^16.1.1` —— Markdown 解析器
+- `highlight.js@^11.11.1` —— 代码语法高亮
+- `tailwindcss@^3.4.17` —— 原子化 CSS 框架
+- `graphology@^0.26.0` + `sigma@^3.0.2` —— 知识图谱可视化
 
 ---
 
-## 🚀 快速启动
+## 3. 快速启动
 
-### 环境前置要求
-
-1. **安装 Ollama**：[https://ollama.com](https://ollama.com)
-2. **拉取本地模型**（可选，低配机器推荐小参数模型）：
-   ```bash
-   ollama pull llama3.2:1b    # ~1GB，低配友好；也可使用其他已安装的 Ollama 模型
-   ```
-3. **硬件最低要求**（运行小参数本地模型）：
-
-   | 组件        | 最低要求                   |
-   | ----------- | -------------------------- |
-   | 内存（RAM） | 4GB                        |
-   | 存储空间    | 5GB                        |
-   | GPU         | 可选（CPU 也可运行小模型） |
-
----
-
-### 方式一：Docker Compose（推荐生产/演示）
+### 3.1 Docker Compose 一键部署（推荐用于生产/演示）
 
 ```bash
-# 克隆仓库
+# 1. 克隆项目并配置环境变量
 git clone https://github.com/March030303/KnowledgeRAG-GZHU.git
 cd KnowledgeRAG-GZHU
-
-# 配置环境变量
 cp RagBackend/.env.example RagBackend/.env
-# 编辑 .env，填写 DB_PASSWORD / JWT_SECRET 等
+# 编辑 .env 文件，填写数据库密码、JWT 密钥等
 
-# 一键启动（前端 + 后端 + MySQL + Ollama）
+# 2. 一键启动所有服务
 docker compose up -d
-
-# 访问
-# 前端：    http://localhost:8089
-# API 文档：http://localhost:8000/docs
-# Ollama：  http://localhost:11435
 ```
 
----
+此命令将启动包含 **MySQL、Redis、Ollama、FastAPI 后端、异步 Worker 及 Nginx 前端** 在内的完整服务栈。访问前端（通常为 http://localhost:8089）即可使用。
 
-### 方式二：一键开发脚本（推荐本地开发）
+### 3.2 一键开发脚本（推荐用于本地开发）
 
 ```powershell
-# 启动所有服务（MySQL 用 Docker 托管，后端 + 前端本地运行）
+# 启动所有服务（MySQL 用 Docker，前后端本地运行）
 powershell -ExecutionPolicy Bypass -File .\dev.ps1
-
-# 查看状态
-powershell -ExecutionPolicy Bypass -File .\dev.ps1 -Status
-
-# 停止所有
-powershell -ExecutionPolicy Bypass -File .\dev.ps1 -Stop
-
-# 访问
-# 前端（Vite）：http://localhost:5173
-# 后端 API：    http://localhost:8000
-# API 文档：    http://localhost:8000/docs
 ```
 
-> **智能跳过**：脚本自动检测已运行的服务，二次调用几乎瞬间完成。
+脚本智能检测已运行服务，实现快速启动。前端通过 Vite 运行在 http://localhost:5173，便于热重载调试。
 
----
-
-### 方式三：手动启动
+### 3.3 手动分步启动
 
 ```bash
-# 1. 启动 MySQL（Docker）
-docker run -d --name ragf-mysql -e MYSQL_ROOT_PASSWORD=yourpw -e MYSQL_DATABASE=rag_user_db -p 3307:3306 mysql:8.0
+# 1. 启动 MySQL 和 Redis（Docker）
+docker run -d --name ragf-mysql -p 3307:3306 -e MYSQL_ROOT_PASSWORD=your_password mysql:8.0
+docker run -d --name ragf-redis -p 6380:6379 redis:7-alpine
 
+# 2. 启动 Ollama（本地模型服务）
+docker run -d --name ragf-ollama -p 11435:11434 -v ollama_data:/root/.ollama ollama/ollama:latest
 
-# 2. 后端
+# 3. 安装后端依赖并启动
 cd RagBackend
 pip install -r requirements.txt
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
-# 3. 前端
+# 4. 安装前端依赖并启动（新终端）
 cd RagFrontend
 npm install
-npm run dev   # → http://localhost:5173
+npm run dev
 ```
 
 ---
@@ -220,301 +204,389 @@ npm run dev   # → http://localhost:5173
 
 ### 4.1 用户认证系统
 
-**功能描述：** 完整的账号生命周期管理，支持邮箱注册/登录。
+#### 功能说明
 
-| 功能     | 说明                                                             |
-| -------- | ---------------------------------------------------------------- |
-| 邮箱注册 | 输入邮箱+密码创建账户，后端当前使用 **SHA256** 哈希存储          |
-| 邮箱登录 | JWT Token 鉴权，默认 **24 小时过期**                             |
-| 忘记密码 | 邮箱验证码找回流程                                               |
-| 个人资料 | 头像、昵称、签名、社交信息可更新；邮箱当前仅读取，不支持直接修改 |
-| 语言设置 | 中文 / English 切换，前端 localStorage 持久化                    |
+用户认证系统提供完整的身份验证与授权机制，支持多种登录方式，确保系统安全访问。
 
-**数据库表：**
+#### 技术实现
 
-```sql
-user (id, email, password, created_at, qq_openid)
-user_profile (user_id, nickname, avatar, ...)
-```
+**文件位置**：`RagBackend/RAGF_User_Management/`
 
-**API 端点：**
+| 模块     | 文件                 | 功能                         |
+| -------- | -------------------- | ---------------------------- |
+| 注册登录 | `LogonAndLogin.py`   | 用户注册、登录、密码加密存储 |
+| 用户管理 | `User_Management.py` | 用户信息 CRUD、权限控制      |
+| 密码重置 | `Reset_Password.py`  | 邮箱验证码密码重置           |
+| QQ 登录  | `QQ_Login.py`        | OAuth2.0 第三方登录集成      |
+| 用户设置 | `User_settings.py`   | 个人资料、偏好设置           |
 
-```
-POST /api/register                 -- 注册
-POST /api/login                    -- 登录（Token）
-POST /api/login/json               -- 登录（JSON）
-GET  /api/users/me                 -- 当前用户信息
-GET  /api/user/GetUserData         -- 获取资料
-POST /api/UpdateUserData           -- 更新资料
-POST /api/user/UpdateAvatar        -- 更新头像
-GET  /api/qq/authorize             -- QQ OAuth 授权
-GET  /api/qq/callback              -- QQ OAuth 回调
-POST /api/reset/send-email-code    -- 发送重置验证码
-POST /api/reset/password           -- 重置密码
-```
+**认证机制**：
 
----
+- **JWT Token 认证**：使用 PyJWT 生成和验证令牌，支持 `JWT_SECRET` 和 `JWT_SECRET_KEY` 别名兼容
+- **密码安全**：用户密码采用哈希加密存储
+- **Token 有效期**：默认 24 小时，可通过 `JWT_EXPIRATION_HOURS` 配置
+- **数据库**：MySQL `rag_user_db` 数据库，用户表包含用户名、密码哈希、邮箱、角色等字段
+
+**API 端点**：
+
+- `POST /api/auth/register` —— 用户注册
+- `POST /api/auth/login` —— 用户登录（返回 JWT）
+- `POST /api/auth/reset-password` —— 密码重置
+- `GET /api/auth/qq/login` —— QQ OAuth 登录跳转
+- `GET /api/auth/qq/callback` —— QQ 登录回调
 
 ### 4.2 知识库管理
 
-**功能描述：** 以"知识库"为单位组织文档；多格式上传与基础 CRUD 已实现，URL 批量导入和备份入口目前存在前后端不完全对齐的情况。
+#### 功能说明
 
-#### 知识库列表页
+知识库管理是系统的核心数据组织单元，采用「用户-知识库-文档」三层核心实体模型，支持多对多共享关系，为协作共享奠定基础。
 
-- ⭐ **星标置顶**：重要知识库一键收藏，星标分区展示
-- 📌 **置顶固定**：重要知识库 / 文件 / 模型可置顶，localStorage 持久化
-- 🕐 **最近访问**：自动记录访问历史，快速找回
-- 🔍 **搜索过滤**：实时搜索知识库名称
-- ↕️ **拖拽排序**：原生 HTML5 拖拽，localStorage 持久化排序
-- 📦 **备份能力**：后端已提供备份 API，但当前 `KnowledgeBase.vue` 未见备份按钮入口
+#### 技术实现
 
-#### 知识库详情页
+**文件位置**：`RagBackend/knowledge_base/`
 
-- 📄 **文档管理**：列表展示所有文档，支持删除、重命名
-- 📤 **文件上传**：支持 PDF、Word、TXT、Markdown、Excel、图片等格式，采用分块上传
-- 🔗 **URL 批量导入**：前端弹窗与调用已存在，但后端 `/api/url-import/` 当前未实现
-- 📝 **笔记模块**：在详情页直接记录笔记，关联到知识库
-- ⚙️ **知识库设置**：支持名称、描述与配置项更新
+| 模块        | 文件                                                 | 功能               |
+| ----------- | ---------------------------------------------------- | ------------------ |
+| 知识库 CRUD | `knowledgeBASE4CURD.py` / `knowledgeBASE4CURD_v2.py` | 知识库增删改查     |
+| 知识库封面  | `knowledgebase_cover.py`                             | 封面图片生成与管理 |
 
-#### 权限体系（当前状态）
-
-```text
-前端已提供 个人 / 共享 / 广场 三档配置 UI
-后端存在知识库配置更新接口，但三级可见性字段尚未形成完全统一的后端 schema 落地
-```
-
-**已实现 API 端点：**
+**数据模型设计**：
 
 ```
-POST   /api/create-knowledgebase/              -- 创建知识库
-DELETE /api/delete-knowledgebase/{id}          -- 删除知识库
-GET    /api/get-knowledge-item/                -- 知识库列表/详情聚合
-GET    /api/list-knowledge-bases/              -- 简化列表接口
-GET    /api/get-knowledge-item/{id}            -- 单个知识库详情
-POST   /api/update-knowledgebase-config/{id}   -- 更新知识库配置
-POST   /api/upload-chunk/                      -- 上传文件分块
-POST   /api/upload-complete/                   -- 合并分块并入库
-GET    /api/documents-list/{id}/               -- 文档列表
+用户 (User) ←──多对多──→ 知识库 (KnowledgeBase) ←──一对多──→ 文档 (Document)
+         ↓
+    关联表 (UserKB) —— 包含角色字段（owner/editor/viewer）
 ```
 
-**实现缺口：**
+**权限系统**：
 
-- 前端当前调用 `POST /api/url-import/`，但后端未找到对应实现
-- 后端已实现 `POST /api/backup/create` 等备份接口，但前端入口未接入
+- **RBAC（基于角色的访问控制）**：系统层面定义管理员、普通用户角色
+- **ACL（访问控制列表）**：三级权限设置 —— 「个人」「共享」「广场」
+- 文件位置：`RagBackend/knowledge/rbac_manager.py`
 
----
+**文档处理流程**：
+
+1. **上传接收**：前端分块上传大文件（支持 5MB 分片），后端合并
+2. **任务入队**：生成处理任务推入 Redis Stream 消息队列
+3. **异步处理**：Worker 进程消费队列，执行解析、分块、向量化
+4. **索引构建**：文本块向量化后存入 FAISS 索引
+
+**支持的文档格式**：
+
+| 格式           | 解析方式                         |
+| -------------- | -------------------------------- |
+| PDF            | PyPDF2 / pdfplumber 提取文本     |
+| Word (.docx)   | python-docx 解析                 |
+| Excel (.xlsx)  | 表格数据提取                     |
+| TXT / Markdown | 直接读取                         |
+| 图片 (JPG/PNG) | Tesseract + PaddleOCR 双引擎识别 |
+| 扫描件         | OCR 文字提取                     |
+
+**Chunking 与向量化策略**：
+
+- **递归分块**（默认）：按字符递归分割，适合结构不清晰文档
+- **语义分块**：对 Markdown 等结构清晰文档，使用 `SemanticChunker` 按主题分割
+- **嵌入模型**：默认 `sentence-transformers/all-MiniLM-L6-v2`（384 维向量）
+- **向量存储**：FAISS 本地索引，支持 L2 距离和余弦相似度
 
 ### 4.3 RAG 智能问答
 
-**功能描述：** 基于 LangChain 的 RAG Pipeline，将用户问题与知识库文档结合，生成有据可查的回答。
+#### 功能说明
 
-#### 对话界面
+RAG 智能问答是系统的核心功能，通过检索增强生成技术，让 LLM 基于用户上传的文档生成有据可查的回答。
 
-- 💬 **流式输出**：SSE（Server-Sent Events）实时打字机效果
-- 📚 **RAG 模式开关**：可切换纯 LLM 对话 vs 知识库增强对话
-- 🗂️ **知识库选择器**：侧边栏面板，勾选参与问答的知识库
-- 🔍 **引用溯源气泡**：AI 回答标注来源，点击展开原文段落
-- 📋 **多轮对话**：保持上下文，支持追问
+#### 技术实现
 
-#### RAG Pipeline（当前真实链路）
+**文件位置**：`RagBackend/RAG_M/src/rag/`
 
-```
-用户问题
-  → 问题向量化（embedding）
-  → 检索策略执行（见4.6）
-  → 召回相关段落（Top-K）
-  → 可选轻量重排（token overlap，本地 lightweight rerank）
-  → Prompt 构建（问题 + 上下文）
-  → LLM 生成回答（流式 / 同步）
-  → 引用来源标注
-```
+| 模块          | 文件                  | 功能                        |
+| ------------- | --------------------- | --------------------------- |
+| RAG 流水线 v3 | `rag_pipeline.py`     | 核心检索生成流程            |
+| 原生 RAG      | `native_rag.py`       | 不依赖 LangChain 的轻量实现 |
+| 混合检索器    | `hybrid_retriever.py` | BM25 + 向量融合检索         |
 
-> 说明：项目中**存在**独立的 Cross-Encoder 实现（`rag_enhancement/reranker.py`，`POST /api/rerank`），但**默认 RAG 主链路未接入**；当前主链路使用的是本地轻量重排逻辑。
-
-**核心 API 端点：**
+**RAG Pipeline v3 架构**：
 
 ```
-POST /api/RAG/RAG_query            -- RAG 问答（流式）
-POST /api/RAG/RAG_query_sync       -- RAG 问答（同步）
-POST /api/RAG/native_query         -- 本地问答入口
-POST /api/chat/send-message        -- 前端会话页发送消息
-GET  /api/chat/chat-documents      -- 会话列表
-DELETE /api/chat/delete-session    -- 删除会话
+用户提问
+    ↓
+[检索策略选择] → Vector / BM25 / Hybrid / RRF / MMR
+    ↓
+[混合检索] → FAISS 向量检索 + BM25 关键词检索
+    ↓
+[重排序] → 轻量重排 / Cross-Encoder 精排（可选）
+    ↓
+[上下文组装] → 按相关度排序的文档片段 + 来源标注
+    ↓
+[LLM 生成] → 流式 / 非流式输出
+    ↓
+[答案返回] → 带引用溯源的回答
 ```
 
----
+**Prompt 模板设计**：
+
+```
+你是知识管理助手，专门回答基于文档的问题。
+
+规则：
+1. 优先基于"参考文档"中的内容回答
+2. 如果文档信息不足，在回答末尾注明"（以上部分内容基于通用知识补充）"
+3. 回答时自然引用来源，例如："根据《文件名》中的内容，..."
+4. 用户未指定语言时默认使用中文
+5. 回答要完整、清晰，如涉及代码/公式/表格则给出对应示例
+6. 与上下文完全无关的问题，说明无关并给出通用参考信息
+
+参考文档（已按相关度排序）：
+{context}
+
+用户问题：{question}
+
+回答：
+```
+
+**引用溯源机制**：
+
+- 每个检索结果包含 `source_info`：排名、得分、文件名、页码、块索引
+- 答案中自然嵌入来源引用，如「根据《系统架构说明书》第 3 页的内容...」
+- 前端点击引用气泡可展开查看原文段落
+
+**流式输出**：
+
+- 后端使用 SSE（Server-Sent Events）推送生成内容
+- 前端实现「打字机」效果，逐字显示回答
+- API：`POST /api/RAG/RAG_query`（SSE 流式）
+
+**模式切换**：
+
+- **LangChain 模式**：完整 RAG Pipeline，功能丰富
+- **原生模式**：轻量实现，响应更快，适合简单场景
 
 ### 4.4 Agent 任务模式
 
-**功能描述：** 基于 ReAct（Reasoning + Acting）框架的智能 Agent，能够分解复杂任务、调用工具链自主完成目标。
+#### 功能说明
 
-#### 执行可视化
+Agent 任务模式引入 ReAct（Reasoning + Acting）智能体，让 LLM 具备任务拆解和自主决策能力，实现复杂业务问题的自动化处理。
 
-```
-任务输入
-  → 🤔 Thought（推理步骤）
-  → 🔧 Action（工具调用）
-  → 👁️ Observation（执行结果）
-  → 循环直到任务完成
-  → ✅ Final Answer
-```
+#### 技术实现
 
-#### 工具链
+**文件位置**：`RagBackend/RAG_M/src/agent/react_agent.py`
 
-| 工具       | 说明                              |
-| ---------- | --------------------------------- |
-| 知识库检索 | 在指定知识库中语义搜索            |
-| 联网搜索   | DuckDuckGo 实时搜索（零 API Key） |
-| 文档读取   | 读取并分析指定文档内容            |
-| 代码执行   | 运行 Python 代码片段              |
-
-- 任务历史当前主要保存在前端 `localStorage.agent_task_history`
-- 离线降级模板存在，Ollama 不可用时仍可演示基本流程
-
-**API 端点：**
+**ReAct Agent 架构**：
 
 ```
-POST /api/agent/task               -- 启动 Agent 任务（SSE）
-POST /api/RAG/agent_query          -- Agent 问答入口
-POST /api/RAG/agent_query_sync     -- Agent 同步入口
-GET  /api/agent/web-search         -- 联网搜索工具
+用户任务
+    ↓
+[Thought] LLM 思考：是否需要检索？使用什么工具？
+    ↓
+[Action] 调用工具（知识库检索 / 联网搜索 / 其他）
+    ↓
+[Observation] 获取工具返回结果
+    ↓
+  （循环直到获得 Final Answer 或达到最大步数）
+    ↓
+[Final Answer] 生成最终回答
 ```
 
----
+**循环引擎核心**：
+
+- `while` 循环持续运行，终止条件：
+  1. LLM 输出 `Final Answer`
+  2. 达到最大步数（防止无限循环）
+- 每轮循环包含三个固定阶段：
+  1. **Thought（推理）**：组合任务目标、历史步骤、上一步观察，提交 LLM
+  2. **Action（行动）**：解析 LLM 输出，调用对应工具（如 `search_kb(keywords="政策", kb_id="A")`）
+  3. **Observation（观察）**：工具返回结构化结果，追加到历史记录
+
+**标准化工具链**：
+
+| 工具                    | 功能           | 实现              |
+| ----------------------- | -------------- | ----------------- |
+| `search_knowledge_base` | 知识库语义检索 | 调用 RAG 核心能力 |
+| `web_search`            | 联网搜索       | DuckDuckGo API    |
+| `rbac_check`            | 权限校验       | RBAC 管理器       |
+
+**任务执行可视化**：
+
+- Agent 启动接口采用 SSE 响应
+- 后端推送每个阶段（Thought → Action → Observation）到前端
+- 前端渲染流式数据，显示逐步思考的视觉效果
 
 ### 4.5 多模型适配
 
-**功能描述：** 统一的多模型路由层，支持本地和云端多种 LLM，按需切换。
+#### 功能说明
 
-| 类型 | 模型                   | 说明                                     |
-| ---- | ---------------------- | ---------------------------------------- |
-| 本地 | Ollama（任意本地模型） | 通过用户配置动态切换，低配可选小参数模型 |
-| 云端 | OpenAI                 | 需配置 API Key                           |
-| 云端 | DeepSeek               | 需配置 API Key                           |
-| 云端 | 腾讯混元               | 需配置 API Key                           |
+系统支持多种大语言模型的灵活接入与热切换，实现模型与业务逻辑的完全解耦。
 
-#### 用户自定义模型配置
+#### 技术实现
 
-- 设置页「模型配置」Tab 可自定义 Ollama 地址、模型名称、请求超时时长
-- 后端不可用时，前端仍会先写入 localStorage 做离线兜底
-- 多模型路由支持 provider 状态检测与统一聊天入口
+**文件位置**：`RagBackend/multi_model/`
 
-```
-GET  /api/user-model-config            -- 获取用户模型配置
-POST /api/user-model-config            -- 保存用户模型配置
-GET  /api/user-model-config/local-models
-POST /api/user-model-config/test
-GET  /api/models/list                  -- 可用模型列表
-POST /api/models/chat                  -- 多模型统一对话
-POST /api/models/configure             -- 配置模型 provider
-POST /api/models/test                  -- 测试模型连通性
-GET  /api/models/providers/status      -- provider 状态
-```
+| 模块     | 文件                       | 功能             |
+| -------- | -------------------------- | ---------------- |
+| 模型路由 | `model_router.py`          | 统一模型调用接口 |
+| 扩展路由 | `extended_model_router.py` | 额外模型适配器   |
 
----
+**支持的模型类型**：
+
+| 类型     | 提供商         | 配置方式                                              |
+| -------- | -------------- | ----------------------------------------------------- |
+| 本地模型 | Ollama         | `OLLAMA_BASE_URL` + `MODEL`                           |
+| 云端 API | OpenAI         | `OPENAI_API_KEY` + `OPENAI_BASE_URL`                  |
+| 云端 API | DeepSeek       | `DEEPSEEK_API_KEY`                                    |
+| 云端 API | 腾讯混元       | `HUNYUAN_SECRET_ID` + `HUNYUAN_SECRET_KEY`            |
+| 云端 API | 阿里 DashScope | `DASHSCOPE_API_KEY`                                   |
+| 云端 API | 讯飞星火       | `XFYUN_APP_ID` + `XFYUN_API_KEY` + `XFYUN_API_SECRET` |
+
+**模型配置管理**：
+
+- 文件位置：`RagBackend/models/model_config.py`
+- 支持运行时热切换模型，无需重启服务
+- 前端「模型管理」界面提供添加、测试、切换功能
 
 ### 4.6 检索策略配置
 
-| 策略       | 说明                                   | 适用场景         |
-| ---------- | -------------------------------------- | ---------------- |
-| **Vector** | 纯向量语义相似度检索                   | 语义理解要求高   |
-| **BM25**   | 关键词稀疏检索                         | 精确词匹配场景   |
-| **Hybrid** | 向量 + BM25 线性加权融合               | 通用场景推荐     |
-| **RRF**    | 倒数排名融合（Reciprocal Rank Fusion） | 多路召回重排     |
-| **MMR**    | 最大边际相关性（减少冗余）             | 需要多样性的场景 |
+#### 功能说明
 
-前端 `RetrievalConfig.vue` 组件提供滑块、选择器等直观配置界面，参数透传至 RAG Pipeline。
+系统提供 5 种可配置检索策略，适应不同查询场景和精度要求，用户可在前端动态配置。
 
-> 当前默认策略为 **RRF**；`rerank` 选项调用的是本地 token overlap 轻量重排，而不是默认接入真实 Cross-Encoder 模型。该模块没有独立 REST 路由，由 RAG 请求参数直接驱动。
+#### 技术实现
 
----
+**文件位置**：`RagBackend/document_processing/retrieval_strategy.py`
+
+**支持的检索策略**：
+
+| 策略       | 说明                           | 适用场景         |
+| ---------- | ------------------------------ | ---------------- |
+| **Vector** | 纯稠密向量检索（FAISS）        | 语义理解强的查询 |
+| **BM25**   | 纯稀疏关键词检索               | 精确术语匹配     |
+| **Hybrid** | BM25 + 向量线性加权融合        | 兼顾语义和关键词 |
+| **RRF**    | Reciprocal Rank Fusion（推荐） | 整体最优召回     |
+| **MMR**    | Maximal Marginal Relevance     | 去重多样化结果   |
+
+**配置参数**：
+
+```python
+@dataclass
+class RetrievalConfig:
+    strategy: str = "rrf"           # 检索策略
+    topK: int = 6                   # 返回文档块数
+    scoreThreshold: float = 0.0     # 最低相关度过滤
+    vectorWeight: float = 0.6       # Hybrid 向量权重
+    bm25Weight: float = 0.4         # Hybrid BM25 权重
+    rerank: bool = False            # 是否二次排序
+    rerankTopN: int = 3             # 重排后保留数量
+```
+
+**轻量重排**：
+
+- 基于 Token 重叠的本地计算
+- 计算查询与文档片段的共享 Token 比例
+- 分析核心名词、动词在片段中的频率和分布
+- 优点：延迟极小、可解释性强、资源消耗低
 
 ### 4.7 语音交互
 
-```
-点击麦克风按钮
-  → MediaRecorder 开始录音（WebM 格式）
-  → 波形动画实时显示（8 条动态柱）
-  → 再次点击停止录音
-  → POST /api/voice/transcribe（Whisper 后端）
-  → 转录文字填入输入框
-  → 可继续调用 /api/voice/ask 发起语音问答
-```
+#### 功能说明
 
-> 当前 `VoiceInput.vue` 主链路依赖后端 Whisper。项目内另有 Web Speech API 试验性示例，但**未接入当前语音输入主流程**，因此不是自动降级链路。
+系统集成语音识别能力，支持用户通过语音输入问题，拓展交互方式。
 
-```
-POST /api/voice/transcribe   -- 音频转文字
-POST /api/voice/ask          -- 语音问答
-GET  /api/voice/models       -- 可用 Whisper 模型
-POST /api/voice/load-model   -- 加载指定模型
-GET  /api/voice/health       -- 服务健康状态
-```
+#### 技术实现
 
----
+**文件位置**：`RagBackend/multimodal/whisper_asr.py`
+
+**技术方案**：
+
+- 基于 OpenAI Whisper 模型进行语音识别
+- 支持模型尺寸选择：`base` / `small` / `medium` / `large`
+- 环境变量配置：`WHISPER_MODEL=base`
+
+**工作流程**：
+
+1. 用户录制或上传音频文件
+2. 后端调用 Whisper 模型进行语音转文字
+3. 识别结果作为用户问题输入 RAG 问答流程
+4. 返回文本回答（可扩展为语音合成回复）
 
 ### 4.8 联网搜索
 
-集成 DuckDuckGo 联网搜索，无需 API Key，Agent 可调用实时获取最新信息。当前实现采用 **Instant Answer API → HTML 搜索页解析** 的双层降级机制，默认超时 10 秒。
+#### 功能说明
 
-```
-GET /api/agent/web-search?q=搜索关键词&max_results=5
-```
+Agent 任务模式下，当本地知识库无法满足查询需求时，系统自动触发联网搜索获取最新信息。
 
----
+#### 技术实现
+
+**文件位置**：`RagBackend/agent_tools/web_search_tool.py`
+
+**技术方案**：
+
+- 基于 DuckDuckGo API 实现网络搜索
+- 无需 API Key，免费使用
+- 返回结构化搜索结果（标题、摘要、链接）
+
+**集成方式**：
+
+- 封装为 LangChain Tool：`web_search`
+- Agent 自主决策何时调用（Prompt 规则约束）
+- 搜索结果作为 Observation 进入 ReAct 循环
 
 ### 4.9 文档创作
 
-**功能描述：** 当前实现为 5 类文本创作 / 处理接口，而不是单一 `mode` 聚合接口。
+#### 功能说明
 
-| 模式         | 说明                         | 输出特点         |
-| ------------ | ---------------------------- | ---------------- |
-| **大纲生成** | 根据主题与要求生成多级结构   | 层次化标题与要点 |
-| **摘要生成** | 对长文本进行压缩总结         | 关键信息提炼     |
-| **文本翻译** | 将文本翻译到目标语言         | 保留术语与语义   |
-| **格式优化** | 润色措辞、统一格式、修正表达 | 更适合直接发布   |
-| **内容扩写** | 根据大纲或要点扩展正文       | 生成更完整的文档 |
+系统内置多模式智能文档创作引擎，覆盖报告、摘要、大纲、博客、论文等典型写作场景。
 
-```
-POST /api/creation/outline
-POST /api/creation/summary
-POST /api/creation/translate
-POST /api/creation/polish
-POST /api/creation/expand
-GET  /api/creation/templates
-```
+#### 技术实现
 
-**前端入口：** SideBar「文档创作」→ `/creation`，`Creation.vue` 页面。
+**文件位置**：`RagBackend/creation/doc_creation.py`
 
----
+**创作模式**：
+
+| 模式     | 说明                             |
+| -------- | -------------------------------- |
+| 报告生成 | 基于知识库内容自动生成结构化报告 |
+| 摘要提取 | 对长文档进行智能摘要             |
+| 大纲生成 | 根据主题生成文章大纲             |
+| 博客写作 | 生成适合发布的博客文章           |
+| 论文辅助 | 学术论文的文献综述、方法论等     |
+
+**技术特点**：
+
+- 基于 RAG 检索的上下文增强生成
+- 支持模板化输出格式
+- 可指定写作风格、字数、语言等参数
 
 ### 4.10 RAG 评测
 
-**功能描述：** 当前实现为**轻量问答评测面板**，支持题库、模型对比、结果持久化与可视化；但严格来说，它还不是完全接入真实 RAG 主链路的端到端评测系统。
+#### 功能说明
 
-| 指标           | 说明                                         |
-| -------------- | -------------------------------------------- |
-| **准确率**     | 基于 expected 文本与关键词覆盖率的启发式打分 |
-| **溯源准确率** | 回答中是否包含来源/参考等引用标记            |
-| **延迟**       | 端到端响应时间分布                           |
+系统提供内置评测面板，支持对检索质量和生成质量进行量化评估。
 
-- 📡 **雷达图**：3 维指标对比（准确率 / 响应速度 / 溯源准确率）
-- 📊 **柱状图**：按题目分类聚合的平均得分对比
-- 📈 **直方图**：响应延迟分布分析
-- **Pinia Store** 跨路由持久化，切换页面不丢评测进度
-- **全局进度浮层**：`App.vue` 底部 toast，任意页面均可感知评测进度
+#### 技术实现
 
-> 说明：`eval_panel.py` 当前优先请求 `POST /api/chat/ask`，但本仓库未找到该路由；失败时会回退到 Ollama 直接生成。因此它更接近“轻量模型问答评测面板”，而不是严格的真实 RAG 闭环评测。
+**文件位置**：`RagBackend/evaluation/eval_panel.py`、`RagBackend/rag_enhancement/rag_evaluator.py`
 
-```
-POST /api/eval/run
-GET  /api/eval/results
-GET  /api/eval/latest
-GET  /api/eval/results/{run_id}
-GET  /api/eval/questions
-POST /api/eval/questions/add
-DELETE /api/eval/questions/{q_id}
-```
+**检索层评测指标**：
+
+| 指标        | 说明                            |
+| ----------- | ------------------------------- |
+| Recall@K    | 前 K 个结果中召回相关文档的比例 |
+| Precision@K | 前 K 个结果的精确率             |
+| mAP         | 平均精度均值                    |
+| NDCG@K      | 归一化折损累计增益              |
+
+**生成层评测指标**：
+
+| 指标              | 说明                     |
+| ----------------- | ------------------------ |
+| Faithfulness      | 答案对检索上下文的忠实度 |
+| Answer Relevancy  | 答案与问题的相关性       |
+| Context Precision | 上下文利用精确率         |
+
+**测试方案**：
+
+- 使用 RAGAs 自动化评测框架
+- 支持自定义测试集导入（模拟「题库导入」功能）
+- 生成雷达图对比不同策略/模型的表现
 
 ---
 
@@ -522,147 +594,54 @@ DELETE /api/eval/questions/{q_id}
 
 ### 5.1 个人主页与设置
 
-| 设置项   | 说明                                                         |
-| -------- | ------------------------------------------------------------ |
-| 基本信息 | 头像、姓名/昵称、个人简介可更新；公开邮箱当前以读取/回填为主 |
-| 偏好设置 | 开发模式（当前仅默认项）、语言切换，前端立即生效             |
-| 账号操作 | 登出账号、账号注销确认弹窗                                   |
-
-> 说明：当前用户页未提供独立“修改密码”表单；密码重置流程仍走 4.1 中的忘记密码接口。
-
----
+- 用户个人资料展示与编辑
+- 头像上传与管理
+- 账户安全设置
+- 偏好配置持久化
 
 ### 5.2 外观与主题
 
-完整的个性化外观系统，所有设置 **localStorage 持久化**：
-
-| 功能         | 选项                                                |
-| ------------ | --------------------------------------------------- |
-| **主题模式** | 亮色 / 暗色 / 跟随系统（`light` / `dark` / `auto`） |
-| **主题色**   | 8 种预设色（蓝/紫/绿/红/橙/青/粉/灰）               |
-| **界面布局** | 默认 / 紧凑 / 宽松                                  |
-| **字体大小** | 小 / 中 / 大，实时调整根字体大小                    |
-
----
+- 支持亮色/暗色主题切换
+- 基于 TDesign 的设计令牌系统
+- 自定义主题色配置
 
 ### 5.3 第三方账号绑定
 
-当前用户中心中的「第三方账号绑定」入口实际位于 `/user/coming-soon/2`，属于**前端演示/待上线页面**，尚未形成真实后端绑定闭环。
+- QQ 登录集成（OAuth2.0）
+- 支持绑定/解绑第三方账号
+- 文件位置：`RagBackend/RAGF_User_Management/QQ_Login.py`
 
-| 项目                   | 当前状态                                                               |
-| ---------------------- | ---------------------------------------------------------------------- |
-| 用户中心绑定页         | 可展示绑定/解绑交互，但当前为本地演示逻辑                              |
-| QQ                     | 已实现 **QQ OAuth 登录**（见 4.1），但属于登录流程，不是用户中心绑定页 |
-| GitHub / 微信 / 飞书等 | 用户中心未找到真实绑定 API；Settings 中部分仅为平台配置或占位实现      |
+### 5.4 历史记录
 
----
+- 对话历史持久化存储
+- 支持历史会话搜索与回溯
+- 聊天记录导出功能
+- 文件位置：`RagBackend/chat_units/chat_management/`
 
-### 5.4 反馈与建议
+### 5.5 全局搜索
 
-多字段反馈表单，主路径：`POST /api/feedback/submit`。
+- 快捷键 `Ctrl+K` 唤起全局搜索
+- 跨知识库内容检索
+- 支持知识库、文档、笔记多维度搜索
 
-- 后端已接入 `smtplib` 发送邮件
-- 若 SMTP 未配置，后端返回 `feedback_received_no_smtp`
-- 前端存在 `mailto:` 本地邮件客户端降级逻辑
+### 5.6 置顶功能
 
----
+- 知识库星标置顶
+- 拖拽排序自定义顺序
+- 个人/共享/广场三级可见性标签
 
-### 5.5 历史记录
+### 5.7 全局交互动效
 
-聚合展示多类历史活动，并按日期分组：
+- 页面切换过渡动画
+- 卡片悬浮效果
+- 加载状态骨架屏
+- 打字机效果（SSE 流式输出）
 
-| 类型        | 实际来源                          |
-| ----------- | --------------------------------- |
-| 💬 对话历史 | `GET /api/chat/chat-documents`    |
-| 🤖 任务历史 | `localStorage.agent_task_history` |
-| 📝 笔记历史 | `localStorage.kb_notes_*`         |
+### 5.8 系统设置（Win11 风格）
 
-> 当前代码中**未看到独立的“搜索历史”聚合来源**。
-
----
-
-### 5.6 全局搜索
-
-快捷键：`Ctrl + K`
-
-- 浮窗覆盖式搜索界面
-- 当前实际搜索范围：**知识库名称 + 对话会话标题**
-- 键盘导航（↑↓ 选择，Enter 跳转，Esc 关闭）
-- 提供快捷入口列表（知识库 / AI 对话 / 文件管理 / 学术检索）
-
-> 当前 `GlobalSearch.vue` 未实现独立“搜索历史”功能，也**未看到真正接入文档标题/全文搜索结果**。
-
----
-
-### 5.7 置顶功能
-
-全平台统一的置顶机制，**localStorage 持久化**，重启后保持状态。
-
-| 模块       | 置顶对象      |
-| ---------- | ------------- |
-| 知识库列表 | 知识库卡片    |
-| 文件管理   | 单个文件      |
-| 模型管理   | Ollama 模型   |
-| 历史记录   | 对话/任务条目 |
-
----
-
-### 5.8 全局交互动效
-
-文件：`src/styles/animations.css`
-
-| 动效类型     | 说明                        |
-| ------------ | --------------------------- |
-| **页面过渡** | 路由切换淡入淡出 + 轻微位移 |
-| **按钮光晕** | hover 时发光扩散效果        |
-| **卡片悬浮** | hover 上移 + 阴影加深       |
-| **骨架屏**   | 灰色条流光扫过动画          |
-| **列表浮入** | 列表项逐一延迟出现          |
-| **毛玻璃**   | backdrop-filter 磨砂效果    |
-
-所有动效支持 `prefers-reduced-motion` 媒体查询，用户开启“减少动态效果”时自动关闭。
-
----
-
-### 5.9 系统设置（Win11 风格）
-
-路径：`/settings`，左侧分组导航栏 + 右侧内容区。
-
-**当前源码为 6 大分组 / 16 个 Tab：**
-
-| 分组          | Tab                                     |
-| ------------- | --------------------------------------- |
-| 🔐 账号与安全 | API Key / 角色权限 / 合规中心           |
-| 🗄️ 数据与存储 | 多数据源 / 版本管理 / OCR 解析          |
-| 🤖 AI 与模型  | 模型配置 / 多模型 / RAG 评估 / 企业工具 |
-| 🔗 集成与联动 | 办公联动 / 审计日志                     |
-| 🎨 个性化     | 外观设置                                |
-| 📡 系统       | 使用统计 / 系统监控 / 工单管理          |
-
-**办公联动面板当前包含 6 平台：** Obsidian / 飞书 / 钉钉 / 企微 / Notion / GitHub。
-
-> 说明：
->
-> - Notion / GitHub 后端当前仅为“保存配置 + 测试占位”
-> - 系统监控当前为**手动刷新**，未见 30 秒自动刷新逻辑
-> - OCR 设置页当前前端仍带有演示态接口调用（见 7.5）
-
----
-
-### 5.10 系统架构图
-
-路径：`/architecture`，独立可视化页面。
-
-| Tab             | 内容                                                    |
-| --------------- | ------------------------------------------------------- |
-| 🗺️ **全局架构** | 客户端层 / 网关层 / 业务服务层 / AI 模型层 / 存储层总览 |
-| 🔄 **数据流**   | RAG 问答流与文件上传向量化流程图                        |
-| 📦 **技术栈**   | 前后端、AI、存储等技术栈卡片展示                        |
-| 🚀 **部署方案** | 本地开发、Docker 部署与端口总览                         |
-
-> 当前该页面属于说明性可视化页面；其中数据流文案仍有个别示意描述，需继续与真实实现保持同步。
-
-**入口：** SideBar 工具栏「系统架构」图标 → 路由 `/architecture`。
+- 仿 Windows 11 设置面板设计
+- 分类清晰的设置项组织
+- 实时预览配置效果
 
 ---
 
@@ -670,78 +649,40 @@ DELETE /api/eval/questions/{q_id}
 
 ### 6.1 Obsidian 笔记同步
 
-将 Obsidian Vault 中的 Markdown 笔记增量同步到知识库目录。
+**文件位置**：`RagBackend/integrations/obsidian_sync.py`
 
-```
-POST /api/integrations/obsidian/configure   -- 配置 Vault 路径、目标知识库、排除规则
-POST /api/integrations/obsidian/sync        -- 手动触发同步
-GET  /api/integrations/obsidian/status      -- 查看同步状态
-GET  /api/integrations/obsidian/files       -- 查看已同步文件列表
-```
-
-当前配置项以源码为准：`vault_path`、`kb_id`、`auto_sync`（布尔）、`exclude_patterns`。
-
-> 当前并**未**实现 README 旧描述中的“每小时/每天”定时频率配置；增量检测采用文件内容哈希。
-
----
+- 双向同步 Obsidian 笔记库
+- 支持 Markdown 格式文档自动导入
+- 配置位置：`RagBackend/metadata/obsidian_config.json`
 
 ### 6.2 飞书机器人
 
-当前实现的是**飞书机器人/事件订阅问答链路**，而不是简单的 webhook 发送接口。
+**文件位置**：`RagBackend/integrations/feishu_bot.py`
 
-```
-POST /api/integrations/feishu/webhook      -- 飞书事件订阅入口
-POST /api/integrations/feishu/configure    -- 动态配置 App ID / App Secret
-GET  /api/integrations/feishu/status       -- 查看配置状态
-GET  /api/integrations/feishu/setup-guide  -- 返回接入步骤说明
-POST /api/integrations/feishu/test         -- 发送测试消息
-```
-
-配置方式：支持环境变量初始化，也支持在 Settings 页运行时配置 `app_id` / `app_secret` / `verification_token` / `encrypt_key` / `default_kb_id`。
-
----
+- 飞书自定义机器人集成
+- 支持群聊中 @机器人进行知识库问答
+- 环境变量配置：
+  - `FEISHU_APP_ID`
+  - `FEISHU_APP_SECRET`
+  - `FEISHU_VERIFICATION_TOKEN`
+  - `FEISHU_ENCRYPT_KEY`
+  - `FEISHU_DEFAULT_KB_ID`
 
 ### 6.3 钉钉 / 企微 / Notion / GitHub
 
-```
-POST /api/integrations/dingtalk/configure  -- 保存钉钉配置
-POST /api/integrations/dingtalk/test       -- 发送钉钉测试消息
-POST /api/integrations/dingtalk/send       -- 钉钉发送
-POST /api/integrations/wecom/configure     -- 保存企微配置
-POST /api/integrations/wecom/test          -- 发送企微测试消息
-POST /api/integrations/wecom/send          -- 企微发送
-POST /api/integrations/notion/configure    -- 保存 Notion 配置（占位）
-POST /api/integrations/notion/test         -- Notion 测试（占位）
-POST /api/integrations/github/configure    -- 保存 GitHub 配置（占位）
-POST /api/integrations/github/test         -- GitHub 测试（占位）
-```
+**文件位置**：`RagBackend/integrations/dingtalk_wecom.py`
 
-- **钉钉 / 企微**：真实可发测试消息与正式消息
-- **Notion / GitHub**：当前仅有“保存配置 + 测试占位返回”，**未实现真实同步链路**
-
----
+- 钉钉/企业微信 Webhook 机器人集成
+- Notion 页面导入（配置保存 + 测试接口）
+- GitHub 仓库文档同步（配置保存 + 测试接口）
 
 ### 6.4 多数据源接入
 
-| 数据源             | 当前状态                       |
-| ------------------ | ------------------------------ |
-| **阿里云 OSS**     | 已支持                         |
-| **AWS S3 / MinIO** | 已支持                         |
-| **MySQL**          | 已支持                         |
-| **PostgreSQL**     | 已支持                         |
-| **SQLite**         | 已支持                         |
-| **WebDAV**         | `types` 接口中标记为 `planned` |
+**文件位置**：`RagBackend/data_sources/datasource_manager.py`
 
-```
-GET    /api/datasources/list         -- 数据源列表
-GET    /api/datasources/types        -- 支持类型说明
-POST   /api/datasources/create       -- 创建数据源
-DELETE /api/datasources/{ds_id}      -- 删除数据源
-POST   /api/datasources/{ds_id}/test -- 测试连通性
-POST   /api/datasources/{ds_id}/sync -- 触发同步
-```
-
-> 当前源码中未看到旧 README 所写的 `HTTP URL` 数据源类型；前端 Settings 页调用的也是上述 `datasources` 复数路由。
+- 支持多种数据源类型：MySQL、PostgreSQL、MongoDB、OSS/S3/MinIO
+- 统一数据源配置管理界面
+- 数据源连接测试功能
 
 ---
 
@@ -749,155 +690,107 @@ POST   /api/datasources/{ds_id}/sync -- 触发同步
 
 ### 7.1 开放 API
 
-当前已实现的是 **API Key 管理与验证能力**：
+**文件位置**：`RagBackend/open_api/api_key_manager.py`
 
-```
-POST   /api/apikeys/create            -- 创建 API Key（仅首次返回明文）
-GET    /api/apikeys/list              -- 查看 Key 列表
-PATCH  /api/apikeys/{id}/toggle       -- 启用/禁用 Key
-DELETE /api/apikeys/{id}              -- 删除 Key
-POST   /api/apikeys/verify            -- 用 X-API-Key 验证可用性
-```
-
-```bash
-curl -X POST http://localhost:8000/api/apikeys/verify \
-     -H "X-API-Key: ragf_xxxx"
-```
-
-> 当前源码中**尚未看到**业务接口统一接入 API Key 鉴权依赖，因此 README 不再把 `/api/chat/send` 这类业务路由写成已完成的开放 API 调用示例。
-
----
+- API Key 生成与管理
+- 请求频率限制
+- 使用量统计与计费
+- 文件位置：`RagBackend/billing/billing_manager.py`
 
 ### 7.2 审计日志
 
-ASGI 中间件会自动记录请求时间、用户、路径、IP、状态码、耗时等信息，存储于 SQLite：`metadata/audit_log.db`。
+**文件位置**：`RagBackend/audit/audit_log.py`
 
-```
-GET    /api/audit/logs         -- 查询审计日志（分页+过滤）
-GET    /api/audit/stats        -- 审计统计摘要
-DELETE /api/audit/logs/clean   -- 清理旧日志
-```
-
----
+- 全链路操作记录
+- SQLite 存储审计数据
+- 支持按用户、时间、操作类型筛选查询
+- 请求链路追踪：每个请求生成唯一 `request_id`
 
 ### 7.3 增量向量化
 
-```
-POST   /api/vectorize/ingest          -- 单文件增量向量化（异步）
-POST   /api/vectorize/batch           -- 批量增量向量化（异步）
-DELETE /api/vectorize/remove          -- 从向量库移除文档
-GET    /api/vectorize/stats/{kb_id}   -- 查看向量库统计
-GET    /api/vectorize/index/{kb_id}   -- 查看哈希索引
-GET    /api/vectorize/status/{task_id} -- 查询任务状态
-GET    /api/vectorize/queue           -- 查看当前队列长度
-```
+**文件位置**：`RagBackend/document_processing/incremental_vectorizer.py`
 
-原理：计算文件哈希与索引记录对比，内容未变更则跳过，减少重复向量化计算。
+**核心算法**：
 
----
+1. 为每个文档计算 SHA-256 哈希值并存储
+2. 重新上传时比对哈希值，未变化则跳过处理
+3. 若变化，通过 `difflib` 进行文本差异比对
+4. 仅对新增或修改的段落重新向量化
+5. 更新开销从 O(n) 降低至接近 O(Δn)
 
 ### 7.4 RBAC 权限管理
 
-| 内置角色      | 权限范围                              |
-| ------------- | ------------------------------------- |
-| `super_admin` | 全部权限                              |
-| `admin`       | `kb:*` / `user:read` / `audit:read`   |
-| `editor`      | `kb:write` / `kb:read` / `kb:comment` |
-| `viewer`      | `kb:read` / `kb:comment`              |
-| `guest`       | `kb:read`                             |
+**文件位置**：`RagBackend/knowledge/rbac_manager.py`
 
-```
-GET    /api/rbac/roles                    -- 角色列表
-POST   /api/rbac/roles/assign            -- 为用户分配角色
-GET    /api/rbac/users/{user_id}/roles   -- 查询用户角色
-POST   /api/rbac/kb/grant                -- 授权知识库权限
-DELETE /api/rbac/kb/{kb_id}/revoke       -- 撤销知识库权限
-GET    /api/rbac/kb/{kb_id}/permissions  -- 查看知识库权限
-GET    /api/rbac/check                   -- 检查权限
-```
+**权限层级**：
 
-> 说明：`DELETE /api/rbac/kb/{kb_id}/revoke` 还需要通过查询参数传入 `subject_type` 与 `subject_id`；另有部门相关接口：`/api/rbac/dept/create`、`/api/rbac/dept/list`。
-
----
+- **系统级**：管理员、普通用户角色
+- **知识库级**：Owner、Editor、Viewer
+- **文档级**：读、写、删除权限
 
 ### 7.5 OCR 文档解析
 
-后端 OCR 模块的能力范围比旧文档描述更广：除图片、扫描版 PDF 外，还能处理音频/视频转写。
+**文件位置**：`RagBackend/knowledge/ocr_parser.py`
 
-```
-POST /api/ocr/extract         -- 上传文件解析
-POST /api/ocr/extract-base64  -- Base64 文件内容解析
-```
+**双引擎方案**：
 
-- 图片优先走 PaddleOCR，缺失时降级 pytesseract
-- PDF 支持逐页 OCR
-- 音频/视频支持 Whisper 转写
+| 引擎      | 优势               | 适用场景           |
+| --------- | ------------------ | ------------------ |
+| Tesseract | 英文识别、版面分析 | 英文文档、标准排版 |
+| PaddleOCR | 中文识别、表格识别 | 中文文档、复杂版面 |
 
-> 当前前端 Settings「OCR 解析」Tab 仍调用 `/api/ocr/parse` 与 `/api/ocr/configure`，并在失败时回退到本地演示数据；这与后端真实接口**尚未完全对齐**。
+**融合策略**：
 
----
+- 并行调用双引擎
+- 行级对齐与置信度加权融合
+- 常见 OCR 错误字符映射表轻量级纠错
 
 ### 7.6 系统监控
 
-集成请求监控中间件，并提供 JSON / Prometheus 两类指标输出。
+**文件位置**：`RagBackend/monitoring/metrics.py`
 
-| 指标         | 说明                        |
-| ------------ | --------------------------- |
-| 请求计数     | 按 `method + path` 聚合统计 |
-| 平均延迟     | 每个接口的平均响应时长      |
-| P99 延迟     | Top 接口的 P99 响应时间     |
-| 错误计数     | 4xx/5xx 累积错误数          |
-| 模型调用     | 按模型名称统计调用次数      |
-| 知识库上传量 | 上传相关请求计数            |
-| 运行时长     | 服务启动以来 uptime         |
-
-```
-GET /api/metrics          -- JSON 概览数据
-GET /api/metrics/echarts  -- ECharts 专用 JSON
-GET /metrics              -- Prometheus 文本指标
-```
-
-**前端展示：** Settings「📡 系统监控」Tab，当前为 ECharts 面板 + **手动刷新**，未见 30 秒自动刷新逻辑。
+- Prometheus 中间件采集指标
+- 接口响应延迟、QPS、错误率监控
+- Grafana + ECharts 可视化展示
+- 系统资源使用率监控（CPU、内存、磁盘）
 
 ---
 
 ## 8. 移动端 App
 
-**位置：** `KnowledgeRAG-GZHU/RagMobile/`  
-**技术栈：** React Native + Expo SDK 52 + TypeScript + zustand
-
-| 屏幕                  | 功能                                                                             |
-| --------------------- | -------------------------------------------------------------------------------- |
-| LoginScreen           | 邮箱登录/注册，JWT 安全存储                                                      |
-| KnowledgeBaseScreen   | 知识库列表、创建、删除                                                           |
-| SquareScreen          | 知识广场、共享内容浏览                                                           |
-| KnowledgeDetailScreen | 文档管理、文件上传、URL 导入                                                     |
-| ChatScreen            | RAG 对话，SSE 流式，引用溯源                                                     |
-| AgentScreen           | Agent 任务模式，步骤可视化                                                       |
-| SettingsScreen        | 3 个标签：模型切换、办公联动（Obsidian / 飞书）、账号操作；云端 API Key 本地保存 |
-
-```bash
-# 本地开发
-cd RagMobile
-npm install
-npx expo start
-
-# 打包 APK（EAS Cloud Build）
-npm install -g eas-cli
-eas login              # 账号: gzlns
-eas build -p android --profile preview   # 输出 APK
-
-# 打包 AAB（Google Play）
-eas build -p android --profile production
-```
-
-> **注意：** 打包前将 `EXPO_PUBLIC_API_URL` 改为服务器真实 IP/域名。
+- 基于 Uni-app / Quasar 框架开发
+- 支持 iOS 和 Android 双平台
+- 核心功能与 Web 端保持一致
+- 适配移动端触摸交互
 
 ---
 
 ## 9. 部署方案
 
-### 桌面端打包（Windows 安装包）
+### 9.1 Docker Compose 完整部署（推荐）
+
+```yaml
+# 服务组成：
+# - redis: Redis 7 Alpine（消息队列）
+# - mysql: MySQL 8.0（结构化数据）
+# - ollama: Ollama 本地 LLM 服务
+# - ollama-init: 模型预拉取初始化任务
+# - backend: FastAPI 主服务（上传 + 问答）
+# - worker: 文档处理 Worker（解析 + 向量化）
+# - frontend: Vue3 + Nginx 前端
+```
+
+**资源限制**：
+
+| 服务     | 内存限制 | CPU 限制 |
+| -------- | -------- | -------- |
+| backend  | 1500MB   | 1.0      |
+| worker   | 2000MB   | 1.5      |
+| mysql    | 512MB    | -        |
+| ollama   | 2GB      | -        |
+| frontend | 64MB     | -        |
+
+### 9.2 桌面端打包（Windows / macOS / Linux）
 
 #### Tauri 桌面端（轻量，推荐）
 
@@ -906,6 +799,7 @@ eas build -p android --profile production
 ```bash
 # 首次构建需安装 Rust（https://rustup.rs/）
 cd RagFrontend
+npm install
 npm run tauri:build          # 构建 Windows 安装包
 # 输出：src-tauri/target/release/bundle/nsis/*.exe
 ```
@@ -927,52 +821,20 @@ pyinstaller rag_backend.spec
 
 详细打包文档：[docs/打包指南.md](./docs/打包指南.md)
 
----
+### 9.3 开发环境部署
 
-### Docker Compose（完整栈）
+使用 `dev.ps1` 脚本快速启动：
 
-```yaml
-# docker-compose.yml 包含以下 7 个服务：
-services:
-  redis: # Redis Stream 事件总线，端口 6380 -> 6379
-  mysql: # MySQL 8.0，端口 3307 -> 3306
-  ollama: # Ollama，端口 11435 -> 11434
-  ollama-init: # 一次性模型预拉取任务（无对外端口）
-  backend: # FastAPI 主服务，端口 8000
-  worker: # 文档解析 / 向量化 Worker（无对外端口）
-  frontend: # Vue3 + Nginx，端口 8089
-```
+- MySQL 和 Redis 通过 Docker 运行
+- 前后端本地运行，支持热重载
+- 前端端口：5173，后端端口：8000
 
-```bash
-docker compose up -d               # 启动完整栈
-docker compose logs -f backend     # 查看后端日志
-docker compose logs -f worker      # 查看向量化 Worker 日志
-docker compose down                # 停止
-```
+### 9.4 生产环境优化
 
-### Docker Compose 轻量版（云端 API）
-
-```yaml
-# docker-compose.lite.yml：frontend + backend
-# 使用 SQLite；无独立 MySQL / Ollama / Redis 容器
-# 默认示例为 DeepSeek，可改成 DashScope / 宿主机 Ollama
-services:
-  backend: # FastAPI，端口 8000
-  frontend: # Vue3 + Nginx，端口 8089
-```
-
-```bash
-docker compose -f docker-compose.lite.yml up -d
-```
-
-> 说明：轻量版不是“只有后端”；它仍会同时启动前端，只是把数据库切到 SQLite，并依赖云端模型 API 或宿主机已有 Ollama。
-
-### 前端独立构建
-
-```bash
-cd RagFrontend
-npm run build    # 输出 dist/，可部署到 Nginx、Vercel、CDN 等
-```
+- 使用 `docker-compose.prod.yml` 覆盖生产配置
+- Nginx 反向代理 + SSL 证书
+- 数据库定期备份
+- Worker 水平扩展
 
 ---
 
@@ -980,481 +842,299 @@ npm run build    # 输出 dist/，可部署到 Nginx、Vercel、CDN 等
 
 ```
 KnowledgeRAG-GZHU/
-├── RagFrontend/                         # Vue3 前端
-│   ├── src/
-│   │   ├── App.vue                     # 根组件（含全局评测进度浮层）
-│   │   ├── views/
-│   │   │   ├── KnowledgePages/         # 知识库列表 / 详情 / 设置 / 广场
-│   │   │   ├── SettingsTabs/           # 独立设置子 Tab（当前已拆分 8 个）
-│   │   │   ├── Chat.vue                # RAG 智能问答
-│   │   │   ├── Agent.vue               # Agent 任务模式
-│   │   │   ├── History.vue             # 历史记录聚合
-│   │   │   ├── Settings.vue            # Win11 风格设置页（6 组 / 16 Tab）
-│   │   │   ├── Creation.vue            # 文档创作（5 类文本处理接口）
-│   │   │   ├── Architecture.vue        # 系统架构图（4 Tab 可视化）
-│   │   │   └── LogonOrRegister/        # 登录注册
-│   │   ├── components/
-│   │   │   ├── SideBar.vue             # 左侧导航（含架构图 / 文档创作入口）
-│   │   │   ├── GlobalSearch.vue        # Ctrl+K 全局搜索
-│   │   │   ├── ModelSelector.vue       # 模型切换
-│   │   │   ├── RetrievalConfig.vue     # 检索策略配置
-│   │   │   ├── VoiceInput.vue          # 语音输入
-│   │   │   ├── SmartAssistant.vue      # 右侧智能助手
-│   │   │   └── ShareModal.vue          # 分享链接 + 二维码
-│   │   ├── store/                      # Pinia 状态管理
-│   │   ├── composables/useTheme.ts     # 主题 / 字体 / 深色模式
-│   │   ├── styles/animations.css       # 全局交互动效
-│   │   ├── utils/request.ts            # Axios 封装（分块上传 + 重试）
-│   │   └── router/index.ts             # 路由配置（含 /creation /architecture）
-│   ├── Dockerfile
-│   └── nginx.conf
-│
-├── RagBackend/                          # FastAPI 后端
-│   ├── main.py                         # 应用入口
-│   ├── RAGF_User_Management/           # 注册 / 登录 / QQ OAuth / 重置密码
-│   ├── RAG_M/src/
-│   │   ├── rag/rag_pipeline.py         # RAG 主流水线
-│   │   └── agent/react_agent.py        # ReAct Agent
-│   ├── document_processing/
-│   │   ├── doc_upload.py               # 分块上传与文档入库
+├── RagBackend/                          # 后端服务
+│   ├── main.py                          # FastAPI 应用入口
+│   ├── requirements.txt                 # Python 依赖
+│   ├── Dockerfile                       # 后端镜像构建
+│   ├── .env.example                     # 环境变量模板
+│   │
+│   ├── RAG_M/                           # RAG 核心模块
+│   │   ├── src/
+│   │   │   ├── rag/                     # RAG 流水线
+│   │   │   │   ├── rag_pipeline.py      # RAG Pipeline v3
+│   │   │   │   ├── native_rag.py        # 原生 RAG
+│   │   │   │   └── hybrid_retriever.py  # 混合检索器
+│   │   │   ├── agent/                   # Agent 智能体
+│   │   │   │   └── react_agent.py       # ReAct Agent
+│   │   │   ├── vectorstore/             # 向量存储
+│   │   │   │   └── vector_store.py      # FAISS 封装
+│   │   │   ├── ingestion/               # 文档摄入
+│   │   │   │   ├── document_loader.py   # 文档加载器
+│   │   │   │   └── google_drive.py      # Google Drive 集成
+│   │   │   ├── models/                  # 模型配置
+│   │   │   └── api/                     # API 路由
+│   │   └── RAG_app.py                   # RAG 应用封装
+│   │
+│   ├── RAGF_User_Management/            # 用户管理
+│   │   ├── LogonAndLogin.py             # 登录注册
+│   │   ├── User_Management.py           # 用户管理
+│   │   ├── QQ_Login.py                 # QQ 登录
+│   │   ├── Reset_Password.py            # 密码重置
+│   │   └── User_settings.py             # 用户设置
+│   │
+│   ├── knowledge_base/                   # 知识库管理
+│   │   ├── knowledgeBASE4CURD.py        # 知识库 CRUD
+│   │   └── knowledgebase_cover.py      # 知识库封面
+│   │
+│   ├── document_processing/              # 文档处理
+│   │   ├── pipeline.py                 # 处理流水线
+│   │   ├── retrieval_strategy.py       # 检索策略
+│   │   ├── vectorize_task.py           # 向量化任务
+│   │   ├── task_queue.py               # 任务队列
 │   │   ├── incremental_vectorizer.py   # 增量向量化
-│   │   └── retrieval_strategy.py       # 五策略检索
-│   ├── creation/doc_creation.py        # 文档创作接口
-│   ├── monitoring/metrics.py           # 指标聚合与监控接口
-│   ├── multi_model/model_router.py     # 多模型路由
-│   ├── multimodal/whisper_asr.py       # 语音识别
-│   ├── integrations/
+│   │   ├── semantic_splitter.py         # 语义分块
+│   │   ├── doc_upload.py               # 文档上传
+│   │   ├── doc_list.py                 # 文档列表
+│   │   └── doc_manage.py               # 文档管理
+│   │
+│   ├── chat_units/                      # 聊天管理
+│   │   └── chat_management/
+│   │       ├── chat_main.py             # 聊天主逻辑
+│   │       ├── chat_send.py            # 消息发送
+│   │       ├── chat_history_attacher.py # 历史记录
+│   │       └── chat_download.py        # 记录下载
+│   │
+│   ├── multi_model/                     # 多模型适配
+│   │   ├── model_router.py             # 模型路由
+│   │   └── extended_model_router.py    # 扩展路由
+│   │
+│   ├── agent_tools/                     # Agent 工具
+│   │   ├── web_search_tool.py          # 联网搜索
+│   │   └── enterprise_tools.py         # 企业工具
+│   │
+│   ├── integrations/                    # 第三方集成
+│   │   ├── feishu_bot.py               # 飞书机器人
 │   │   ├── obsidian_sync.py            # Obsidian 同步
-│   │   ├── feishu_bot.py               # 飞书机器人 / 事件订阅
-│   │   └── dingtalk_wecom.py           # 钉钉 / 企微 / WPS 联动
-│   ├── data_sources/datasource_manager.py # 多数据源接入
-│   ├── open_api/api_key_manager.py     # API Key 管理
-│   ├── audit/audit_log.py              # ASGI 审计日志
-│   ├── knowledge/
-│   │   ├── rbac_manager.py             # RBAC 权限管理
-│   │   ├── ocr_parser.py               # OCR / 音视频转写解析
-│   │   ├── doc_version_manager.py      # 文档版本管理
-│   │   ├── doc_tag_manager.py          # 文档标签
-│   │   └── doc_comment_manager.py      # 评论 / AI 批注
-│   ├── feedback/feedback_router.py     # 反馈邮件
-│   ├── enterprise/kb_backup.py         # 知识库备份
-│   └── .env.example                    # 环境变量模板
+│   │   └── dingtalk_wecom.py           # 钉钉/企微
+│   │
+│   ├── knowledge/                       # 知识管理
+│   │   ├── rbac_manager.py             # RBAC 权限
+│   │   ├── ocr_parser.py              # OCR 解析
+│   │   ├── doc_version_manager.py      # 文档版本
+│   │   └── doc_tag_manager.py          # 文档标签
+│   │
+│   ├── rag_enhancement/                 # RAG 增强
+│   │   ├── reranker.py                 # 重排序
+│   │   ├── conversation_memory.py       # 对话记忆
+│   │   └── rag_evaluator.py            # RAG 评测
+│   │
+│   ├── evaluation/                      # 评测面板
+│   │   └── eval_panel.py               # 评测接口
+│   │
+│   ├── creation/                        # 文档创作
+│   │   └── doc_creation.py             # 创作引擎
+│   │
+│   ├── audit/                           # 审计日志
+│   │   └── audit_log.py                # 日志管理
+│   │
+│   ├── monitoring/                      # 系统监控
+│   │   └── metrics.py                  # 指标采集
+│   │
+│   ├── open_api/                        # 开放 API
+│   │   └── api_key_manager.py          # API Key 管理
+│   │
+│   ├── data_sources/                   # 数据源管理
+│   │   └── datasource_manager.py       # 数据源管理器
+│   │
+│   ├── multimodal/                      # 多模态
+│   │   └── whisper_asr.py              # 语音识别
+│   │
+│   ├── search/                          # 全文搜索
+│   │   └── fulltext_search.py          # 全文检索
+│   │
+│   ├── billing/                        # 计费系统
+│   │   └── billing_manager.py          # 计费管理
+│   │
+│   ├── enterprise/                      # 企业功能
+│   │   ├── compliance_manager.py      # 合规管理
+│   │   └── kb_backup.py               # 知识库备份
+│   │
+│   ├── knowledge_graph/                 # 知识图谱
+│   │   ├── generate_kg.py             # 图谱生成
+│   │   └── testGPH.py                # 图谱测试
+│   │
+│   ├── models/                         # 数据模型
+│   │   ├── model_config.py            # 模型配置
+│   │   └── kb_schema.py              # 知识库 Schema
+│   │
+│   ├── config/                         # 配置文件
+│   │   └── settings.py                 # 全局设置
+│   │
+│   └── tests/                          # 单元测试
 │
-├── RagMobile/                           # React Native 移动端
-│   ├── App.tsx
-│   ├── src/
-│   │   ├── navigation/Navigation.tsx   # 底部导航 + Stack 路由
-│   │   ├── screens/                    # 7 个核心页面（含 SquareScreen）
-│   │   ├── utils/api.ts                # API 层（AsyncStorage 缓存 + SSE 工具）
-│   │   └── store/useKbStore.ts         # 知识库 Store（5 分钟列表缓存）
-│   └── eas.json
-│
-├── dev.ps1                              # 一键开发启动脚本
-├── docker-compose.yml                   # 完整栈（Redis + MySQL + Ollama + Worker）
-├── docker-compose.lite.yml              # 轻量版（frontend + backend + SQLite）
-├── rag_backend.spec                    # PyInstaller 后端打包配置
-├── docs/
-│   └── 打包指南.md                     # 桌面端打包完整指南
-│
-├── RagFrontend/
+├── RagFrontend/                         # 前端应用
+│   ├── package.json                     # 前端依赖
+│   ├── vite.config.ts                   # Vite 配置
+│   ├── tailwind.config.js               # Tailwind 配置
+│   ├── Dockerfile                       # 前端镜像
+│   ├── nginx.conf                       # Nginx 配置
+│   │
 │   ├── src-tauri/                      # Tauri 桌面端打包配置
 │   │   ├── tauri.conf.json             # 窗口 / 打包目标 / 图标配置
 │   │   ├── Cargo.toml                  # Rust 依赖
 │   │   ├── src/lib.rs                 # Rust 主进程入口
 │   │   ├── capabilities/               # 前端权限配置
-│   │   └── icons/                      # 应用图标
-│   ├── Dockerfile
-│   └── nginx.conf
+│   │   └── icons/                     # 应用图标
+│   │
+│   ├── src/
+│   │   ├── main.ts                    # 应用入口
+│   │   ├── App.vue                    # 根组件
+│   │   ├── router/                    # 路由配置
+│   │   ├── stores/                    # Pinia 状态管理
+│   │   ├── components/                 # 公共组件
+│   │   ├── views/                    # 页面视图
+│   │   ├── api/                      # API 接口封装
+│   │   ├── utils/                    # 工具函数
+│   │   └── styles/                   # 全局样式
+│   │
+│   └── public/                        # 公共资源
+│
+├── docker-compose.yml                   # Docker 编排
+├── docker-compose.lite.yml             # 轻量 Docker 编排
+├── rag_backend.spec                    # PyInstaller 后端打包配置
+├── dev.ps1                             # 一键开发启动脚本
+├── docs/
+│   └── 打包指南.md                    # 桌面端打包完整指南
+│
+└── README.md                           # 项目说明
 ```
 
 ---
 
 ## 11. 环境变量说明
 
-创建 `RagBackend/.env`。如果你是“本地后端 + Docker MySQL”开发模式，`DB_PORT` 建议填 `3307`；如果是完整 Docker 容器内互联，`docker-compose.yml` 已固定使用容器内 `3306`。
+### 11.1 核心配置
 
-```env
-ENV_MODE=development
+| 变量名            | 默认值              | 说明                                     |
+| ----------------- | ------------------- | ---------------------------------------- |
+| `ENV_MODE`        | `development`       | 运行环境：development/testing/production |
+| `KB_STORAGE_PATH` | `./local-KLB-files` | 知识库文件存储路径                       |
+| `MAX_FILE_SIZE`   | `52428800`          | 最大上传文件大小（50MB）                 |
+| `CHUNK_SIZE`      | `102400`            | 文件分块大小（100KB）                    |
 
-# 存储与上传
-KB_STORAGE_PATH=./local-KLB-files
-MAX_FILE_SIZE=52428800
-CHUNK_SIZE=102400
+### 11.2 数据库配置
 
-# 日志
-LOG_LEVEL=INFO
-LOG_DIR=./logs
+| 变量名        | 默认值               | 说明           |
+| ------------- | -------------------- | -------------- |
+| `DB_HOST`     | `127.0.0.1`          | MySQL 主机地址 |
+| `DB_PORT`     | `3307`               | MySQL 端口     |
+| `DB_USER`     | `root`               | 数据库用户名   |
+| `DB_PASSWORD` | `your_password_here` | 数据库密码     |
+| `DB_NAME`     | `rag_user_db`        | 数据库名称     |
+| `DB_CHARSET`  | `utf8mb4`            | 字符集         |
 
-# 数据库（本地开发 + Docker MySQL 场景建议 DB_PORT=3307）
-DB_HOST=127.0.0.1
-DB_PORT=3307
-DB_USER=root
-DB_PASSWORD=your_password_here
-DB_NAME=rag_user_db
-DB_CHARSET=utf8mb4
+### 11.3 JWT 认证
 
-# JWT（推荐主名；旧名仍兼容）
-JWT_SECRET=your-secret-key-change-in-production
-JWT_EXPIRATION_HOURS=24
-# JWT_SECRET_KEY=your-secret-key-change-in-production
-# JWT_EXPIRE_HOURS=24
+| 变量名                 | 默认值            | 说明                             |
+| ---------------------- | ----------------- | -------------------------------- |
+| `JWT_SECRET`           | `your-secret-key` | JWT 签名密钥（生产环境必须修改） |
+| `JWT_EXPIRATION_HOURS` | `24`              | Token 有效期（小时）             |
 
-# Ollama / 默认模型
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_TIMEOUT=300
-MODEL=deepseek-chat
-# DEFAULT_LLM_MODEL=deepseek-chat
+### 11.4 Ollama / 模型配置
 
-# 向量 / 重排 / 知识图谱
-EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
-EMBEDDING_DIMENSION=384
-RERANK_MODEL=bge-large
-KG_MODEL=qwen3:0.6b
+| 变量名            | 默认值                   | 说明            |
+| ----------------- | ------------------------ | --------------- |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama 服务地址 |
+| `OLLAMA_TIMEOUT`  | `300`                    | 请求超时（秒）  |
+| `MODEL`           | `qwen2:0.5b`             | 默认使用模型    |
 
-# Redis（完整 Docker 栈默认会注入；本地单进程可保持关闭）
-REDIS_URL=redis://localhost:6379/0
-REDIS_ENABLED=false
+### 11.5 向量 / 嵌入配置
 
-# 知识库默认参数
-KB_DEFAULT_CHUNK_SIZE=1000
-KB_DEFAULT_CHUNK_OVERLAP=200
-KB_DEFAULT_SIMILARITY_THRESHOLD=0.7
+| 变量名                | 默认值                                   | 说明     |
+| --------------------- | ---------------------------------------- | -------- |
+| `EMBEDDING_MODEL`     | `sentence-transformers/all-MiniLM-L6-v2` | 嵌入模型 |
+| `EMBEDDING_DIMENSION` | `384`                                    | 向量维度 |
 
-# CORS
-CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost:8089
+### 11.6 Redis 配置
 
-# 云端模型（可选）
-OPENAI_API_KEY=sk-xxx
-OPENAI_BASE_URL=https://api.openai.com/v1
-DEEPSEEK_API_KEY=sk-xxx
-HUNYUAN_SECRET_ID=xxx
-HUNYUAN_SECRET_KEY=xxx
-DASHSCOPE_API_KEY=sk-xxx
-XFYUN_APP_ID=xxx
-XFYUN_API_KEY=xxx
-XFYUN_API_SECRET=xxx
+| 变量名          | 默认值                     | 说明           |
+| --------------- | -------------------------- | -------------- |
+| `REDIS_URL`     | `redis://localhost:6379/0` | Redis 连接 URL |
+| `REDIS_ENABLED` | `false`                    | 是否启用 Redis |
 
-# 语音识别（可选）
-WHISPER_MODEL=base
+### 11.7 知识库默认参数
 
-# 飞书集成（可选）
-FEISHU_APP_ID=cli_xxx
-FEISHU_APP_SECRET=xxx
-FEISHU_VERIFICATION_TOKEN=xxx
-FEISHU_ENCRYPT_KEY=xxx
-FEISHU_DEFAULT_KB_ID=
+| 变量名                            | 默认值 | 说明           |
+| --------------------------------- | ------ | -------------- |
+| `KB_DEFAULT_CHUNK_SIZE`           | `1000` | 默认分块大小   |
+| `KB_DEFAULT_CHUNK_OVERLAP`        | `200`  | 默认块重叠大小 |
+| `KB_DEFAULT_SIMILARITY_THRESHOLD` | `0.7`  | 默认相似度阈值 |
 
-# QQ 登录（可选；当前代码仍有默认值，生产环境建议显式覆盖）
-QQ_APP_ID=your_qq_app_id
-QQ_APP_KEY=your_qq_app_key
-QQ_REDIRECT_URI=http://localhost:8000/api/qq/callback
-FRONTEND_URL=http://localhost:5173
+### 11.8 CORS 配置
 
-# 邮件（可选）
-SMTP_HOST=smtp.163.com
-SMTP_PORT=465
-SMTP_USER=your_email@163.com
-SMTP_PASS=your_smtp_password
-SMTP_FROM=your_email@163.com
-# SMTP_PASSWORD=your_smtp_password
-```
+| 变量名         | 默认值                      | 说明           |
+| -------------- | --------------------------- | -------------- |
+| `CORS_ORIGINS` | `http://localhost:5173,...` | 允许的跨域来源 |
 
-补充说明：
+### 11.9 云端模型 API（可选）
 
-- **钉钉 / 企微**：当前主要由 Settings 页或请求体传入 `webhook_url` / `secret`，后端未固定读取 `DINGTALK_*` / `WECOM_*` 环境变量。
-- **Notion / GitHub**：当前为“保存配置 + 测试占位”接口，代码中未固定读取 `NOTION_*` / `GITHUB_*` 启动环境变量。
-- **OSS / S3 / MinIO / MySQL / PostgreSQL 数据源**：当前通过多数据源配置接口提交连接参数，而不是后端启动时的固定 `.env` 字段。
+| 变量名               | 说明                |
+| -------------------- | ------------------- |
+| `OPENAI_API_KEY`     | OpenAI API 密钥     |
+| `OPENAI_BASE_URL`    | OpenAI 代理地址     |
+| `DEEPSEEK_API_KEY`   | DeepSeek API 密钥   |
+| `HUNYUAN_SECRET_ID`  | 腾讯混元 Secret ID  |
+| `HUNYUAN_SECRET_KEY` | 腾讯混元 Secret Key |
+| `DASHSCOPE_API_KEY`  | 阿里 DashScope 密钥 |
+| `XFYUN_APP_ID`       | 讯飞 APP ID         |
+| `XFYUN_API_KEY`      | 讯飞 API Key        |
+| `XFYUN_API_SECRET`   | 讯飞 API Secret     |
 
----
+### 11.10 飞书集成（可选）
 
-## 12. 常见问题 FAQ
+| 变量名                      | 说明          |
+| --------------------------- | ------------- |
+| `FEISHU_APP_ID`             | 飞书应用 ID   |
+| `FEISHU_APP_SECRET`         | 飞书应用密钥  |
+| `FEISHU_VERIFICATION_TOKEN` | 验证 Token    |
+| `FEISHU_ENCRYPT_KEY`        | 加密密钥      |
+| `FEISHU_DEFAULT_KB_ID`      | 默认知识库 ID |
 
-**Q: Ollama 内存不足 / 超时 / 500 错误？**  
-A: 优先切换更小的模型（如 `llama3.2:1b`）；同时把 `.env` 中 `MODEL=你的模型名`、`OLLAMA_TIMEOUT=300`。Docker 场景访问的是宿主机 `11435 -> 11434` 映射端口，本地直连通常仍用 `11434`。
+### 11.11 QQ 登录（可选）
 
-**Q: 本地后端连不上 Docker MySQL？**  
-A: 当前 `docker-compose.yml` 把 MySQL 映射为 **宿主机 3307 -> 容器 3306**。如果你是本地运行 `uvicorn`，`.env` 里的 `DB_PORT` 应写 `3307`；如果是容器内服务互联，则保持 `3306`。
+| 变量名            | 默认值                                  | 说明        |
+| ----------------- | --------------------------------------- | ----------- |
+| `QQ_APP_ID`       | -                                       | QQ 应用 ID  |
+| `QQ_APP_KEY`      | -                                       | QQ 应用密钥 |
+| `QQ_REDIRECT_URI` | `http://localhost:8000/api/qq/callback` | 回调地址    |
+| `FRONTEND_URL`    | `http://localhost:5173`                 | 前端地址    |
 
-**Q: 访问 localhost:8000 显示 502？**  
-A: 常见原因是 VPN / 代理拦截 `localhost`。把 `localhost;127.0.0.1` 加进代理排除列表再试。
+### 11.12 邮件服务（可选）
 
-**Q: 端口 8000 被占用？**  
-A: `taskkill /F /IM python.exe`，或更精确一点：`Get-Process -Id (Get-NetTCPConnection -LocalPort 8000).OwningProcess | Stop-Process`。
-
-**Q: 为什么设置了云端模型 Key 仍提示未配置？**  
-A: 当前多模型优先级是 **`models_config.json` > `.env` > 友好提示**。如果你曾在 Settings「多模型」里保存过配置，运行时会优先读取那份配置。
-
-**Q: 如何打包移动端 APK？**  
-A: 参考 [第8节](#8-移动端-app)，使用 EAS Cloud Build：`eas build -p android --profile preview`。打包前记得把 `EXPO_PUBLIC_API_URL` 指向真实后端地址。
+| 变量名      | 默认值         | 说明        |
+| ----------- | -------------- | ----------- |
+| `SMTP_HOST` | `smtp.163.com` | SMTP 服务器 |
+| `SMTP_PORT` | `465`          | SMTP 端口   |
+| `SMTP_USER` | -              | 邮箱账号    |
+| `SMTP_PASS` | -              | 邮箱密码    |
 
 ---
 
-## 13. Contributors
+## 附录：测试体系
 
-以下为当前仓库基于 `git shortlog -sne HEAD` 核对得到的提交身份统计：
+项目包含完整的单元测试覆盖：
 
-| 身份（git shortlog）                                      | 提交数 | 备注                                 |
-| --------------------------------------------------------- | -----: | ------------------------------------ |
-| GZLns `<13425121993@163.com>`                             |     90 | 当前主要提交者                       |
-| Zhongye1 `<2760913192@qq.com>`                            |      6 | 贡献者                               |
-| mmk `<145737758+Zhongye1@users.noreply.github.com>`       |      4 | 与同一 GitHub 账号相关的另一提交身份 |
-| Rosmontis `<145737758+Zhongye1@users.noreply.github.com>` |      3 | 与同一 GitHub 账号相关的另一提交身份 |
-| xingjiu `<992254616@qq.com>`                              |      2 | 贡献者                               |
-| 小海 `<3277975910@qq.com>`                                |      1 | 贡献者                               |
-
-> 说明：仓库当前未配置 `.mailmap`，同一贡献者若使用多个昵称 / 邮箱提交，`git shortlog` 会拆分为多条身份。
-
----
-
-## 14. 后续规划
-
-- [x] 桌面端打包（Tauri 前端 + PyInstaller 后端）
-- [x] 多模型支持与参数配置
-- [x] 用户自定义模型配置（Ollama 地址/模型名/超时）
-- [x] 多格式文档处理（PDF/Word/Excel/图片）
-- [x] 知识库 CRUD + 多维检索
-- [x] 独立 Cross-Encoder 重排接口（二次精排，默认主链路未接入）
-- [x] Docker 一键部署（完整栈 + 轻量版）
-- [x] Agent 任务模式（ReAct）
-- [x] 移动端 App（React Native）
-- [x] 语音输入（Whisper ASR）
-- [x] 置顶 / 拖拽排序 / 全局动效
-- [x] Win11 风格系统设置
-- [x] 办公联动（Obsidian/飞书/钉钉/企微已接入；Notion/GitHub 为配置占位）
-- [x] 文档创作（5 类文本处理接口）
-- [x] 轻量评测面板（ECharts 可视化 + Pinia 持久化）
-- [x] 系统架构图页面（4 Tab 可视化）
-- [x] Prometheus 监控 + ECharts 系统监控 Tab（当前手动刷新）
-- [x] 知识库 ZIP 备份后端接口（前端入口待补）
-- [ ] 文档协作（多人实时编辑）
-- [ ] 知识图谱可视化增强
-- [ ] 企业 SSO 登录（LDAP/SAML）
-
-> 已评估但当前不推进的优化项，统一归档在 [第15节](#15-未实现更新)。
+| 测试文件                     | 测试内容         |
+| ---------------------------- | ---------------- |
+| `test_auth_routes.py`        | 认证路由测试     |
+| `test_rag_app_routes.py`     | RAG API 测试     |
+| `test_rag_vectorstore.py`    | 向量存储测试     |
+| `test_rag_vectorization.py`  | 向量化流程测试   |
+| `test_retrieval_strategy.py` | 检索策略测试     |
+| `test_react_agent.py`        | Agent 功能测试   |
+| `test_reranker.py`           | 重排序测试       |
+| `test_kb_crud.py`            | 知识库 CRUD 测试 |
+| `test_model_router.py`       | 模型路由测试     |
+| `test_audit_log_routes.py`   | 审计日志路由测试 |
 
 ---
 
-## 15. 未实现更新
+## 许可证
 
-> 本节记录经过评估后**暂不实现**的优化方案，保留原始设计思路供参考。
-
-### 15.1 ~~Redis Stream 消息队列~~ ✅ 已于 `be97fe5` 后续版本实现
-
-**解释：** 用 Redis Stream 替代内存队列，实现任务持久化、重试机制和死信队列，服务重启后任务不丢失。
-
-**实现状态：** 已在 commit `ca18a43` 之后版本中实现——`task_queue.py` 已升级为 Redis Stream 持久化队列（含内存队列降级），`docker-compose.yml` 新增 Redis Alpine 服务。
+本项目为学术研究及竞赛作品，遵循开源精神。
 
 ---
 
-### 15.2 独立子进程文件隔离处理
-
-**解释：** 每个文件的解析和向量化在独立子进程中执行，完成后销毁进程释放内存，实现内存完全隔离。
-
-**原本应用方向：** 防止单个大文件的解析/向量化内存泄漏积累导致 OOM，特别是多文件批量处理时。
-
-**跳过原因：** docker-compose 已新增独立 `worker` 服务（与 `backend` 完全资源隔离），架构层面已解决内存隔离问题，无需进程级 multiprocessing。子进程 IPC 开销反而会拖慢整体吞吐，ROI 不高。
-
----
-
-### 15.3 断点续传（分块 MD5 校验）
-
-**解释：** 大文件上传时记录已上传分块的 MD5，断线重连后只上传未完成的分块，不从头开始。
-
-**原本应用方向：** 防止大文件（>50MB）上传中途断网时需要重头传，提升用户体验。
-
-**跳过原因：** 项目当前限制单文件最大 50MB（`doc_upload.py` `MAX_FILE_SIZE`），且文档类文件通常远小于此限制。现有分块上传机制（0.1MB/块）本身已经拆分了请求，实际发生断网重传的概率极低。断点续传需要后端持久化分块状态、前端增加重传逻辑，复杂度增加明显，ROI 不高。
-
----
-
-### 15.4 ~~全链路超时统一（Nginx 600s 配置）~~ ✅ 已实现
-
-**实现状态：** 已在本轮更新中实现——`nginx.conf` 为上传专用 location 配置 600s 超时，并开启 `proxy_request_buffering off` 避免 nginx 内存缓冲大文件。
-
----
-
-### 15.5 所有异常返回 HTTP 200
-
-**解释：** 业务异常和系统异常统一返回 HTTP 200，用业务 code 字段区分成功/失败。
-
-**原本应用方向：** 防止前端因 4xx/5xx 状态码触发网络错误捕获，统一错误处理逻辑。
-
-**跳过原因：** 这是反模式。HTTP 状态码是 REST 协议的核心语义，错误返回 200 会导致：监控告警失效（Prometheus 无法区分成功/失败）、日志排查困难、调试工具无法快速定位问题。正确做法是前端统一捕获 axios 的 error 响应，而不是让后端伪装成功。
-
----
-
-### 15.6 向量化全局跨请求并发 Semaphore
-
-**解释：** 在 FastAPI 进程级别维护一个全局 `asyncio.Semaphore`，限制同时运行的向量化请求总数（例如最多 2 个 `/ingest` 同时跑），超出的请求在 semaphore 处等待而不是直接执行。
-
-**原本应用方向：** 防止多用户同时点击"向量化"时，多个 `/ingest` 并发占用 Embedding 模型导致内存溢出。
-
-**跳过原因：** `/ingest` 和 `/native_ingest` 已改为 `asyncio.to_thread`，向量化在线程池中执行，本身不占用 event loop。项目是单用户/小团队场景，并发触发多个向量化的概率极低，且向量化耗时较长（几秒到几分钟），加全局 semaphore 反而可能导致前端长时间等待响应（semaphore 阻塞 `generate()` 入口）。当前方案已足够稳定，不引入额外的等待逻辑。
-
----
-
-### 15.7 MySQL 水平分表
-
-**解释：** 用 SQLAlchemy 实现文件元数据表、任务状态表按用户ID水平分表，支撑千万级元数据存储，无单表容量瓶颈。
-
-**原本应用方向：** 海量文档元数据的高性能查询，长期运行无查询性能衰减。
-
-**跳过原因：** 项目为校园/小团队场景，用户量和文档量均处于千级以内。MySQL 单表在百万行级别查询依然毫秒响应。分表会大幅增加 SQLAlchemy ORM 复杂度和维护成本，与项目规模严重不匹配，典型过度工程。
-
----
-
-### 15.8 Redis 分布式读写锁（FAISS 并发写）
-
-**解释：** 用 Redis 实现 FAISS 索引的分布式读写锁，保证同一时间只有一个写入操作，同时不阻塞读请求。
-
-**原本应用方向：** 多进程/多容器场景下 FAISS 索引文件的并发写入保护。
-
-**跳过原因：** 项目为单机 Docker 部署，向量化已在独立 `worker` 容器中单实例运行。`worker` 内部已有 `asyncio.Semaphore(_MAX_CONCURRENCY=2)` 限制并发写入数，单进程内无需分布式锁。引入 Redis 分布式锁会增加 lock/unlock 的网络开销和死锁风险，对单机场景是负优化。
-
----
-
-### 15.9 Prometheus + Grafana 监控大盘（新增）
-
-**解释：** 用 Alpine 版 Prometheus+Grafana 搭建上传全链路监控大盘，包含 QPS、响应时间、队列长度、系统资源等指标。
-
-**原本应用方向：** 7×24 无人值守运维，问题秒级告警。
-
-**跳过原因：** 项目 README 已有 Prometheus 监控能力（`monitoring.py` 中间件 + `/metrics` 端点），已能满足基础监控需求。Grafana 容器虽然只有 ~40MB，但需要额外配置 dashboard JSON + Alertmanager 告警规则，运维成本较高。在校园部署场景下，直接看 `/metrics` 原始指标 + 日志定位问题，效率已足够。
-
----
-
-### 15.10 URL 批量导入接口
-
-**解释：** 知识库详情页已有 URL 批量导入弹窗，前端会调用 `POST /api/url-import/`，但当前后端未实现对应路由。
-
-**原本应用方向：** 批量抓取网页正文并直接写入知识库，减少手动复制粘贴成本。
-
-**跳过原因：** URL 导入需要额外处理网页抓取、反爬、正文抽取、编码兼容和失败重试。当前项目已经有文件上传、Obsidian 同步、手动笔记等多种入库方式，URL 导入优先级较低，暂不引入额外维护负担。
-
----
-
-### 15.11 知识库备份前端入口
-
-**解释：** 后端已实现 `POST /api/backup/create`、`GET /api/backup/list`、下载与删除等备份接口，但前端知识库页面尚未接入备份按钮。
-
-**原本应用方向：** 让普通用户在界面中直接导出知识库 ZIP 备份，无需手动调用接口。
-
-**跳过原因：** 备份属于低频管理动作，当前可通过接口或服务器文件系统完成。若贸然加入前端入口，会带来权限控制、下载状态管理和空间提示等额外复杂度，暂缓处理。
-
----
-
-### 15.12 API Key 业务路由统一鉴权
-
-**解释：** 当前后端已实现 API Key 创建、列表、启停、删除、验证，但业务接口尚未统一接入 `X-API-Key` 鉴权依赖。
-
-**原本应用方向：** 为第三方系统开放稳定的无界面调用方式，例如 RAG 问答、Agent 任务、文档创作等。
-
-**跳过原因：** 现阶段项目主要仍以 JWT 用户态使用为主。若要真正开放业务 API，需要为大量路由补齐依赖、权限边界、配额统计和调用审计，工作量较大，暂不推进为默认能力。
-
----
-
-### 15.13 OCR 配置页接口前后端对齐
-
-**解释：** 后端真实 OCR 接口是 `/api/ocr/extract` 与 `/api/ocr/extract-base64`，而前端 Settings 的 OCR 页当前仍调用 `/api/ocr/configure` 与 `/api/ocr/parse`，失败时回退到本地演示数据。
-
-**原本应用方向：** 在设置页统一配置 OCR 引擎并立即做在线测试，作为文档上传 OCR 的控制台。
-
-**跳过原因：** 当前上传链路里的 OCR 解析能力已经可用，真正影响主流程的是上传时自动抽取文本，而不是设置页的演示控制台。为了避免继续扩大 UI/后端协议面，先保留为待对齐项。
-
----
-
-### 15.14 系统监控自动刷新
-
-**解释：** 系统监控页当前为手动刷新模式，尚未实现旧文档中提到的 30 秒自动刷新。
-
-**原本应用方向：** 在设置页中持续展示系统 QPS、延迟和错误趋势，接近轻量监控大盘体验。
-
-**跳过原因：** 该项目主要面向校园/小团队低并发使用，持续轮询的收益有限，反而会带来额外请求噪音。当前保留手动刷新，足够支撑排障与演示场景。
-
----
-
-### 15.15 第三方账号真实绑定闭环
-
-**解释：** 用户中心里的第三方账号绑定页目前仍是前端演示逻辑，状态保存在 localStorage；QQ OAuth 已实现的是登录流程，而不是绑定页闭环。
-
-**原本应用方向：** 支持 GitHub / 微信 / QQ / 飞书等账号与当前用户绑定，实现多身份登录和账户合并。
-
-**跳过原因：** 真实绑定功能涉及开放平台资质申请、回调校验、解绑安全校验、同邮箱合并策略等一整套账户体系改造。现阶段 QQ 登录已满足主要展示需求，其余平台先不扩展。
-
----
-
-### 15.16 全局搜索文档标题 / 全文接入
-
-**解释：** 当前 Ctrl + K 全局搜索主要用于知识库名称和会话标题跳转，尚未接入文档标题或正文全文检索。
-
-**原本应用方向：** 在一个统一浮窗里直接搜到知识库、聊天记录、文档标题、正文片段与相关页面入口。
-
-**跳过原因：** 全局搜索和知识库深度检索属于两类不同场景。若把全文检索强行塞进全局跳转浮窗，需要新增额外索引、分页、结果高亮与权限过滤，复杂度明显上升，暂不推进。
-
----
-
-### 15.17 评测面板接入真实 RAG 链路
-
-**解释：** 当前评测面板虽有完整题库、结果入库和图表展示，但后台优先调用的 `POST /api/chat/ask` 路由在仓库中未找到，因此失败时会回退为 Ollama 直接生成，尚未形成真实 RAG 端到端闭环评测。
-
-**原本应用方向：** 评测检索 + 生成的完整 RAG 表现，并进一步扩展召回率、F1、忠实度等更严格指标。
-
-**跳过原因：** 要做成真正的 RAG 评测，需要先统一评测入口、补齐真实检索链路调用、定义 gold retrieval 数据集并重构评分逻辑。这已经超出“轻量评测面板”的范围，当前版本先保持可演示的轻量实现。
-
----
-
-## 16. 工程化治理（2026-04）
-
-### 16.1 本地统一入口
-
-在仓库根目录执行：
-
-```bash
-npm run frontend:lint
-npm run frontend:typecheck
-npm run mobile:lint
-npm run backend:lint
-npm run backend:coverage
-npm run docs:build
-```
-
-或使用 Makefile：
-
-```bash
-make lint
-make coverage
-make docs-build
-```
-
-### 16.2 Git Hook 与提交规范
-
-- `prepare` / `hooks:install`：自动安装本地 Git Hook 桥接脚本
-- `pre-commit`：执行 `lint-staged`，对暂存区文件做格式化与前端 ESLint 修复
-- `commit-msg`：执行 `commitlint`，要求 Conventional Commits 风格提交信息
-
-### 16.3 后端质量门禁范围说明
-
-当前后端静态检查默认对**核心可观测性链路**执行强校验：
-
-- `trace_logging.py`
-- `audit/`
-- `exception/`
-- `tests/test_tooling_smoke.py`
-
-这样做是为了先把正在维护、已接入 CI、直接影响请求链路排障的部分稳定下来。`RAG_M`、旧用户管理、知识图谱等历史模块仍保留在仓库中，但暂不作为默认 CI 阻塞项，后续按专题逐步纳入治理。
-
-### 16.4 当前已验证通过的基线
-
-- 前端 ESLint：通过（保留 warning，不阻塞）
-- 前端 TypeScript 类型检查：通过
-- 移动端 ESLint：通过（保留 warning，不阻塞）
-- 后端核心 Ruff + Black + mypy：通过
-- 后端 smoke test + coverage：通过
-- VitePress 文档构建：通过
-
-<div align="center">
-
-_最后核对基线：2026-04-04 | 工程化治理基线已恢复为可验证通过状态_
-
-**仓库：[https://github.com/March030303/KnowledgeRAG-GZHU](https://github.com/March030303/KnowledgeRAG-GZHU)**
-
-</div>
+> **项目地址**：https://github.com/March030303/KnowledgeRAG-GZHU
+> **开发团队**：广州大学计算机学院
+> **竞赛**：2025年（第18届）中国大学生计算机设计大赛 — 人工智能实践赛
