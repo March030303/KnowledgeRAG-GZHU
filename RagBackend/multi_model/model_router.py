@@ -570,7 +570,7 @@ async def test_provider(req: ProviderTestRequest):
 
         elif provider == "deepseek":
             if not api_key:
-                return {"ok": False, "message": "API Key 为空"}
+                return {"ok": False, "message": "API Key 未配置，请在左侧「多模型管理」中填写 DeepSeek API Key 后保存"}
             headers = {
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
@@ -589,17 +589,23 @@ async def test_provider(req: ProviderTestRequest):
                     timeout=aiohttp.ClientTimeout(total=15),
                 ) as r:
                     ok = r.status == 200
-                    msg = (
-                        "连接成功，API Key 有效"
-                        if ok
-                        else f"API 返回 {r.status}，请检查 Key"
-                    )
+                    err_body = await r.text() if r.status != 200 else ""
+                    if r.status == 401:
+                        msg = "API Key 无效，请确认 Key 正确且未被封禁，可在 DeepSeek 官网重新获取"
+                    elif r.status == 403:
+                        msg = "API Key 权限不足，请检查账户状态"
+                    elif r.status == 429:
+                        msg = "请求频率超限，请稍后重试或降低调用频率"
+                    elif not ok:
+                        msg = f"API 返回 {r.status}，{err_body[:100] if err_body else '请检查 Key'}"
+                    else:
+                        msg = "连接成功，API Key 有效"
             latency = int((time.monotonic() - start) * 1000)
             return {"ok": ok, "message": msg, "latency": latency}
 
         elif provider == "openai":
             if not api_key:
-                return {"ok": False, "message": "API Key 为空"}
+                return {"ok": False, "message": "API Key 未配置，请在左侧「多模型管理」中填写 OpenAI API Key 后保存"}
             base_url = cfg.get("base_url", "https://api.openai.com/v1")
             headers = {
                 "Authorization": f"Bearer {api_key}",
@@ -619,22 +625,30 @@ async def test_provider(req: ProviderTestRequest):
                     timeout=aiohttp.ClientTimeout(total=15),
                 ) as r:
                     ok = r.status == 200
-                    msg = (
-                        "连接成功，API Key 有效"
-                        if ok
-                        else f"API 返回 {r.status}，请检查 Key 或 Base URL"
-                    )
+                    err_body = await r.text() if r.status != 200 else ""
+                    if r.status == 401:
+                        msg = "API Key 无效，请确认 Key 正确，可在 OpenAI 官网重新获取"
+                    elif r.status == 403:
+                        msg = "API Key 权限不足，请检查账户状态"
+                    elif r.status == 429:
+                        msg = "请求频率超限，请稍后重试"
+                    elif r.status == 404 and "v1" not in base_url:
+                        msg = "Base URL 格式可能有误，OpenAI 格式应为 https://api.openai.com/v1"
+                    elif not ok:
+                        msg = f"API 返回 {r.status}，{err_body[:100] if err_body else '请检查 Key 和 Base URL'}"
+                    else:
+                        msg = "连接成功，API Key 有效"
             latency = int((time.monotonic() - start) * 1000)
             return {"ok": ok, "message": msg, "latency": latency}
 
         elif provider in ("hunyuan", "bailian", "xinghuo"):
             if not api_key:
-                return {"ok": False, "message": "API Key 为空"}
-            # Key
+                return {"ok": False, "message": "API Key 未配置，请在左侧「多模型管理」中填写后保存"}
+            # Key 格式校验（简单检查非空）
             latency = int((time.monotonic() - start) * 1000)
             return {
                 "ok": True,
-                "message": "API Key 已填写（格式校验通过）",
+                "message": "API Key 已配置，保存后将自动生效",
                 "latency": latency,
             }
 
@@ -642,9 +656,9 @@ async def test_provider(req: ProviderTestRequest):
             return {"ok": False, "message": f"未知 provider: {provider}"}
 
     except aiohttp.ClientConnectorError:
-        return {"ok": False, "message": "网络连接失败，请检查地址或网络"}
+        return {"ok": False, "message": f"无法连接到 {provider} 服务器，请检查网络或确认服务地址正确"}
     except asyncio.TimeoutError:
-        return {"ok": False, "message": "连接超时"}
+        return {"ok": False, "message": "连接超时，请检查网络或稍后重试"}
     except Exception as e:
         return {"ok": False, "message": f"测试失败: {e}"}
 

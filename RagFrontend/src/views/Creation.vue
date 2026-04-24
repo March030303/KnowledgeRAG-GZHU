@@ -259,38 +259,84 @@ const skillInputPlaceholder = computed(() => {
 async function loadSkills() {
   try {
     const res = await axios.get<{ skills: SkillItem[] }>('/api/creation/skills')
-    if (res.data?.skills) {
+    if (Array.isArray(res.data?.skills) && res.data.skills.length > 0) {
       skills.value = res.data.skills
+    } else {
+      // API 返回空数据，使用内置 Skill 列表
+      loadSkillsFallback()
     }
   } catch {
-    // 降级：内置基础 Skill 列表
-    skills.value = [
-      {
-        id: 'academic-paper',
-        name: '学术论文',
-        desc: '完整学术论文结构',
-        icon: '🎓',
-        type: 'outline',
-        preset: { requirements: '学术论文风格，约5000字' }
-      },
-      {
-        id: 'tech-report',
-        name: '技术报告',
-        desc: '项目技术报告',
-        icon: '🔧',
-        type: 'outline',
-        preset: { requirements: '技术报告风格，约3000字' }
-      },
-      {
-        id: 'business-plan',
-        name: '商业方案',
-        desc: '商业计划书',
-        icon: '💼',
-        type: 'outline',
-        preset: { requirements: '商业方案风格，约4000字' }
-      }
-    ]
+    // API 调用失败，使用内置 Skill 列表
+    loadSkillsFallback()
   }
+}
+function loadSkillsFallback() {
+  skills.value = [
+    {
+      id: 'academic-paper',
+      name: '学术论文',
+      desc: '完整学术论文结构，含摘要、引言、方法、实验、结论',
+      icon: '🎓',
+      type: 'outline',
+      preset: { requirements: '学术论文风格，约5000字' }
+    },
+    {
+      id: 'tech-report',
+      name: '技术报告',
+      desc: '项目技术报告，含背景、架构、实现、测试',
+      icon: '🔧',
+      type: 'outline',
+      preset: { requirements: '技术报告风格，约3000字' }
+    },
+    {
+      id: 'business-plan',
+      name: '商业方案',
+      desc: '商业计划书，含市场分析、产品策略、财务预测',
+      icon: '💼',
+      type: 'outline',
+      preset: { requirements: '商业方案风格，约4000字' }
+    },
+    {
+      id: 'meeting-minutes',
+      name: '会议纪要',
+      desc: '规范化会议纪要，含议题、决议、待办',
+      icon: '📋',
+      type: 'polish',
+      preset: { text: '', style: '正式商务风格' }
+    },
+    {
+      id: 'project-proposal',
+      name: '项目申报书',
+      desc: '项目申报/立项报告模板',
+      icon: '📑',
+      type: 'outline',
+      preset: { requirements: '项目申报书风格，约3000字' }
+    },
+    {
+      id: 'weekly-report',
+      name: '周报/日报',
+      desc: '工作周报/日报模板，含进展、问题、计划',
+      icon: '📅',
+      type: 'template',
+      preset: { template_type: '工作周报', scenario: '技术研发团队周报' }
+    },
+    {
+      id: 'api-doc',
+      name: 'API 文档',
+      desc: 'RESTful API 接口文档模板',
+      icon: '🔌',
+      type: 'template',
+      preset: { template_type: 'API接口文档', scenario: 'RESTful API 接口文档' }
+    },
+    {
+      id: 'readme',
+      name: 'README',
+      desc: 'GitHub 项目 README 文档',
+      icon: '📖',
+      type: 'template',
+      preset: { template_type: '项目README', scenario: 'GitHub 开源项目 README' }
+    }
+  ]
 }
 
 function selectSkill(skill: SkillItem) {
@@ -318,13 +364,13 @@ const selectedModel = ref('')
 async function loadModels() {
   try {
     const res = await axios.get<{ models: ModelOption[] }>('/api/models/list')
-    if (res.data?.models) {
+    if (Array.isArray(res.data?.models) && res.data.models.length > 0) {
       availableModels.value = res.data.models
       // 优先选已配置的云端模型
       const saved = localStorage.getItem('creation_selected_model')
-      const cloud = res.data.models.find(m => m.provider !== 'ollama' && m.available)
-      const local = res.data.models.find(m => m.provider === 'ollama' && m.available)
-      if (saved && res.data.models.find(m => m.id === saved)) {
+      const cloud = res.data.models.find((m: ModelOption) => m.provider !== 'ollama' && m.available)
+      const local = res.data.models.find((m: ModelOption) => m.provider === 'ollama' && m.available)
+      if (saved && res.data.models.find((m: ModelOption) => m.id === saved)) {
         selectedModel.value = saved
       } else if (cloud) {
         selectedModel.value = cloud.id
@@ -333,22 +379,38 @@ async function loadModels() {
       } else {
         selectedModel.value = res.data.models[0]?.id || 'deepseek-chat'
       }
+    } else {
+      // API 返回空数据，使用本地缓存
+      loadModelsFromCache()
     }
   } catch {
-    const persistedModel =
-      localStorage.getItem('creation_selected_model') ||
-      localStorage.getItem('selected_model') ||
-      localStorage.getItem('default_model') ||
-      'deepseek-chat'
-    availableModels.value = [
-      {
-        id: persistedModel,
-        name: `${persistedModel}（最近使用）`,
-        provider: persistedModel.includes(':') ? 'ollama' : 'deepseek',
-        available: true
-      }
-    ]
+    // API 调用失败，使用本地缓存
+    loadModelsFromCache()
+  }
+}
+function loadModelsFromCache() {
+  const persistedModel =
+    localStorage.getItem('creation_selected_model') ||
+    localStorage.getItem('selected_model') ||
+    localStorage.getItem('default_model') ||
+    'deepseek-chat'
+  // 提供完整的默认模型列表，确保前端不会因空数据报错
+  availableModels.value = [
+    { id: 'deepseek-chat', name: 'DeepSeek Chat', provider: 'deepseek', available: false },
+    { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner', provider: 'deepseek', available: false },
+    { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: 'openai', available: false },
+    { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai', available: false },
+    { id: 'hunyuan-lite', name: '混元 Lite', provider: 'hunyuan', available: false },
+    { id: 'qwen-plus', name: '通义千问 Plus', provider: 'dashscope', available: false },
+    { id: 'llama3:8b', name: 'Llama3 8B（本地）', provider: 'ollama', available: false }
+  ]
+  // 如果有历史选择的模型，标记为可用
+  const savedModel = availableModels.value.find(m => m.id === persistedModel)
+  if (savedModel) {
+    savedModel.available = true
     selectedModel.value = persistedModel
+  } else {
+    selectedModel.value = 'deepseek-chat'
   }
 }
 function onModelChange() {
