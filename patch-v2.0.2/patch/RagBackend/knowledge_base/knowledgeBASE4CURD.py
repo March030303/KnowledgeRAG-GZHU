@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
@@ -20,6 +21,11 @@ router = APIRouter()
 - 所有 KLB_id/kbName 参数均经过路径遍历防护验证
 - 使用 Path.resolve().relative_to() 确保路径不逃逸基础目录
 - Pydantic 模型级输入校验（禁止 ../ / \\ 等字符）
+
+v2.0.3 更新：
+- 新增 RESTful 路由（/api/knowledge-bases），兼容 Mobile 端调用
+- 提取 _build_kb_data() 统一构建函数，消除代码重复
+- 新增 updated_at 字段自动维护
 """
 
 # ============================================================================
@@ -129,9 +135,54 @@ class UpdateKBConfigRequest(BaseModel):
     segmentMethod: Optional[str] = Field(None)
 
 
+# ── RESTful 风格请求体（Mobile 端使用） ──
+class KbCreateRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255, description="知识库名称")
+    description: str = Field(default="", max_length=2000, description="描述")
+
+
 # ============================================================================
 # 数据访问层
 # ============================================================================
+
+
+def _build_kb_data(kbName: str, owner_id: Optional[str] = None, description: str = "新建知识库") -> dict:
+    """构建新知识库的数据字典（统一入口，避免重复）"""
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return {
+        "id": kbName,
+        "title": kbName,
+        "avatar": "https://avatars.githubusercontent.com/u/145737758?v=4",
+        "description": description,
+        "createdTime": now,
+        "updated_at": now,
+        "cover": (
+            "https://picx.zhimg.com/80/v2-381cc3f4ba85f62cdc483136e5fa4f47_"
+            "720w.webp?source=d16d100b"
+        ),
+        "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+        "chunk_size": 1000,
+        "chunk_overlap": 200,
+        "pdfParser": "PyPDFLoader",
+        "docxParser": "Docx2txtLoader",
+        "excelParser": "Unstructured Excel Loader",
+        "csvParser": "CsvLoader",
+        "txtParser": "TextLoader",
+        "segmentMethod": "General",
+        "name": kbName,
+        "vector_dimension": 768,
+        "similarity_threshold": 0.7,
+        "convert_table_to_html": True,
+        "preserve_layout": False,
+        "remove_headers": True,
+        "extract_knowledge_graph": False,
+        "kg_method": "通用",
+        "selected_entity_types": ["PERSON", "ORGANIZATION", "LOCATION"],
+        "entity_normalization": True,
+        "community_report": False,
+        "relation_extraction": True,
+        "owner_id": owner_id or "",
+    }
 
 
 def knowledge_base_data() -> List[dict]:
@@ -202,39 +253,7 @@ async def create_knowledgebase(
 
     kb_dir.mkdir(parents=True, exist_ok=True)
 
-    data = {
-        "id": safe_kb_name,
-        "title": safe_kb_name,
-        "avatar": "https://avatars.githubusercontent.com/u/145737758?v=4",
-        "description": "新建知识库",
-        "createdTime": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "cover": (
-            "https://picx.zhimg.com/80/v2-381cc3f4ba85f62cdc483136e5fa4f47_"
-            "720w.webp?source=d16d100b"
-        ),
-        "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
-        "chunk_size": 1000,
-        "chunk_overlap": 200,
-        "pdfParser": "PyPDFLoader",
-        "docxParser": "Docx2txtLoader",
-        "excelParser": "Unstructured Excel Loader",
-        "csvParser": "CsvLoader",
-        "txtParser": "TextLoader",
-        "segmentMethod": "General",
-        "name": safe_kb_name,
-        "vector_dimension": 768,
-        "similarity_threshold": 0.7,
-        "convert_table_to_html": True,
-        "preserve_layout": False,
-        "remove_headers": True,
-        "extract_knowledge_graph": False,
-        "kg_method": "通用",
-        "selected_entity_types": ["PERSON", "ORGANIZATION", "LOCATION"],
-        "entity_normalization": True,
-        "community_report": False,
-        "relation_extraction": True,
-        "owner_id": owner_id or "",
-    }
+    data = _build_kb_data(safe_kb_name, owner_id)
 
     json_file_path = kb_dir / "knowledge_data.json"
     with open(json_file_path, "w", encoding="utf-8") as f:
@@ -367,6 +386,9 @@ async def update_knowledgebase_config(KLB_id: str, request: Request):
             if key in _SAFE_CONFIG_KEYS and value is not None:
                 kb_data[key] = value
 
+        # 自动更新 updated_at
+        kb_data["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
         with open(json_file_path, "w", encoding="utf-8") as f:
             json.dump(kb_data, f, ensure_ascii=False, indent=4)
 
@@ -470,3 +492,92 @@ async def get_knowledge_item_by_id(item_id: str):
     except Exception as e:
         logger.error(f"[KB] 获取知识库项目失败: item_id={item_id}, error={e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"获取知识库项目失败: {str(e)}")
+
+
+# ============================================================================
+# RESTful 路由（Mobile 端兼容）
+# ============================================================================
+
+@router.post("/api/knowledge-bases")
+async def rest_create_kb(body: KbCreateRequest):
+    """
+    RESTful 创建知识库（Mobile 端 JSON 调用）
+
+    安全：name 经过 _validate_kb_id 验证，防止路径遍历
+    """
+    try:
+        safe_name = _validate_kb_id(body.name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    kb_dir = _safe_kb_path(safe_name)
+    KB_BASE_DIR.mkdir(parents=True, exist_ok=True)
+
+    if kb_dir.exists():
+        raise HTTPException(status_code=400, detail="知识库已存在")
+
+    kb_dir.mkdir(parents=True, exist_ok=True)
+
+    data = _build_kb_data(safe_name, description=body.description or "新建知识库")
+
+    json_file_path = kb_dir / "knowledge_data.json"
+    with open(str(json_file_path), "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+    logger.info(f"[KB] RESTful 创建知识库成功: {safe_name}")
+
+    return JSONResponse(status_code=201, content=data)
+
+
+@router.get("/api/knowledge-bases")
+async def list_knowledge_bases_rest(user_id: Optional[str] = None):
+    """
+    RESTful 获取知识库列表（Mobile 端调用）
+    返回格式：{ knowledge_bases: [...], total: N }
+    """
+    try:
+        data = knowledge_base_data()
+
+        if user_id:
+            safe_user_id = user_id.strip()[:255]
+            data = [
+                kb for kb in data
+                if kb.get("owner_id", "") in (safe_user_id, "")
+            ]
+
+        return JSONResponse(status_code=200, content={
+            "knowledge_bases": data,
+            "total": len(data),
+        })
+
+    except Exception as e:
+        logger.error(f"[KB] RESTful 列表获取失败: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/api/knowledge-bases/{kb_id}")
+async def rest_delete_kb(kb_id: str):
+    """RESTful 删除知识库（Mobile 端调用）"""
+    try:
+        safe_id = _validate_kb_id(kb_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    try:
+        kb_dir = _safe_kb_path(safe_id)
+
+        if not kb_dir.exists():
+            raise HTTPException(status_code=404, detail="知识库不存在")
+
+        shutil.rmtree(kb_dir)
+        logger.info(f"[KB] RESTful 删除知识库成功: {safe_id}")
+        return JSONResponse(
+            status_code=200,
+            content={"message": "删除成功", "id": safe_id},
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[KB] RESTful 删除失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
