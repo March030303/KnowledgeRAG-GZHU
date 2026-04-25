@@ -260,7 +260,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { MessagePlugin } from 'tdesign-vue-next'
-import axios from 'axios'
+import { post } from '@/utils/ASFaxios'
 import { useCardDataStore } from '../../store'
 import { storeToRefs } from 'pinia'
 import KbCard from '@/components/knowledge-unit/KbCard.vue'
@@ -371,7 +371,7 @@ const createKnowledgeBase = async () => {
     })()
     const ownerId = userInfo.id || userInfo.email || ''
     if (ownerId) formData.append('owner_id', ownerId)
-    await axios.post('/api/create-knowledgebase/', formData, {
+    await post('/api/create-knowledgebase/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
     MessagePlugin.success('知识库 "' + kbName.value + '" 创建成功')

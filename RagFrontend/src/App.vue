@@ -78,7 +78,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { computed, ref, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import axios from 'axios'
+import { post } from '@/utils/ASFaxios'
 import SideBar from './components/SideBar.vue'
 import GlobalSearch from './components/GlobalSearch.vue'
 import ErrorBoundary from './components/ErrorBoundary.vue'
@@ -130,7 +130,7 @@ async function doQuickCreate() {
     })()
     const ownerId = userInfo.id || userInfo.email || ''
     if (ownerId) formData.append('owner_id', ownerId)
-    await axios.post('/api/create-knowledgebase/', formData, {
+    await post('/api/create-knowledgebase/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
     MessagePlugin.success(`知识库「${name}」创建成功 `)
