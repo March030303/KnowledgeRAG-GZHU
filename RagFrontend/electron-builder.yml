@@ -1,0 +1,49 @@
+# ============================================================
+# KnowledgeRAG-GZHU Electron Builder 配置
+# ============================================================
+
+electronVersion: '41.3.0'
+
+appId: com.knowledge-rag-gzhu.desktop
+productName: KnowledgeRAG
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - dist/**/*
+  - electron/**/*
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+  icon: build/icon.ico
+  artifactName: '${productName}-${version}-setup.${ext}'
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: KnowledgeRAG 智能知识库
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  license: ../LICENSE
+  language: 2052 # 简体中文
+
+# 禁用代码签名（Windows 非管理员模式下符号链接权限不足）
+forceCodeSigning: false
+
+portable:
+  artifactName: '${productName}-${version}-portable.${ext}'
+
+# 发布配置（可选，取消注释后可用）
+# publish:
+#   provider: generic
+#   url: https://example.com/releases/

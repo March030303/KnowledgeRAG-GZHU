@@ -1,0 +1,17 @@
+# KnowledgeRAG 前端简化版 Dockerfile
+# 直接使用已构建的 dist/ 目录，无需在容器内运行 npm install
+
+FROM nginx:1.25-alpine
+
+# 复制预构建的 Vue 产物
+COPY dist/ /usr/share/nginx/html/
+
+# Nginx 配置：支持 Vue Router history 模式，反代后端 /api
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD wget -qO- http://localhost/ || exit 1
+
+CMD ["nginx", "-g", "daemon off;"]

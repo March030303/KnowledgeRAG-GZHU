@@ -1,0 +1,8 @@
+{
+  "tag_name": "v2.0.0",
+  "target_commitish": "main",
+  "name": "KnowledgeRAG v2.0 - Docker Offline Edition",
+  "body": "## KnowledgeRAG v2.0 - Docker Offline Edition\n\n> **一键安装，零依赖配置，完全离线运行**\n\n### 下载文件\n- **KnowledgeRAG-v2.0-Scripts.zip** (4KB) - 必下载！\n- **knowledge-rag-v2.tar.part1** (1.9GB)\n- **knowledge-rag-v2.tar.part2** (1.4GB)\n\n### 安装：3步\n1. 安装 Docker Desktop\n2. 解压 Scripts.zip + 放入分卷文件\n3. 双击 install.bat -> 打开 http://localhost:8089",
+  "draft": false,
+  "prerelease": false
+}

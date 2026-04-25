@@ -1,0 +1,57 @@
+# KnowledgeRAG 后端 Docker 精简版依赖（去除冲突包）
+# 用于离线 Docker 镜像构建，保留核心功能
+
+# Web 框架
+fastapi==0.116.1
+uvicorn==0.35.0
+python-multipart==0.0.6
+
+# 数据验证
+pydantic==2.11.7
+pydantic-settings==2.13.1
+python-dotenv==1.1.1
+
+# 认证
+PyJWT==2.10.1
+
+# AI / LLM
+langchain==0.3.27
+langchain_community==0.3.27
+langchain_huggingface==0.3.1
+langchain_ollama==0.3.6
+
+# 向量数据库
+faiss-cpu>=1.12.0
+
+# 嵌入模型
+sentence-transformers>=5.1.0
+
+# 文档处理
+beautifulsoup4==4.13.4
+PyPDF2==3.0.1
+pdfplumber==0.11.7
+python-docx==1.1.2
+docx2txt==0.9
+Pillow==11.3.0
+aiofiles==24.1.0
+
+# 数据库
+PyMySQL==1.1.1
+
+# 模板引擎
+Jinja2==3.1.6
+
+# HTTP
+Requests==2.32.4
+protobuf==6.31.1
+
+# Redis（可选，如不需要可注释）
+redis[hiredis]>=5.0.0
+
+# 排除的冲突包（手动安装时按需添加）：
+# magic-pdf[full]>=0.10.0    ← 与 pdfplumber 冲突
+# layoutparser>=0.3.4         ← 重型依赖
+# google-api-python-client    ← 非必需
+# pytesseract>=0.3.13          ← OCR 可选
+# openai-whisper>=20231117     ← ASR 可选
+# ffmpeg-python>=0.2.0         ← 音频处理可选

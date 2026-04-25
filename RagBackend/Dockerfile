@@ -10,25 +10,36 @@ FROM python:3.11-slim AS builder
 
 WORKDIR /build
 
+# 使用阿里云 apt 镜像源（解决国内网络访问问题）
+RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources 2>/dev/null || \
+    echo "deb https://mirrors.aliyun.com/debian/ bookworm main contrib non-free non-free-firmware" > /etc/apt/sources.list && \
+    echo "deb https://mirrors.aliyun.com/debian-security bookworm-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list
+
 # 安装编译依赖（构建阶段用完即丢弃）
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # 使用清华镜像加速 pip
-RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && \
+    pip install --upgrade pip
 
-# 复制依赖文件并安装到 /install 目录（供 runtime 复制）
-COPY requirements.txt .
+# 复制依赖文件并安装到 /install 目录（使用精简版，去除冲突包）
+COPY requirements-docker.txt .
 RUN pip install --no-cache-dir --prefix=/install \
-    # 排除不必要的重型依赖（如 layoutparser、google-api-python-client 在基础部署中可选）
-    --requirement requirements.txt
+    --prefer-binary \
+    --requirement requirements-docker.txt
 
 
 # ─────────────────── Stage 2: Runtime ───────────────────
 FROM python:3.11-slim AS runtime
 
 WORKDIR /app
+
+# 使用阿里云 apt 镜像源（解决国内网络访问问题）
+RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources 2>/dev/null || \
+    echo "deb https://mirrors.aliyun.com/debian/ bookworm main contrib non-free non-free-firmware" > /etc/apt/sources.list && \
+    echo "deb https://mirrors.aliyun.com/debian-security bookworm-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list
 
 # 只安装运行时系统依赖（tesseract 用于 OCR，可选）
 RUN apt-get update && apt-get install -y --no-install-recommends \

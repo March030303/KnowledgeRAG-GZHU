@@ -1,8 +1,8 @@
 # Node 依赖（构建时重新安装）
 node_modules/
 
-# 旧构建产物
-dist/
+# 注意：dist/ 不再排除，简化版 Dockerfile 需要预构建的 dist 目录
+# dist/
 
 # 开发文件
 .env

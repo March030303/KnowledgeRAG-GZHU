@@ -9,6 +9,8 @@ export default defineConfig(async ({ mode }) => {
   consola.info(`[vite] loading config in ${mode} mode`)
 
   return {
+    // Electron file:// 协议必须用相对路径，否则 /assets/xxx 会去找 C:\assets\xxx
+    base: mode === 'production' ? './' : '/',
     // 生产环境不加载 devtools，减小包体积
     plugins: [
       envCompatible(),

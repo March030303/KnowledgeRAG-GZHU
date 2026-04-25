@@ -1,0 +1,62 @@
+# ============================================================
+# KnowledgeRAG-GZHU v2.0 离线版 Docker Compose
+# 使用本地预构建镜像，无需网络连接即可启动
+# ============================================================
+
+services:
+  # ── 后端（FastAPI + 全部依赖 + DeepSeek LLM）──────────────
+  backend:
+    image: knowledgerag-gzhu-backend:latest
+    container_name: ragf-backend-v2
+    restart: unless-stopped
+    ports:
+      - '8000:8000'
+    environment:
+      # 数据库：SQLite（无需额外数据库服务）
+      - DB_TYPE=sqlite
+      - SQLITE_PATH=/app/data/ragf.db
+
+      # LLM 配置（DeepSeek API，已预埋 Key）
+      - LLM_PROVIDER=deepseek
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-sk-e5b9e14d94224cf9863d76cf8d32c199}
+      - DEEPSEEK_MODEL=${DEEPSEEK_MODEL:-deepseek-chat}
+
+      # 认证配置
+      - JWT_SECRET=${JWT_SECRET:-knowledgeRAG_gzhu_2025_secure_v2}
+    volumes:
+      - ragf_data:/app/data
+      - ragf_kb:/app/local-KLB-files
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ── 前端（Nginx + Vue 预构建产物）────────────────────────────
+  frontend:
+    image: knowledgerag-gzhu-frontend:latest
+    container_name: ragf-frontend-v2
+    restart: unless-stopped
+    ports:
+      - '8089:80'
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost/']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  ragf_data:
+    driver: local
+  ragf_kb:
+    driver: local
