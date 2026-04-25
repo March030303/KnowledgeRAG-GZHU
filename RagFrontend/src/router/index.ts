@@ -212,7 +212,15 @@ export function markJustAuthenticated() {
 }
 
 router.beforeEach((to, from, next) => {
+  // 公开路由始终放行
   if (publicRoutes.includes(to.path)) {
+    return next()
+  }
+
+  // ── 单用户模式 / 开发环境：跳过 JWT 强制校验 ──
+  // 后端可能未启动或正在重启，不应阻断前端页面访问
+  // 真正的权限由后端 API 负责，前端只是 UX 层面的优化
+  if (import.meta.env.VITE_SINGLE_USER_MODE === 'true') {
     return next()
   }
 
