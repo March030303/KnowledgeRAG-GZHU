@@ -260,7 +260,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { MessagePlugin } from 'tdesign-vue-next'
-import { post } from '@/utils/ASFaxios'
+import { post, del } from '@/utils/ASFaxios'
 import { useCardDataStore } from '../../store'
 import { storeToRefs } from 'pinia'
 import KbCard from '@/components/knowledge-unit/KbCard.vue'
@@ -390,8 +390,8 @@ const createKnowledgeBase = async () => {
 const deleteCard = async (card: any) => {
   try {
     console.log('[KB] 删除请求:', `/api/delete-knowledgebase/${card.id}`, 'card:', card)
-    const res = await axios.delete(`/api/delete-knowledgebase/${card.id}`)
-    console.log('[KB] 删除响应:', res.status, res.data)
+    const res = await del(`/api/delete-knowledgebase/${card.id}`)
+    console.log('[KB] 删除响应:', res)
     MessagePlugin.success(`知识库「${card.title}」已删除`)
     // 从星标/最近移除
     starredIds.value.delete(card.id)
