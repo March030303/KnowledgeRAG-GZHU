@@ -762,7 +762,7 @@ const simulateStreamResponse = async (
 ) => {
   const assistantMessage: ChatMessage = {
     avatar: 'https://tdesign.gtimg.com/site/chat-avatar.png',
-    name: 'ASF助手',
+    name: '助手',
     datetime: new Date().toLocaleTimeString('zh-CN', {
       hour: '2-digit',
       minute: '2-digit'

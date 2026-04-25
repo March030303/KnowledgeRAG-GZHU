@@ -934,29 +934,6 @@ onUnmounted(() => {
 .history-btn:hover {
   background: #f3f4f6;
 }
-/* AI 状态指示器 */
-.agent-ai-status {
-  display: flex;
-  align-items: center;
-}
-.ai-badge {
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-weight: 500;
-}
-.ai-badge--checking {
-  background: #fef3c7;
-  color: #92400e;
-}
-.ai-badge--online {
-  background: #dcfce7;
-  color: #166534;
-}
-.ai-badge--offline {
-  background: #fee2e2;
-  color: #991b1b;
-}
 /* 模型选择器 */
 .agent-model-selector {
   display: flex;

@@ -317,7 +317,7 @@
           </div>
           <h3 class="mt-6 mb-3">后端 .env 配置指南</h3>
           <div class="code-block">
-            <p class="text-gray-400 text-xs mb-2">路径：KnowledgeRAG-GZHU/RagBackend/.env</p>
+            <p class="text-gray-400 text-xs mb-2">路径：RagBackend/.env</p>
             <pre>
 SMTP_USER=your@163.com # 反馈邮件发件箱
 SMTP_PASS=your_auth_code # 163授权码
@@ -545,7 +545,7 @@ async function collectProjectContext(): Promise<string> {
   const lines: string[] = []
   // 1. 项目基本信息
   lines.push('=== 项目信息 ===')
-  lines.push('项目名：KnowledgeRAG-GZHU（RAG知识库系统）')
+  lines.push('项目名：RAGF 智能知识库系统')
   lines.push('技术栈：Vue3 + TypeScript + TDesign | FastAPI + Python + SQLite/MySQL + Ollama')
   lines.push(`当前页面路径：${window.location.pathname}`)
   lines.push(`当前时间：${new Date().toLocaleString('zh-CN')}`)
@@ -666,7 +666,7 @@ ${systemContext}
         {
           message: userMsg,
           systemPrompt,
-          project: 'KnowledgeRAG-GZHU',
+          project: 'RAGF',
           context: systemContext
         },
         {

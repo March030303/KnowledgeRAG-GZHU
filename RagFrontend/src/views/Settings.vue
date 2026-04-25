@@ -1723,7 +1723,7 @@ async function submitTicket() {
   } catch {}
   // 后端不可用时，通过 mailto: 发送至邮箱
   if (!backendOk) {
-    const SUPPORT_EMAIL = 'support@rag-gzhu.com'
+    const SUPPORT_EMAIL = 'support@ragf.com'
     const typeLabel: Record<string, string> = { bug: 'Bug报告', feature: '功能请求', other: '其他' }
     const subject = encodeURIComponent(
       `[RAG-F工单] [${typeLabel[ticket.type] || ticket.type}] ${ticket.title}`

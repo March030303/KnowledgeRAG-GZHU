@@ -4,7 +4,7 @@ import GlobalSearch from '@/components/GlobalSearch.vue'
 
 describe('frontend toolchain smoke test', () => {
   it('runs vitest successfully', () => {
-    expect('KnowledgeRAG-GZHU').toContain('RAG')
+    expect('RAGF').toContain('RAG')
   })
 
   it('can import GlobalSearch component', () => {

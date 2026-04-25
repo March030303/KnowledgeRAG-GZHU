@@ -332,7 +332,7 @@ const loadChatHistory = async () => {
         preview: lastMsg?.content?.slice(0, 80) || '',
         content: (s.history || [])
           .map(
-            (m: any) => `<p><strong>${m.role === 'user' ? '我' : 'AI'}：</strong>${m.content}</p>`
+            (m: any) => `<p><strong>${m.role === 'user' ? '我' : '助手'}：</strong>${m.content}</p>`
           )
           .join(''),
         timestamp: (s.created_at || 0) * 1000,

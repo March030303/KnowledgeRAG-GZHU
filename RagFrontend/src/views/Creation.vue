@@ -246,7 +246,7 @@ const skillInputPlaceholder = computed(() => {
   const s = currentSkill.value
   if (!s) return '请输入...'
   if (s.id === 'academic-paper') return '如：基于大语言模型的中文文本纠错方法研究'
-  if (s.id === 'tech-report') return '如：KnowledgeRAG-GZHU 知识库问答系统'
+  if (s.id === 'tech-report') return '如：RAGF 智能知识库系统'
   if (s.id === 'business-plan') return '如：AI + 教育赛道的创业项目'
   if (s.id === 'meeting-minutes') return '粘贴会议记录内容...'
   if (s.id === 'project-proposal') return '如：面向高校的知识库智能问答系统'

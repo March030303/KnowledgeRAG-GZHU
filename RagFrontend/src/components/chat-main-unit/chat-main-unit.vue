@@ -408,7 +408,7 @@ const inputEnter = function (messageContent) {
   }
   // 根据当前选中模型动态命名 AI
   const curModelVal = selectedModelValue.value
-  let aiName = 'TDesignAI'
+  let aiName = '助手'
   if (curModelVal.toLowerCase().includes('deepseek')) {
     aiName = ' DeepSeek'
   } else if (
