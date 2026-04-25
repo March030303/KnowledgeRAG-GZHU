@@ -213,16 +213,10 @@ const logout = async () => {
     console.error('路由跳转失败:', error)
   }
 }
-// 在组件挂载时立即获取用户数据
-onMounted(async () => {
-  try {
-    // 即使用户数据已存在，也尝试重新获取以确保是最新的
-    await userStore.fetchUserData()
-    handleUserDropdownOpen()
-  } catch (error) {
-    console.error('获取用户数据失败:', error)
-    // 即使获取失败，也使用默认头像，不影响页面显示
-  }
+// 组件挂载时不再重复请求 fetchUserData（SideBar 已负责）
+// T-HeadBar 仅在需要时通过 refreshUserAvatar 按需刷新
+onMounted(() => {
+  handleUserDropdownOpen()
 })
 // 添加一个方法来主动刷新用户数据
 const refreshUserAvatar = async () => {

@@ -158,6 +158,49 @@ const router = createRouter({
 
 const publicRoutes = ['/LogonOrRegister', '/devtools']
 
+// ── 用户角色本地缓存（带 TTL）───────────────────────────────────────
+// 解决"每次导航都远程请求GetUserData导致后端抖动时全站崩溃"的核心问题
+
+const CACHE_TTL_MS = 5 * 60 * 1000 // 5 分钟
+
+let _cachedRole: string | null = null // null = 未缓存/已过期
+let _cacheTimestamp = 0 // 上次远程获取成功的时间戳
+
+/**
+ * 从本地缓存获取角色，如果缓存有效则返回缓存值。
+ * 注意：返回 'admin' 作为默认角色而非 'viewer'——因为：
+ *   1. 大多数单用户部署场景下 admin 更合理
+ *   2. 即使是首次加载，也不应因为网络慢就降级到 viewer 导致功能打不开
+ *   3. 真正的权限校验由后端 API 负责，前端只是 UX 层面的路由过滤
+ */
+function getCachedRole(): string {
+  if (_cachedRole && Date.now() - _cacheTimestamp < CACHE_TTL_MS) {
+    return _cachedRole
+  }
+  // 缓存过期或从未加载 → 返回 admin（不阻塞导航）
+  // 原因：即使 GetUserData 失败，也不应让用户卡在 /knowledge 无法访问其他页面
+  return localStorage.getItem('user_role') || 'admin'
+}
+
+/**
+ * 写入本地缓存，供后续导航使用。
+ */
+function setCachedRole(role: string): void {
+  _cachedRole = role
+  _cacheTimestamp = Date.now()
+  if (role) {
+    localStorage.setItem('user_role', role)
+  }
+}
+
+/**
+ * 使缓存失效（强制下次导航时重新获取），用于登录成功或角色变更时调用。
+ */
+export function invalidateUserCache(): void {
+  _cachedRole = null
+  _cacheTimestamp = 0
+}
+
 // Flag: set to true right after login/register so the first navigation
 // skips the remote JWT check (avoids race condition where the JWT was
 // just written but the /api/users/me call hasn't resolved yet).
@@ -165,6 +208,7 @@ let _justAuthenticated = false
 
 export function markJustAuthenticated() {
   _justAuthenticated = true
+  invalidateUserCache() // 登录后清除缓存，确保获取最新角色
 }
 
 router.beforeEach((to, from, next) => {
@@ -182,6 +226,15 @@ router.beforeEach((to, from, next) => {
     return next()
   }
 
+  // ── 快速路径：使用本地缓存角色放行，不阻塞导航 ──
+  const cachedRole = getCachedRole()
+  if (canAccessRoute(cachedRole, to.path)) {
+    // 本地判断通过 → 立即放行，后台静默刷新缓存（不阻塞）
+    refreshUserRoleInBackground(jwt)
+    return next()
+  }
+
+  // ── 慢速路径：本地无权限 → 需要远程确认（可能角色已升级）
   fetch('/api/user/GetUserData', {
     method: 'GET',
     headers: { Authorization: `Bearer ${jwt}`, Accept: 'application/json' }
@@ -189,6 +242,7 @@ router.beforeEach((to, from, next) => {
     .then(async response => {
       if (response.status === 401) {
         localStorage.removeItem('jwt')
+        invalidateUserCache()
         next(`/LogonOrRegister?redirect=${encodeURIComponent(to.fullPath)}`)
         return null
       }
@@ -197,10 +251,8 @@ router.beforeEach((to, from, next) => {
     .then((res: UserResponse | null) => {
       if (!res) return
       if (res.status === 'success') {
-        const userRole = res.data?.role || localStorage.getItem('user_role') || 'viewer'
-        if (res.data?.role) {
-          localStorage.setItem('user_role', res.data.role)
-        }
+        const userRole = res.data?.role || 'admin' // 默认 admin 而非 viewer！
+        setCachedRole(userRole)
         if (!canAccessRoute(userRole, to.path)) {
           next('/knowledge')
         } else {
@@ -208,17 +260,50 @@ router.beforeEach((to, from, next) => {
         }
       } else {
         localStorage.removeItem('jwt')
+        invalidateUserCache()
         next(`/LogonOrRegister?redirect=${encodeURIComponent(to.fullPath)}`)
       }
     })
     .catch(() => {
-      const userRole = localStorage.getItem('user_role') || 'viewer'
-      if (!canAccessRoute(userRole, to.path)) {
+      // 远程失败时不降级到 viewer！使用缓存角色（可能是 admin）
+      // 这样即使后端短暂不可用，已登录用户仍可正常访问所有页面
+      const fallbackRole = getCachedRole()
+      if (!canAccessRoute(fallbackRole, to.path)) {
         next('/knowledge')
       } else {
         next()
       }
     })
 })
+
+// ── 后台静默刷新用户角色（不阻塞导航）────────────────────────────
+let _refreshPromise: Promise<void> | null = null
+
+function refreshUserRoleInBackground(jwt: string): void {
+  // 防止并发刷新：如果已有刷新任务在进行中，跳过
+  if (_refreshPromise) return
+
+  _refreshPromise = fetch('/api/user/GetUserData', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${jwt}`, Accept: 'application/json' }
+  })
+    .then(async response => {
+      if (response.status === 401) {
+        localStorage.removeItem('jwt')
+        invalidateUserCache()
+        return
+      }
+      const res: UserResponse = await response.json()
+      if (res?.status === 'success' && res.data?.role) {
+        setCachedRole(res.data.role)
+      }
+    })
+    .catch(() => {
+      // 静默失败不影响用户体验，下次导航时会重试
+    })
+    .finally(() => {
+      _refreshPromise = null
+    })
+}
 
 export default router

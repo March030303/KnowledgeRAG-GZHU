@@ -89,6 +89,24 @@ async def get_user_data(credentials: HTTPAuthorizationCredentials = Depends(oaut
         profile = cur.fetchone()
 
         if profile:
+            # Query role from RBAC (same logic as /api/users/me)
+            user_role = "admin"
+            try:
+                import sqlite3
+                rbac_db = sqlite3.connect("rbac.db")
+                rbac_cursor = rbac_db.cursor()
+                rbac_cursor.execute(
+                    "SELECT r.name FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = ? ORDER BY r.id LIMIT 1",
+                    (str(user_id),),
+                )
+                role_row = rbac_cursor.fetchone()
+                if role_row:
+                    user_role = role_row[0]
+                rbac_cursor.close()
+                rbac_db.close()
+            except Exception:
+                pass
+
             return {
                 "status": "success",
                 "data": {
@@ -98,6 +116,7 @@ async def get_user_data(credentials: HTTPAuthorizationCredentials = Depends(oaut
                     "social_media": profile[3] or "",
                     "avatar": profile[4] or DEFAULT_AVATAR,
                     "email": email,
+                    "role": user_role,
                 },
             }
 
@@ -116,6 +135,7 @@ async def get_user_data(credentials: HTTPAuthorizationCredentials = Depends(oaut
                 "social_media": "",
                 "avatar": DEFAULT_AVATAR,
                 "email": email,
+                "role": "admin",
             },
         }
 

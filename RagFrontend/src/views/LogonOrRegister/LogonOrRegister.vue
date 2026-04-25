@@ -238,6 +238,28 @@ const handleFormSubmit = async (data: any) => {
       // for the very next navigation (avoids race condition).
       markJustAuthenticated()
       localStorage.setItem('jwt', data.token)
+
+      // ── 立即获取用户信息并写入 localStorage ──
+      // 这样 SideBar / T-HeadBar 等组件不需要各自再请求一次
+      try {
+        const userRes = await fetch('/api/user/GetUserData', {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${data.token}`, Accept: 'application/json' }
+        })
+        if (userRes.ok) {
+          const userData = await userRes.json()
+          if (userData?.status === 'success' && userData.data) {
+            localStorage.setItem('user_info', JSON.stringify(userData.data))
+            if (userData.data.role) {
+              localStorage.setItem('user_role', userData.data.role)
+            }
+          }
+        }
+      } catch {
+        // 用户信息获取失败不阻断登录流程，后续由路由守卫后台刷新补充
+        console.warn('登录后获取用户信息失败，将在后台补充')
+      }
+
       const redirectUrl =
         new URLSearchParams(window.location.search).get('redirect') || '/knowledge'
       window.location.href = redirectUrl
