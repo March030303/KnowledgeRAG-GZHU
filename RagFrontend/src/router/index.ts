@@ -19,8 +19,10 @@ const ROLE_ROUTE_MAP: Record<string, string[]> = {
 }
 
 function canAccessRoute(role: string, path: string): boolean {
-  // 单用户模式下所有路由均可访问
-  if (import.meta.env.VITE_SINGLE_USER_MODE === 'true') return true
+  // 单用户模式下所有路由均可访问（未设置或为 true 均视为开启）
+  const singleUserMode = import.meta.env.VITE_SINGLE_USER_MODE
+  if (singleUserMode === undefined || singleUserMode === '' || singleUserMode === 'true')
+    return true
   const allowed = ROLE_ROUTE_MAP[role] || ROLE_ROUTE_MAP.guest
   if (allowed.includes('*')) return true
   return allowed.some(r => path.startsWith(r))
@@ -217,10 +219,11 @@ router.beforeEach((to, from, next) => {
     return next()
   }
 
-  // ── 单用户模式 / 开发环境：跳过 JWT 强制校验 ──
-  // 后端可能未启动或正在重启，不应阻断前端页面访问
-  // 真正的权限由后端 API 负责，前端只是 UX 层面的优化
-  if (import.meta.env.VITE_SINGLE_USER_MODE === 'true') {
+  // ── 单用户模式（默认开启）────────────────────────────────────
+  // VITE_SINGLE_USER_MODE 未设置或为 true 时，完全跳过 JWT 校验
+  // 真正的权限由后端 API 负责，前端只做 UX 层面优化
+  const singleUserMode = import.meta.env.VITE_SINGLE_USER_MODE
+  if (singleUserMode === undefined || singleUserMode === '' || singleUserMode === 'true') {
     return next()
   }
 

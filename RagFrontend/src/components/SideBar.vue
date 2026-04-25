@@ -302,9 +302,10 @@ const route = useRoute()
 const userStore = useDataUserStore()
 const isCollapsed = ref(false)
 
-// 单用户模式：所有用户视为管理员，不显示角色管理 UI
+// 单用户模式：所有用户视为管理员，不显示角色管理 UI（未设置或为 true 均视为开启）
 const singleUserMode = computed(() => {
-  return import.meta.env.VITE_SINGLE_USER_MODE === 'true'
+  const mode = import.meta.env.VITE_SINGLE_USER_MODE
+  return mode === undefined || mode === '' || mode === 'true'
 })
 
 // 当前用户角色（用于RBAC菜单过滤）

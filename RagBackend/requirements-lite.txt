@@ -1,0 +1,66 @@
+# ═══════════════════════════════════════════════════════════════
+# KnowledgeRAG 精简版依赖 — 解决 "依赖树过深" 安装失败问题
+#
+# 使用方法：
+#   pip install -r requirements-lite.txt --prefer-binary -i https://pypi.tuna.tsinghua.edu.cn/simple
+#
+# 与完整版 requirements.txt 的区别：
+#   - 移除了 magic-pdf[full]    （与 pdfplumber 冲突，依赖树极深）
+#   - 移除了 openai-whisper      （~2GB 依赖，含 pytorch 链）
+#   - 移除了 layoutparser        （重型 CV 依赖）
+#   - 移除了 camelot-py          （复杂依赖链）
+#   - 移除了 ffmpeg-python       （仅 whisper 需要）
+#   - 保留所有核心 RAG 功能
+#
+# 可选功能需要时再单独安装：
+#   pip install openai-whisper        # 语音识别
+#   pip install magic-pdf[full]      # PDF 高级解析
+#   pip install layoutparser          # 版面分析
+# ═══════════════════════════════════════════════════════════════
+
+# ── Web 框架 ──
+fastapi==0.116.1
+uvicorn==0.35.0
+python-multipart>=0.0.6
+jinja2==3.1.6
+
+# ── 数据验证 & 配置 ──
+pydantic==2.11.7
+pydantic-settings==2.13.1
+python-dotenv==1.1.1
+
+# ── 认证 ──
+PyJWT==2.10.1
+
+# ── 数据库 ──
+PyMySQL==1.1.1
+
+# ── AI / LLM 核心 ──
+langchain==0.3.27
+langchain-community==0.3.27
+langchain-huggingface==0.3.1
+langchain-ollama==0.3.6
+langsmith==0.4.17
+
+# ── 向量数据库 ──
+faiss-cpu>=1.12.0
+
+# ── 嵌入模型 ──
+sentence-transformers>=5.1.0
+
+# ── 文档处理（核心） ──
+beautifulsoup4==4.13.4
+PyPDF2==3.0.1
+pdfplumber==0.11.7
+python-docx==1.1.2
+docx2txt>=0.9
+Pillow==11.3.0
+aiofiles==24.1.0
+chardet<6
+
+# ── HTTP / 网络 ──
+requests==2.32.4
+protobuf==6.31.1
+
+# ── Redis（可选但推荐） ──
+redis[hiredis]>=5.0.0
