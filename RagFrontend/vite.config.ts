@@ -27,7 +27,7 @@ export default defineConfig(async ({ mode }) => {
       },
       proxy: {
         '/api': {
-          target: 'http://localhost:8080',
+          target: 'http://localhost:8000',
           changeOrigin: true
         },
         '/lens-api': {

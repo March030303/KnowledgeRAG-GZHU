@@ -958,6 +958,7 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ref, onMounted, reactive, computed, nextTick } from 'vue'
+import { get } from '@/utils/ASFaxios'
 import axios from 'axios'
 import { MessagePlugin } from 'tdesign-vue-next'
 import {
@@ -1205,17 +1206,22 @@ function formatDateTime(ts: number): string {
   return new Date(ts * 1000).toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-')
 }
 onMounted(async () => {
-  loadPlatformConfigs()
-  mcLoadConfig()
-  await Promise.all([
-    fetchKeys(),
-    fetchDatasources(),
-    fetchAuditLogs(),
-    fetchObsidianStatus(),
-    fetchFeishuStatus(),
-    fetchUsageStats(),
-    fetchMonitor()
-  ])
+  try {
+    loadPlatformConfigs()
+    mcLoadConfig()
+    // 并行加载所有数据，单个失败不阻塞其他模块
+    await Promise.allSettled([
+      fetchKeys(),
+      fetchDatasources(),
+      fetchAuditLogs(),
+      fetchObsidianStatus(),
+      fetchFeishuStatus(),
+      fetchUsageStats(),
+      fetchMonitor()
+    ])
+  } catch (e) {
+    console.error('[Settings] 部分设置数据加载失败，页面仍可正常使用', e)
+  }
 })
 // ── 模型配置 ─────────────────────────────────────────────────
 const mcForm = reactive({
