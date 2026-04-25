@@ -237,8 +237,8 @@ echo ╔════════════════════════
 echo ║                    🎉 安装完成！                        ║
 echo ╠═══════════════════════════════════════════════════════════╣
 echo ║                                                       ║
-echo ║   前端界面：http://localhost:5173                       ║
-echo ║   后端API： http://localhost:8000/docs                   ║
+echo ║   前端界面：http://127.0.0.1:5173                      ║
+echo ║   后端API： http://127.0.0.1:8000/docs                   ║
 echo ║                                                       ║
 echo ║   单用户模式已开启，可直接使用                           ║
 echo ║                                                       ║
@@ -248,6 +248,6 @@ echo.
 
 :: 自动打开浏览器
 timeout /t 3 /nobreak >nul 2>&1
-start http://localhost:5173
+start http://127.0.0.1:5173
 
 pause
