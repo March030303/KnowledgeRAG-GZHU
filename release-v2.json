@@ -1,8 +1,8 @@
 {
-  "tag_name": "v2.0.0",
-  "target_commitish": "main",
-  "name": "KnowledgeRAG v2.0 - Docker Offline Edition",
-  "body": "## KnowledgeRAG v2.0 - Docker Offline Edition\n\n> **一键安装，零依赖配置，完全离线运行**\n\n### 下载文件\n- **KnowledgeRAG-v2.0-Scripts.zip** (4KB) - 必下载！\n- **knowledge-rag-v2.tar.part1** (1.9GB)\n- **knowledge-rag-v2.tar.part2** (1.4GB)\n\n### 安装：3步\n1. 安装 Docker Desktop\n2. 解压 Scripts.zip + 放入分卷文件\n3. 双击 install.bat -> 打开 http://localhost:8089",
+  "tag_name": "v2.0.2",
+  "target_commitish": "暖霂的分支",
+  "name": "KnowledgeRAG v2.0.2 — Bug修复稳定版",
+  "body": "## KnowledgeRAG v2.0.2 — Windows 原生版（无需 Docker）\n\n> **双击安装即可使用，无需 Docker，无需配置 MySQL**\n\n### 🆕 v2.0.2 更新内容\n\n#### 🔥 关键Bug修复\n- **知识库获取失败（500错误）**：`knowledgeBASE4CURD.py` 排序函数增加 try-except 容错保护。任何知识库的 createdTime 字段异常不再导致整个列表接口崩溃\n- **「获取用户数据失败」报错已删除**：\n  - `useDataUser.ts`：无缓存时静默返回默认数据，不再弹出错误提示\n  - `user-primary.vue`：onMounted 中移除 MessagePlugin.error 调用\n  - 单用户模式/首次进入时体验更流畅，不再看到红色报错弹窗\n\n#### v2.0.1 遗留修复（继续保留）\n- 后端 DB端口从 3307 修正为 3306（匹配本地MySQL默认端口）\n- `requirements-lite.txt` 精简版依赖，避免安装失败\n- 单用户模式默认开启，免登录即可使用\n- SideBar 管理员菜单默认可见\n- Settings 页面单个API失败不再白屏\n\n#### 新增文件\n| 文件 | 说明 |\n|------|------|\n| `install-windows.bat` | **Windows 一键安装脚本**（自动检测 Python/MySQL/Node） |\n| `stop-local.bat` | 停止本地开发服务 |\n| `requirements-lite.txt` | 精简版依赖列表（避免 pip 解析器溢出） |\n\n### 📦 安装方式\n\n**方式 A：一键安装（推荐，无需 Docker）**\n```\n1. 安装 Python 3.11+ （勾选 Add to PATH）\n2. 安装 MySQL 8.x 或 9.x\n3. 双击 install-windows.bat\n4. 浏览器自动打开 http://localhost:5173\n```\n\n**方式 B：Docker 离线版**\n```\n1. 安装 Docker Desktop\n2. 双击 install.bat（原有流程）\n3. 访问 http://localhost:8089\n```\n\n### 🔧 新机器部署清单\n- [x] Python 3.11+ 自动检测\n- [x] MySQL 自动检测 & 启动\n- [x] .env 配置文件自动生成\n- [x] Python 依赖自动安装（清华镜像加速）\n- [x] 前端依赖自动安装\n- [x] 后端+前端服务自动启动\n- [x] 单用户模式默认开启（免登录）\n- [x] 知识库列表容错（排序异常不崩溃）\n- [x] 用户数据获取静默失败（无扰体验）\n- [x] 浏览器自动打开",
   "draft": false,
   "prerelease": false
 }

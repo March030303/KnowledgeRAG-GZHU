@@ -164,11 +164,14 @@ def knowledge_base_data() -> List[dict]:
             except (json.JSONDecodeError, IOError) as e:
                 logger.warning(f"[KB] 读取 {json_file_path} 失败: {e}")
 
-    # 按 createdTime 降序排列
-    knowledge_bases.sort(
-        key=lambda x: datetime.strptime(x["createdTime"], "%Y-%m-%d %H:%M:%S"),
-        reverse=True,
-    )
+    # 按 createdTime 降序排列（增加容错：跳过格式异常的条目）
+    try:
+        knowledge_bases.sort(
+            key=lambda x: datetime.strptime(x["createdTime"], "%Y-%m-%d %H:%M:%S"),
+            reverse=True,
+        )
+    except (ValueError, KeyError) as e:
+        logger.warning(f"[KB] 知识库排序失败，使用原始顺序: {e}")
 
     logger.debug(f"[KB] 加载知识库列表，共 {len(knowledge_bases)} 个")
     return knowledge_bases

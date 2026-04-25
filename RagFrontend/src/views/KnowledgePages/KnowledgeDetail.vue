@@ -1709,18 +1709,22 @@ const saveKnowledgeBaseSettings = (settings: { name: string; description: string
 }
 const deleteKnowledgeBase = async () => {
   try {
-    router.push('/knowledge')
-    const response = await axios.delete(`/api/delete-knowledgebase/${id.value}`)
+    const kbIdToDelete = id.value // 先保存 id，避免后续异步操作中丢失
+    const response = await axios.delete(`/api/delete-knowledgebase/${kbIdToDelete}`)
     if (response.status === 200) {
-      console.log('知识库已成功删除', id.value)
+      console.log('知识库已成功删除', kbIdToDelete)
       MessagePlugin.success('知识库删除成功')
       showDeleteConfirmation.value = false
+      // 删除成功后才跳转
+      router.push('/knowledge')
     } else {
       console.error('删除知识库失败:', response.data)
-      MessagePlugin.error('知识库删除失败')
+      MessagePlugin.error(`知识库删除失败: ${response.data?.detail || '未知错误'}`)
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('删除知识库请求失败:', error)
+    const errMsg = error?.response?.data?.detail || error?.message || '网络错误，请重试'
+    MessagePlugin.error(`删除失败: ${errMsg}`)
   }
 }
 /** 
