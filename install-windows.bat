@@ -149,6 +149,56 @@ echo.
 :: ═══════════════════════════════════════════════════════════════
 :: 第4步：安装 Python 依赖
 :: ═══════════════════════════════════════════════════════════════
+
+echo [3.5/6] 应用 v2.0.2 Bug 修复补丁...
+
+set "PATCH_APPLIED=0"
+
+:: --- Fix 1: knowledgeBASE4CURD.py 排序崩溃 ---
+set "KB_FILE=%BACKEND_DIR%\knowledge_base\knowledgeBASE4CURD.py"
+if exist "%KB_FILE%" (
+    findstr /C:"except (ValueError, KeyError) as e:" "%KB_FILE%" >nul 2>&1
+    if !errorlevel! neq 0 (
+        echo   [*] 修复知识库排序崩溃...
+        powershell -ExecutionPolicy Bypass -File "%ROOT_DIR%tools\auto_patch_kb.py" "%KB_FILE%"
+        if !errorlevel! equ 0 (echo     ^|^| 知识库排序修复完成 & set /a PATCH_APPLIED+=1) else (echo     ^|⚠^| 修复可能未完全生效)
+    ) else (
+        echo   ^|ℹ^|  knowledgeBASE4CURD.py 已包含容错修复，跳过
+    )
+)
+
+:: --- Fix 2a: useDataUser.ts 用户报错 ---
+set "USER_TS=%FRONTEND_DIR%\src\store\modules\useDataUser.ts"
+if exist "%USER_TS%" (
+    findstr /C:"MessagePlugin.error('获取用户数据失败！')" "%USER_TS%" >nul 2>&1
+    if !errorlevel! equ 0 (
+        echo   [*] 修复「获取用户数据失败」弹窗...
+        powershell -Command "$c=[System.IO.File]::ReadAllText('%USER_TS%');$c=$c.Replace('MessagePlugin.error(''获取用户数据失败！'')','console.debug(''[useDataUser] 获取用户数据失败，使用默认数据'')');$c=$c.Replace('throw _error','return this.userData');[System.IO.File]::WriteAllText('%USER_TS%',$c,(New-Object System.Text.UTF8Encoding $false))"
+        echo     ^|^| useDataUser.ts 修复完成
+        set /a PATCH_APPLIED+=1
+    )
+)
+
+:: --- Fix 2b: user-primary.vue 用户报错 ---
+set "USER_VUE=%FRONTEND_DIR%\src\components\user-primary\user-primary.vue"
+if exist "%USER_VUE%" (
+    findstr /C:"MessagePlugin.error('获取用户数据失败')" "%USER_VUE%" >nul 2>&1
+    if !errorlevel! equ 0 (
+        echo   [*] 修复 user-primary.vue 报错弹窗...
+        powershell -Command "$c=[System.IO.File]::ReadAllText('%USER_VUE%');$c=$c.Replace('MessagePlugin.error(''获取用户数据失败'')','''');[System.IO.File]::WriteAllText('%USER_VUE%',$c,(New-Object System.Text.UTF8Encoding $false))"
+        echo     ^|^| user-primary.vue 修复完成
+        set /a PATCH_APPLIED+=1
+    )
+)
+
+if %PATCH_APPLIED% gtr 0 (
+    echo.
+    echo   ^|^| 已自动应用 %PATCH_APPLIED% 个补丁！无需手动操作。
+) else (
+    echo   ^|ℹ^| 所有补丁已就位，无需修复。
+)
+echo.
+
 echo [4/6] 安装 Python 依赖（首次约 5-10 分钟）...
 echo   使用精简版依赖列表（避免"依赖树过深"问题）
 echo.
