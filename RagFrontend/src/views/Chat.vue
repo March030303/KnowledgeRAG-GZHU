@@ -540,11 +540,14 @@ const fetchChatSessions = async (): Promise<boolean> => {
     console.error('获取会话历史失败:', error)
     if (retryCount.value < maxRetries) {
       retryCount.value++
-      MessagePlugin.warning(`获取失败，正在重试 (${retryCount.value}/${maxRetries})...`)
+      // 只在首次失败时提示，避免重试期间弹窗刷屏
+      if (retryCount.value === 1) {
+        MessagePlugin.info('正在加载会话列表...')
+      }
       await new Promise(resolve => setTimeout(resolve, 1000 * retryCount.value))
       return fetchChatSessions()
     } else {
-      MessagePlugin.error('获取会话历史失败，请刷新页面重试')
+      MessagePlugin.error('会话历史加载失败，已为您创建新对话')
       // 创建默认会话
       await createDefaultSession()
       return false

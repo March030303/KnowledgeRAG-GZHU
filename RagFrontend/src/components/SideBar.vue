@@ -308,8 +308,9 @@ const singleUserMode = computed(() => {
 })
 
 // 当前用户角色（用于RBAC菜单过滤）
+// 默认 admin：宁可多展示菜单项也不可隐藏管理入口
 const userRole = computed(() => {
-  return localStorage.getItem('user_role') || 'viewer'
+  return localStorage.getItem('user_role') || 'admin'
 })
 const isAdmin = computed(
   () => singleUserMode.value || ['admin', 'super_admin'].includes(userRole.value)
